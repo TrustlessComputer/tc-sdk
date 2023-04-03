@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "node",
+    "removeComments": false,
+    "sourceMap": true,
+    "target": "es2018",
+    "outDir": "build/compiled",
+    "declaration": true,
+    "strict": true,
+    "noEmitOnError": true,
+    "lib": ["es2017"],
+    "esModuleInterop": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@src/*": ["./*"],
+      "@root/*": ["../*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "build", "dist", "test"]
+}
