@@ -2937,7 +2937,7 @@ const DummyUTXOValue = 1000;
 const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
-const WalletType$1 = {
+const WalletType = {
     Xverse: 1,
     Hiro: 2,
 };
@@ -2966,7 +2966,7 @@ const setBTCNetwork = (netType) => {
     }
 };
 
-const ERROR_CODE$1 = {
+const ERROR_CODE = {
     INVALID_CODE: "0",
     INVALID_PARAMS: "-1",
     NOT_SUPPORT_SEND: "-2",
@@ -2982,73 +2982,93 @@ const ERROR_CODE$1 = {
     SIGN_XVERSE_ERROR: "-12",
     CREATE_COMMIT_TX_ERR: "-13",
     INVALID_TAPSCRIPT_ADDRESS: "-14",
+    INVALID_NETWORK_TYPE: "-15",
+    RPC_ERROR: "-16",
+    RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
+    RPC_SUBMIT_BTCTX_ERROR: "-18",
 };
-const ERROR_MESSAGE$1 = {
-    [ERROR_CODE$1.INVALID_CODE]: {
+const ERROR_MESSAGE = {
+    [ERROR_CODE.INVALID_CODE]: {
         message: "Something went wrong.",
         desc: "Something went wrong.",
     },
-    [ERROR_CODE$1.INVALID_PARAMS]: {
+    [ERROR_CODE.INVALID_PARAMS]: {
         message: "Invalid input params.",
         desc: "Invalid input params.",
     },
-    [ERROR_CODE$1.NOT_SUPPORT_SEND]: {
+    [ERROR_CODE.NOT_SUPPORT_SEND]: {
         message: "This inscription is not supported to send.",
         desc: "This inscription is not supported to send.",
     },
-    [ERROR_CODE$1.NOT_FOUND_INSCRIPTION]: {
+    [ERROR_CODE.NOT_FOUND_INSCRIPTION]: {
         message: "Can not find inscription UTXO in your wallet.",
         desc: "Can not find inscription UTXO in your wallet.",
     },
-    [ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND]: {
+    [ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND]: {
         message: "Your balance is insufficient. Please top up BTC to your wallet.",
         desc: "Your balance is insufficient. Please top up BTC to your wallet.",
     },
-    [ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE]: {
+    [ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE]: {
         message: "Your balance is insufficient. Please top up BTC to pay network fee.",
         desc: "Your balance is insufficient. Please top up BTC to pay network fee.",
     },
-    [ERROR_CODE$1.ERR_BROADCAST_TX]: {
+    [ERROR_CODE.ERR_BROADCAST_TX]: {
         message: "There was an issue when broadcasting the transaction to the BTC network.",
         desc: "There was an issue when broadcasting the transaction to the BTC network.",
     },
-    [ERROR_CODE$1.INVALID_SIG]: {
+    [ERROR_CODE.INVALID_SIG]: {
         message: "Signature is invalid in the partially signed bitcoin transaction.",
         desc: "Signature is invalid in the partially signed bitcoin transaction.",
     },
-    [ERROR_CODE$1.INVALID_VALIDATOR_LABEL]: {
+    [ERROR_CODE.INVALID_VALIDATOR_LABEL]: {
         message: "Missing or invalid label.",
         desc: "Missing or invalid label.",
     },
-    [ERROR_CODE$1.NOT_FOUND_UTXO]: {
+    [ERROR_CODE.NOT_FOUND_UTXO]: {
         message: "Can not find UTXO with exact value.",
         desc: "Can not find UTXO with exact value.",
     },
-    [ERROR_CODE$1.NOT_FOUND_DUMMY_UTXO]: {
+    [ERROR_CODE.NOT_FOUND_DUMMY_UTXO]: {
         message: "Can not find dummy UTXO in your wallet.",
         desc: "Can not find dummy UTXO in your wallet.",
     },
-    [ERROR_CODE$1.SIGN_XVERSE_ERROR]: {
+    [ERROR_CODE.SIGN_XVERSE_ERROR]: {
         message: "Can not sign with Xverse.",
         desc: "Can not sign with Xverse.",
     },
-    [ERROR_CODE$1.WALLET_NOT_SUPPORT]: {
+    [ERROR_CODE.WALLET_NOT_SUPPORT]: {
         message: "Your wallet is not supported currently.",
         desc: "Your wallet is not supported currently.",
     },
-    [ERROR_CODE$1.CREATE_COMMIT_TX_ERR]: {
+    [ERROR_CODE.CREATE_COMMIT_TX_ERR]: {
         message: "Create commit tx error.",
         desc: "Create commit tx error.",
     },
-    [ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS]: {
+    [ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS]: {
         message: "Can not generate valid tap script address to inscribe.",
         desc: "Can not generate valid tap script address to inscribe.",
     },
+    [ERROR_CODE.INVALID_NETWORK_TYPE]: {
+        message: "Invalid network type params.",
+        desc: "Invalid network type params.",
+    },
+    [ERROR_CODE.RPC_ERROR]: {
+        message: "Call RPC TC node error.",
+        desc: "Call RPC TC node error.",
+    },
+    [ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR]: {
+        message: "Call RPC get inscribeable info error.",
+        desc: "Call RPC get inscribeable info error.",
+    },
+    [ERROR_CODE.RPC_SUBMIT_BTCTX_ERROR]: {
+        message: "Call RPC submit btc tx error.",
+        desc: "Call RPC submit btc tx error.",
+    },
 };
-class SDKError$1 extends Error {
+class SDKError extends Error {
     constructor(code, desc) {
         super();
-        const _error = ERROR_MESSAGE$1[code];
+        const _error = ERROR_MESSAGE[code];
         this.message = `${_error.message} (${code})` || "";
         this.code = code;
         this.desc = desc || (_error === null || _error === void 0 ? void 0 : _error.desc);
@@ -3155,7 +3175,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
     }
     if (sendInscriptionID !== "") {
         if (inscriptionUTXO === null || inscriptionInfo == null) {
-            throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_INSCRIPTION);
+            throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
         }
         // if value is not enough to pay fee, MUST use normal UTXOs to pay fee
         if (isUseInscriptionPayFee && maxAmountInsTransfer.lt(estFee)) {
@@ -3172,7 +3192,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
     let totalInputAmount = BNZero;
     if (totalSendAmount.gt(BNZero)) {
         if (normalUTXOs.length === 0) {
-            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
         }
         if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
             // select the smallest utxo
@@ -3190,7 +3210,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
                 }
             }
             if (totalInputAmount.lt(totalSendAmount)) {
-                throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+                throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
             }
         }
         else {
@@ -3239,7 +3259,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
 */
 const selectInscriptionUTXO = (utxos, inscriptions, inscriptionID) => {
     if (inscriptionID === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "InscriptionID must not be an empty string");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "InscriptionID must not be an empty string");
     }
     // filter normal UTXO and inscription UTXO to send
     for (const utxo of utxos) {
@@ -3253,13 +3273,13 @@ const selectInscriptionUTXO = (utxos, inscriptions, inscriptionID) => {
             if (inscription !== undefined) {
                 // don't support send tx with outcoin that includes more than one inscription
                 if (inscriptionInfos.length > 1) {
-                    throw new SDKError$1(ERROR_CODE$1.NOT_SUPPORT_SEND);
+                    throw new SDKError(ERROR_CODE.NOT_SUPPORT_SEND);
                 }
                 return { inscriptionUTXO: utxo, inscriptionInfo: inscription };
             }
         }
     }
-    throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_INSCRIPTION);
+    throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
 };
 /**
 * selectCardinalUTXOs selects the most reasonable UTXOs to create the transaction.
@@ -3281,7 +3301,7 @@ const selectCardinalUTXOs = (utxos, inscriptions, sendAmount) => {
     const totalSendAmount = sendAmount;
     if (totalSendAmount.gt(BNZero)) {
         if (normalUTXOs.length === 0) {
-            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
         }
         if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
             // select the smallest utxo
@@ -3301,7 +3321,7 @@ const selectCardinalUTXOs = (utxos, inscriptions, sendAmount) => {
                 }
             }
             if (totalInputAmount.lt(totalSendAmount)) {
-                throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+                throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
             }
         }
         else {
@@ -3354,7 +3374,7 @@ const selectUTXOsToCreateBuyTx = (params) => {
 const selectTheSmallestUTXO = (utxos, inscriptions) => {
     const { cardinalUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
     if (cardinalUTXOs.length === 0) {
-        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
     }
     return cardinalUTXOs[cardinalUTXOs.length - 1];
 };
@@ -3409,7 +3429,7 @@ const findExactValueUTXO = (cardinalUTXOs, value) => {
             return { utxo };
         }
     }
-    throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_UTXO, value.toString());
+    throw new SDKError(ERROR_CODE.NOT_FOUND_UTXO, value.toString());
 };
 
 bitcoinjsLib.initEccLib(ecc__namespace);
@@ -3617,7 +3637,7 @@ const decryptWallet = (ciphertext, password) => {
     return wallet;
 };
 
-const preparePayloadSignTx$1 = ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT }) => {
+const preparePayloadSignTx = ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT }) => {
     return {
         network: {
             type: "Mainnet",
@@ -3633,7 +3653,7 @@ const preparePayloadSignTx$1 = ({ base64Psbt, indicesToSign, address, sigHashTyp
             }],
     };
 };
-const finalizeSignedPsbt$1 = ({ signedRawPsbtB64, indicesToSign, }) => {
+const finalizeSignedPsbt = ({ signedRawPsbtB64, indicesToSign, }) => {
     const signedPsbt = bitcoinjsLib.Psbt.fromBase64(signedRawPsbtB64);
     // finalize inputs
     for (let i = 0; i < signedPsbt.txInputs.length; i++) {
@@ -3654,9 +3674,9 @@ const finalizeSignedPsbt$1 = ({ signedRawPsbtB64, indicesToSign, }) => {
 * @param cancelFn callback function for handling cancel signing
 * @returns the base64 encode signed Psbt
 */
-const handleSignPsbtWithXverse$1 = async ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, isGetMsgTx = false, cancelFn, }) => {
+const handleSignPsbtWithXverse = async ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, isGetMsgTx = false, cancelFn, }) => {
     let base64SignedPsbt = "";
-    const payload = preparePayloadSignTx$1({
+    const payload = preparePayloadSignTx({
         base64Psbt,
         indicesToSign, address,
         sigHashType
@@ -3671,16 +3691,16 @@ const handleSignPsbtWithXverse$1 = async ({ base64Psbt, indicesToSign, address, 
             }
             else {
                 // sign unsuccessfully
-                throw new SDKError$1(ERROR_CODE$1.SIGN_XVERSE_ERROR, response);
+                throw new SDKError(ERROR_CODE.SIGN_XVERSE_ERROR, response);
             }
         },
         onCancel: cancelFn,
     };
     await satsConnect.signTransaction(signPsbtOptions);
     if (base64SignedPsbt === "") {
-        throw new SDKError$1(ERROR_CODE$1.SIGN_XVERSE_ERROR, "Response is empty");
+        throw new SDKError(ERROR_CODE.SIGN_XVERSE_ERROR, "Response is empty");
     }
-    const finalizedPsbt = finalizeSignedPsbt$1({ signedRawPsbtB64: base64SignedPsbt, indicesToSign });
+    const finalizedPsbt = finalizeSignedPsbt({ signedRawPsbtB64: base64SignedPsbt, indicesToSign });
     let msgTx;
     let msgTxID = "";
     let msgTxHex = "";
@@ -3707,10 +3727,10 @@ const handleSignPsbtWithXverse$1 = async ({ base64Psbt, indicesToSign, address, 
 * @param cancelFn callback function for handling cancel signing
 * @returns the base64 encode signed Psbt
 */
-const handleSignPsbtWithSpecificWallet$1 = async ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, isGetMsgTx = false, walletType = WalletType$1.Xverse, cancelFn, }) => {
+const handleSignPsbtWithSpecificWallet = async ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, isGetMsgTx = false, walletType = WalletType.Xverse, cancelFn, }) => {
     switch (walletType) {
-        case WalletType$1.Xverse: {
-            return handleSignPsbtWithXverse$1({
+        case WalletType.Xverse: {
+            return handleSignPsbtWithXverse({
                 base64Psbt, indicesToSign,
                 address,
                 sigHashType,
@@ -3719,7 +3739,7 @@ const handleSignPsbtWithSpecificWallet$1 = async ({ base64Psbt, indicesToSign, a
             });
         }
         default: {
-            throw new SDKError$1(ERROR_CODE$1.WALLET_NOT_SUPPORT);
+            throw new SDKError(ERROR_CODE.WALLET_NOT_SUPPORT);
         }
     }
 };
@@ -3977,7 +3997,7 @@ const createRawTx = ({ pubKey, utxos, inscriptions, sendInscriptionID = "", rece
  }) => {
     // validation
     if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
     }
     // select UTXOs
     const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
@@ -4057,7 +4077,7 @@ walletType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, cancelFn, }) => {
         isUseInscriptionPayFeeParam,
     });
     // sign transaction 
-    const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet$1({
+    const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet({
         base64Psbt: base64Psbt,
         indicesToSign: indicesToSign,
         address: address,
@@ -4094,7 +4114,7 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
         if (info.amount.gt(BNZero) && info.amount.lt(MinSats)) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
         }
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
@@ -4163,7 +4183,7 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
         if (info.amount.gt(BNZero) && info.amount.lt(MinSats)) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
         }
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
@@ -4238,7 +4258,7 @@ const createTxWithSpecificUTXOs = (senderPrivateKey, utxos, sendInscriptionID = 
     });
     const senderAddress = p2pktr.address ? p2pktr.address : "";
     if (senderAddress === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Can not get the sender address from the private key");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Can not get the sender address from the private key");
     }
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
     // add inputs
@@ -4333,14 +4353,14 @@ const createTxSplitFundFromOrdinalUTXO = (senderPrivateKey, inscriptionUTXO, ins
 const createRawTxSplitFundFromOrdinalUTXO = ({ pubKey, inscriptionUTXO, inscriptionInfo, sendAmount, feeRatePerByte, }) => {
     // validation
     if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
     }
     const { address: senderAddress, p2pktr } = generateTaprootAddressFromPubKey(pubKey);
     const maxAmountInsSpend = inscriptionUTXO.value.minus(inscriptionInfo.offset).minus(1).minus(MinSats);
     const fee = new BigNumber(estimateTxFee(1, 2, feeRatePerByte));
     const totalAmountSpend = sendAmount.plus(fee);
     if (totalAmountSpend.gt(maxAmountInsSpend)) {
-        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE);
+        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE);
     }
     const newValueInscription = inscriptionUTXO.value.minus(totalAmountSpend);
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
@@ -4376,7 +4396,7 @@ const selectDummyUTXO = (utxos, inscriptions) => {
     if (smallestUTXO.value.lte(DummyUTXOValue)) {
         return smallestUTXO;
     }
-    throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_DUMMY_UTXO);
+    throw new SDKError(ERROR_CODE.NOT_FOUND_DUMMY_UTXO);
 };
 const createDummyUTXOFromCardinal = (senderPrivateKey, utxos, inscriptions, feeRatePerByte) => {
     // create dummy UTXO from cardinal UTXOs
@@ -4491,7 +4511,7 @@ const prepareUTXOsToBuyMultiInscriptions = ({ privateKey, address, utxos, inscri
             const info = needPaymentUTXOs[i];
             const buyInfoIndex = info.buyInfoIndex;
             if (buyReqFullInfos[buyInfoIndex].paymentUTXO != null) {
-                throw new SDKError$1(ERROR_CODE$1.INVALID_CODE);
+                throw new SDKError(ERROR_CODE.INVALID_CODE);
             }
             const newUTXO = {
                 tx_hash: splitTxID,
@@ -4574,7 +4594,7 @@ const broadcastTx = async (txHex) => {
     const response = await blockstream.post("/tx", txHex);
     const { status, data } = response;
     if (status !== 200) {
-        throw new SDKError$1(ERROR_CODE$1.ERR_BROADCAST_TX, data);
+        throw new SDKError(ERROR_CODE.ERR_BROADCAST_TX, data);
     }
     return response.data;
 };
@@ -4640,7 +4660,7 @@ const createPSBTToSell = (params) => {
             isValid = false;
         }
         if (!isValid) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_SIG);
+            throw new SDKError(ERROR_CODE.INVALID_SIG);
         }
     }
     psbt.finalizeAllInputs();
@@ -4735,7 +4755,7 @@ const createPSBTToBuy = (params) => {
         value: dummyUtxo.value.plus(valueInscription).toNumber(),
     });
     if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
     }
     for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
         // Add seller signed input
@@ -4762,7 +4782,7 @@ const createPSBTToBuy = (params) => {
     if (fee.plus(price).gt(totalValue)) {
         fee = totalValue.minus(price); // maximum fee can paid
         if (fee.lt(BNZero)) {
-            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE);
+            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE);
         }
     }
     let changeValue = totalValue.minus(price).minus(fee);
@@ -4780,7 +4800,7 @@ const createPSBTToBuy = (params) => {
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -4851,7 +4871,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
         value: dummyUtxo.value.plus(valueInscription).toNumber(),
     });
     if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
     }
     for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
         // Add seller signed input
@@ -4878,7 +4898,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
     if (fee.plus(price).gt(totalValue)) {
         fee = totalValue.minus(price); // maximum fee can paid
         if (fee.lt(BNZero)) {
-            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE);
+            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE);
         }
     }
     let changeValue = totalValue.minus(price).minus(fee);
@@ -4896,7 +4916,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -4934,7 +4954,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
 const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, feeUTXOs, fee, dummyUTXO, feeRatePerByte, }) => {
     // validation
     if (buyReqFullInfos.length === 0) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "buyReqFullInfos is empty");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "buyReqFullInfos is empty");
     }
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
     const indexInputNeedToSign = [];
@@ -4962,7 +4982,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
         const sellerSignedPsbt = info.sellerSignedPsbt;
         const paymentUTXO = info.paymentUTXO;
         if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
         }
         for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
             // Add seller signed input
@@ -5025,7 +5045,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -5082,7 +5102,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
 const createRawPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, internalPubKey, feeUTXOs, fee, dummyUTXO, feeRatePerByte, }) => {
     // validation
     if (buyReqFullInfos.length === 0) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "buyReqFullInfos is empty");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "buyReqFullInfos is empty");
     }
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
     const indexInputNeedToSign = [];
@@ -5110,7 +5130,7 @@ const createRawPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, internalPubKey, 
         const sellerSignedPsbt = info.sellerSignedPsbt;
         const paymentUTXO = info.paymentUTXO;
         if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
         }
         for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
             // Add seller signed input
@@ -5173,7 +5193,7 @@ const createRawPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, internalPubKey, 
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -5210,16 +5230,16 @@ const reqListForSaleInscription = async (params) => {
     let { amountPayToSeller, feePayToCreator, creatorAddress, } = params;
     // validation
     if (feePayToCreator.gt(BNZero) && creatorAddress === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Creator address must not be empty.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Creator address must not be empty.");
     }
     if (sellInscriptionID === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "SellInscriptionID must not be empty.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "SellInscriptionID must not be empty.");
     }
     if (receiverBTCAddress === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
     }
     if (amountPayToSeller.eq(BNZero)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
     }
     let needDummyUTXO = false;
     if (feePayToCreator.gt(BNZero)) {
@@ -5235,10 +5255,10 @@ const reqListForSaleInscription = async (params) => {
         }
     }
     if (amountPayToSeller.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
     }
     if (feePayToCreator.gt(BNZero) && feePayToCreator.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
     }
     // select inscription UTXO
     const { inscriptionUTXO, inscriptionInfo } = selectInscriptionUTXO(utxos, inscriptions, sellInscriptionID);
@@ -5307,19 +5327,19 @@ const reqListForSaleInscription = async (params) => {
 * amountPayToSeller + feePayToCreator = price that is showed on UI
 * @returns the base64 encode Psbt
 */
-const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, sellInscriptionID, receiverBTCAddress, amountPayToSeller, feePayToCreator, creatorAddress, feeRatePerByte, walletType = WalletType$1.Xverse, cancelFn, }) => {
+const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, sellInscriptionID, receiverBTCAddress, amountPayToSeller, feePayToCreator, creatorAddress, feeRatePerByte, walletType = WalletType.Xverse, cancelFn, }) => {
     // validation
     if (feePayToCreator.gt(BNZero) && creatorAddress === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Creator address must not be empty.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Creator address must not be empty.");
     }
     if (sellInscriptionID === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "SellInscriptionID must not be empty.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "SellInscriptionID must not be empty.");
     }
     if (receiverBTCAddress === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
     }
     if (amountPayToSeller.eq(BNZero)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
     }
     let needDummyUTXO = false;
     if (feePayToCreator.gt(BNZero)) {
@@ -5335,10 +5355,10 @@ const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, se
         }
     }
     if (amountPayToSeller.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
     }
     if (feePayToCreator.gt(BNZero) && feePayToCreator.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
     }
     const { address } = generateTaprootAddressFromPubKey(pubKey);
     // select inscription UTXO
@@ -5365,7 +5385,7 @@ const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, se
         else {
             // need to create split tx 
             // sign transaction 
-            const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet$1({
+            const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet({
                 base64Psbt: splitPsbtB64,
                 indicesToSign,
                 address,
@@ -5413,7 +5433,7 @@ const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, se
         feePayToCreator: feePayToCreator,
     });
     // sign transaction 
-    const { base64SignedPsbt } = await handleSignPsbtWithSpecificWallet$1({
+    const { base64SignedPsbt } = await handleSignPsbtWithSpecificWallet({
         base64Psbt: rawPsbtRes.base64Psbt,
         indicesToSign: rawPsbtRes.indicesToSign,
         address,
@@ -5446,11 +5466,11 @@ const reqBuyInscription = async (params) => {
     const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
     }
     const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
     if (valueInscription === undefined || valueInscription === 0) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
     }
     const newUTXOs = utxos;
     // select or create dummy UTXO
@@ -5511,17 +5531,17 @@ const reqBuyInscription = async (params) => {
 * @param price  = amount pay to seller + fee pay to creator
 * @returns the base64 encode Psbt
 */
-const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, receiverInscriptionAddress, price, utxos, inscriptions, feeRatePerByte, walletType = WalletType$1.Xverse, cancelFn, }) => {
+const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, receiverInscriptionAddress, price, utxos, inscriptions, feeRatePerByte, walletType = WalletType.Xverse, cancelFn, }) => {
     var _a;
     // decode seller's signed PSBT
     const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
     }
     const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
     if (valueInscription === undefined || valueInscription === 0) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
     }
     const newUTXOs = utxos;
     let splitTxID = "";
@@ -5538,7 +5558,7 @@ const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, rec
     else {
         // need to create split tx 
         // sign transaction 
-        const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet$1({
+        const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet({
             base64Psbt: splitPsbtB64,
             indicesToSign,
             address,
@@ -5596,7 +5616,7 @@ const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, rec
         feeRate: feeRatePerByte,
     });
     // sign transaction 
-    const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet$1({
+    const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet({
         base64Psbt: rawBuyRes.base64Psbt,
         indicesToSign: rawBuyRes.indicesToSign,
         address,
@@ -5639,11 +5659,11 @@ const reqBuyMultiInscriptions = (params) => {
         const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
         const sellerInputs = sellerSignedPsbt.data.inputs;
         if (sellerInputs.length === 0) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
         }
         const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
         if (valueInscription === undefined || valueInscription === 0) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
         }
         buyReqFullInfos.push({
             ...buyReqInfos[i],
@@ -5723,7 +5743,7 @@ const reqBuyMultiInscriptions = (params) => {
 * @param price  = amount pay to seller + fee pay to creator
 * @returns the base64 encode Psbt
 */
-const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos, inscriptions, feeRatePerByte, walletType = WalletType$1.Xverse, cancelFn, }) => {
+const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos, inscriptions, feeRatePerByte, walletType = WalletType.Xverse, cancelFn, }) => {
     var _a;
     const { address: buyerAddress } = generateTaprootAddressFromPubKey(pubKey);
     // decode list of seller's signed PSBT
@@ -5733,11 +5753,11 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
         const sellerInputs = sellerSignedPsbt.data.inputs;
         if (sellerInputs.length === 0) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
         }
         const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
         if (valueInscription === undefined || valueInscription === 0) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
         }
         buyReqFullInfos.push({
             ...buyReqInfos[i],
@@ -5753,7 +5773,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         pubKey: pubKey, address: buyerAddress, utxos, inscriptions, feeRatePerByte, buyReqFullInfos
     });
     // sign transaction 
-    const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet$1({
+    const { base64SignedPsbt, msgTx, msgTxID, msgTxHex } = await handleSignPsbtWithSpecificWallet({
         base64Psbt: splitPsbtB64,
         indicesToSign: indicesToSign,
         address: buyerAddress,
@@ -5769,7 +5789,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         const info = needPaymentUTXOs[i];
         const buyInfoIndex = info.buyInfoIndex;
         if (buyReqFullInfos[buyInfoIndex].paymentUTXO != null) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_CODE);
+            throw new SDKError(ERROR_CODE.INVALID_CODE);
         }
         const newUTXO = {
             tx_hash: splitTxID,
@@ -5838,7 +5858,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
     });
     fee = rawBuyRes.fee;
     // sign transaction 
-    const finalRes = await handleSignPsbtWithSpecificWallet$1({
+    const finalRes = await handleSignPsbtWithSpecificWallet({
         base64Psbt: rawBuyRes.base64Psbt,
         indicesToSign: rawBuyRes.indicesToSign,
         address: buyerAddress,
@@ -5881,7 +5901,7 @@ function isPrivateKey(privateKey) {
 class Validator {
     constructor(label, value) {
         if (!label && typeof label !== "string") {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_VALIDATOR_LABEL);
+            throw new SDKError(ERROR_CODE.INVALID_VALIDATOR_LABEL);
         }
         this.value = value;
         this.label = label;
@@ -5926,211 +5946,6 @@ class Validator {
         return this._onCondition(() => this.buffer() && isPrivateKey(this.value), message);
     }
 }
-
-const ERROR_CODE = {
-    INVALID_CODE: "0",
-    INVALID_PARAMS: "-1",
-    NOT_SUPPORT_SEND: "-2",
-    NOT_FOUND_INSCRIPTION: "-3",
-    NOT_ENOUGH_BTC_TO_SEND: "-4",
-    NOT_ENOUGH_BTC_TO_PAY_FEE: "-5",
-    ERR_BROADCAST_TX: "-6",
-    INVALID_SIG: "-7",
-    INVALID_VALIDATOR_LABEL: "-8",
-    NOT_FOUND_UTXO: "-9",
-    NOT_FOUND_DUMMY_UTXO: "-10",
-    WALLET_NOT_SUPPORT: "-11",
-    SIGN_XVERSE_ERROR: "-12",
-    CREATE_COMMIT_TX_ERR: "-13",
-    INVALID_TAPSCRIPT_ADDRESS: "-14",
-};
-const ERROR_MESSAGE = {
-    [ERROR_CODE.INVALID_CODE]: {
-        message: "Something went wrong.",
-        desc: "Something went wrong.",
-    },
-    [ERROR_CODE.INVALID_PARAMS]: {
-        message: "Invalid input params.",
-        desc: "Invalid input params.",
-    },
-    [ERROR_CODE.NOT_SUPPORT_SEND]: {
-        message: "This inscription is not supported to send.",
-        desc: "This inscription is not supported to send.",
-    },
-    [ERROR_CODE.NOT_FOUND_INSCRIPTION]: {
-        message: "Can not find inscription UTXO in your wallet.",
-        desc: "Can not find inscription UTXO in your wallet.",
-    },
-    [ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND]: {
-        message: "Your balance is insufficient. Please top up BTC to your wallet.",
-        desc: "Your balance is insufficient. Please top up BTC to your wallet.",
-    },
-    [ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE]: {
-        message: "Your balance is insufficient. Please top up BTC to pay network fee.",
-        desc: "Your balance is insufficient. Please top up BTC to pay network fee.",
-    },
-    [ERROR_CODE.ERR_BROADCAST_TX]: {
-        message: "There was an issue when broadcasting the transaction to the BTC network.",
-        desc: "There was an issue when broadcasting the transaction to the BTC network.",
-    },
-    [ERROR_CODE.INVALID_SIG]: {
-        message: "Signature is invalid in the partially signed bitcoin transaction.",
-        desc: "Signature is invalid in the partially signed bitcoin transaction.",
-    },
-    [ERROR_CODE.INVALID_VALIDATOR_LABEL]: {
-        message: "Missing or invalid label.",
-        desc: "Missing or invalid label.",
-    },
-    [ERROR_CODE.NOT_FOUND_UTXO]: {
-        message: "Can not find UTXO with exact value.",
-        desc: "Can not find UTXO with exact value.",
-    },
-    [ERROR_CODE.NOT_FOUND_DUMMY_UTXO]: {
-        message: "Can not find dummy UTXO in your wallet.",
-        desc: "Can not find dummy UTXO in your wallet.",
-    },
-    [ERROR_CODE.SIGN_XVERSE_ERROR]: {
-        message: "Can not sign with Xverse.",
-        desc: "Can not sign with Xverse.",
-    },
-    [ERROR_CODE.WALLET_NOT_SUPPORT]: {
-        message: "Your wallet is not supported currently.",
-        desc: "Your wallet is not supported currently.",
-    },
-    [ERROR_CODE.CREATE_COMMIT_TX_ERR]: {
-        message: "Create commit tx error.",
-        desc: "Create commit tx error.",
-    },
-    [ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS]: {
-        message: "Can not generate valid tap script address to inscribe.",
-        desc: "Can not generate valid tap script address to inscribe.",
-    },
-};
-class SDKError extends Error {
-    constructor(code, desc) {
-        super();
-        const _error = ERROR_MESSAGE[code];
-        this.message = `${_error.message} (${code})` || "";
-        this.code = code;
-        this.desc = desc || (_error === null || _error === void 0 ? void 0 : _error.desc);
-    }
-    getMessage() {
-        return this.message;
-    }
-}
-
-new BigNumber(0);
-const WalletType = {
-    Xverse: 1,
-    Hiro: 2,
-};
-
-const preparePayloadSignTx = ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT }) => {
-    return {
-        network: {
-            type: "Mainnet",
-            address: "", // TODO:
-        },
-        message: "Sign Transaction",
-        psbtBase64: base64Psbt,
-        broadcast: false,
-        inputsToSign: [{
-                address: address,
-                signingIndexes: indicesToSign,
-                sigHash: sigHashType,
-            }],
-    };
-};
-const finalizeSignedPsbt = ({ signedRawPsbtB64, indicesToSign, }) => {
-    const signedPsbt = bitcoinjsLib.Psbt.fromBase64(signedRawPsbtB64);
-    // finalize inputs
-    for (let i = 0; i < signedPsbt.txInputs.length; i++) {
-        if (indicesToSign.findIndex(value => value === i) !== -1) {
-            signedPsbt.finalizeInput(i);
-        }
-    }
-    return signedPsbt;
-};
-/**
-* handleSignPsbtWithXverse calls Xverse signTransaction and finalizes signed raw psbt.
-* extract to msgTx (if isGetMsgTx is true)
-* @param base64Psbt the base64 encoded psbt need to sign
-* @param indicesToSign indices of inputs need to sign
-* @param address address of signer
-* @param sigHashType default is SIGHASH_DEFAULT
-* @param isGetMsgTx flag used to extract to msgTx or not
-* @param cancelFn callback function for handling cancel signing
-* @returns the base64 encode signed Psbt
-*/
-const handleSignPsbtWithXverse = async ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, isGetMsgTx = false, cancelFn, }) => {
-    let base64SignedPsbt = "";
-    const payload = preparePayloadSignTx({
-        base64Psbt,
-        indicesToSign, address,
-        sigHashType
-    });
-    const signPsbtOptions = {
-        payload: payload,
-        onFinish: (response) => {
-            console.log("Sign Xverse response: ", response);
-            if (response.psbtBase64 !== null && response.psbtBase64 !== undefined && response.psbtBase64 !== "") {
-                // sign successfully
-                base64SignedPsbt = response.psbtBase64;
-            }
-            else {
-                // sign unsuccessfully
-                throw new SDKError(ERROR_CODE.SIGN_XVERSE_ERROR, response);
-            }
-        },
-        onCancel: cancelFn,
-    };
-    await satsConnect.signTransaction(signPsbtOptions);
-    if (base64SignedPsbt === "") {
-        throw new SDKError(ERROR_CODE.SIGN_XVERSE_ERROR, "Response is empty");
-    }
-    const finalizedPsbt = finalizeSignedPsbt({ signedRawPsbtB64: base64SignedPsbt, indicesToSign });
-    let msgTx;
-    let msgTxID = "";
-    let msgTxHex = "";
-    if (isGetMsgTx) {
-        msgTx = finalizedPsbt.extractTransaction();
-        msgTxHex = msgTx.toHex();
-        msgTxID = msgTx.getId();
-    }
-    return {
-        base64SignedPsbt: finalizedPsbt.toBase64(),
-        msgTx,
-        msgTxHex,
-        msgTxID
-    };
-};
-/**
-* handleSignPsbtWithXverse calls Xverse signTransaction and finalizes signed raw psbt.
-* extract to msgTx (if isGetMsgTx is true)
-* @param base64Psbt the base64 encoded psbt need to sign
-* @param indicesToSign indices of inputs need to sign
-* @param address address of signer
-* @param sigHashType default is SIGHASH_DEFAULT
-* @param isGetMsgTx flag used to extract to msgTx or not
-* @param cancelFn callback function for handling cancel signing
-* @returns the base64 encode signed Psbt
-*/
-const handleSignPsbtWithSpecificWallet = async ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, isGetMsgTx = false, walletType = WalletType.Xverse, cancelFn, }) => {
-    switch (walletType) {
-        case WalletType.Xverse: {
-            return handleSignPsbtWithXverse({
-                base64Psbt, indicesToSign,
-                address,
-                sigHashType,
-                isGetMsgTx,
-                cancelFn,
-            });
-        }
-        default: {
-            throw new SDKError(ERROR_CODE.WALLET_NOT_SUPPORT);
-        }
-    }
-};
 
 /**
  * Helper function that produces a serialized witness script
@@ -6334,7 +6149,7 @@ const start_taptree = async ({ privateKey, data, utxos, feeRatePerByte, reImburs
         }
     }
     if (!commitTX) {
-        throw new SDKError$1(ERROR_CODE$1.CREATE_COMMIT_TX_ERR);
+        throw new SDKError(ERROR_CODE.CREATE_COMMIT_TX_ERR);
     }
     /*
     =============================   REVEAL TX ==================================
@@ -6483,7 +6298,7 @@ const createInscribeTx = ({ senderPrivateKey, utxos, inscriptions, data, reImbur
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
     // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
     if (script_p2tr.address === undefined || script_p2tr.address === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
+        throw new SDKError(ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS, "");
     }
     const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
         senderPrivateKey,
@@ -6544,7 +6359,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, data
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
     // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
     if (script_p2tr.address === undefined || script_p2tr.address === "") {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
+        throw new SDKError(ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS, "");
     }
     const { base64Psbt: commitPsbtB64, fee: commitTxFee, changeAmount, selectedUTXOs, indicesToSign } = createRawTxSendBTC({
         pubKey,
@@ -6612,19 +6427,149 @@ const createLockScript = ({ internalPubKey, data, reImbursementTCAddress, }) => 
     };
 };
 
+const Mainnet = "mainnet";
+const Testnet = "testnet";
+const Regtest = "regtest";
+const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
+const DefaultEndpointTCNodeTestnet = "";
+const DefaultEndpointTCNodeMainnet = "";
+const DefaultEndpointTCNodeRegtest = "http://139.162.54.236:22225";
+const MethodPost = "POST";
+class TcClient {
+    constructor(...params) {
+        this.url = DefaultEndpointTCNodeMainnet;
+        this.network = Mainnet;
+        // client: any = new JSONRPCClient((jsonRPCRequest) =>
+        //     fetch(this.url, {
+        //         method: "POST",
+        //         headers: {
+        //             "content-type": "application/json",
+        //         },
+        //         body: JSON.stringify(jsonRPCRequest),
+        //     }).then((response) => {
+        //         console.log("response: ", response);
+        //         if (response.status === 200) {
+        //             // Use client.receive when you received a JSON-RPC response.
+        //             return response
+        //                 .json()
+        //                 .then((jsonRPCResponse) => this.client.receive(jsonRPCResponse));
+        //         } else if (jsonRPCRequest.id !== undefined) {
+        //             return Promise.reject(new Error(response.statusText));
+        //         }
+        //     })
+        // );
+        this.callRequest = async (payload, methodType, method) => {
+            // JSONRPCClient needs to know how to send a JSON-RPC request.
+            // Tell it by passing a function to its constructor. The function must take a JSON-RPC request and send it.
+            const client = new axios__default["default"].Axios({
+                baseURL: this.url
+            });
+            const dataReq = {
+                jsonrpc: "2.0",
+                id: +new Date(),
+                method: method,
+                params: payload,
+            };
+            const response = await client.post("", JSON.stringify(dataReq), {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                },
+            });
+            const { status, data } = response;
+            if (status !== 200) {
+                throw new SDKError(ERROR_CODE.RPC_ERROR, data);
+            }
+            return response.data;
+        };
+        // call to tc node to get inscribeable nonce and gas price (if need to replace previous orphan tx(s))
+        this.getNonceInscribeable = async (tcAddress) => {
+            const payload = {
+                addr: tcAddress
+            };
+            const resp = await this.callRequest(payload, MethodPost, "eth_getInscribableInfo");
+            console.log("Resp getNonceInscribeable: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+            }
+            const strs = resp.split(":");
+            if (strs.length !== 2) {
+                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
+            }
+            let gasPrice = Number(strs[1]);
+            if (gasPrice !== -1) {
+                gasPrice++;
+            }
+            return {
+                nonce: Number(strs[0]),
+                gasPrice,
+            };
+        };
+        // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+        this.submitInscribeTx = async (btcTxHex) => {
+            const payload = {
+                btcTx: btcTxHex
+            };
+            const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
+            console.log("Resp eth_submitBitcoinTx: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+            }
+            return {
+                btcTxID: resp,
+            };
+        };
+        if (params.length === 0) {
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS);
+        }
+        // check network type
+        if (!SupportedTCNetworkType.includes(params[0])) {
+            throw new SDKError(ERROR_CODE.INVALID_NETWORK_TYPE);
+        }
+        this.network = params[0];
+        if (params.length === 2) {
+            this.url = params[1];
+            return this;
+        }
+        else if (params.length === 1) {
+            switch (this.network) {
+                case Mainnet: {
+                    this.url = DefaultEndpointTCNodeMainnet;
+                    return this;
+                }
+                case Testnet: {
+                    this.url = DefaultEndpointTCNodeTestnet;
+                    return this;
+                }
+                case Regtest: {
+                    this.url = DefaultEndpointTCNodeRegtest;
+                    return this;
+                }
+            }
+        }
+    }
+}
+// function fetch(arg0: string, arg1: { method: string; headers: { "content-type": string; }; body: string; }) {
+//     throw new Error("Function not implemented.");
+// }
+
 exports.BNZero = BNZero;
 exports.BlockStreamURL = BlockStreamURL;
 exports.DummyUTXOValue = DummyUTXOValue;
 exports.ECPair = ECPair;
-exports.ERROR_CODE = ERROR_CODE$1;
-exports.ERROR_MESSAGE = ERROR_MESSAGE$1;
+exports.ERROR_CODE = ERROR_CODE;
+exports.ERROR_MESSAGE = ERROR_MESSAGE;
 exports.InputSize = InputSize;
+exports.Mainnet = Mainnet;
 exports.MinSats = MinSats;
 exports.NetworkType = NetworkType;
 exports.OutputSize = OutputSize;
-exports.SDKError = SDKError$1;
+exports.Regtest = Regtest;
+exports.SDKError = SDKError;
+exports.TcClient = TcClient;
+exports.Testnet = Testnet;
 exports.Validator = Validator;
-exports.WalletType = WalletType$1;
+exports.WalletType = WalletType;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
@@ -6665,6 +6610,7 @@ exports.generateTaprootAddressFromPubKey = generateTaprootAddressFromPubKey;
 exports.generateTaprootKeyPair = generateTaprootKeyPair;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
+exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.prepareUTXOsToBuyMultiInscriptions = prepareUTXOsToBuyMultiInscriptions;
 exports.reqBuyInscription = reqBuyInscription;

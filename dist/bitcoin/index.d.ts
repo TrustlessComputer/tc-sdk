@@ -6,3 +6,4 @@ export * from "./wallet";
 export * from "./psbt";
 export * from "./selectcoin";
 export * from "./network";
+export * from "./xverse";

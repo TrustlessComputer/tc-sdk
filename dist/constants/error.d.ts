@@ -14,6 +14,10 @@ export declare const ERROR_CODE: {
     SIGN_XVERSE_ERROR: string;
     CREATE_COMMIT_TX_ERR: string;
     INVALID_TAPSCRIPT_ADDRESS: string;
+    INVALID_NETWORK_TYPE: string;
+    RPC_ERROR: string;
+    RPC_GET_INSCRIBEABLE_INFO_ERROR: string;
+    RPC_SUBMIT_BTCTX_ERROR: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

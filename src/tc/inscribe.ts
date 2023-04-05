@@ -8,7 +8,7 @@ import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
 import { ERROR_CODE } from "../constants/error";
 import { Network } from "../bitcoin/network";
-import { handleSignPsbtWithSpecificWallet } from "@src/bitcoin/xverse";
+import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { randomBytes } from "crypto";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 

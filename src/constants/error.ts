@@ -14,6 +14,10 @@ export const ERROR_CODE = {
     SIGN_XVERSE_ERROR: "-12",
     CREATE_COMMIT_TX_ERR: "-13",
     INVALID_TAPSCRIPT_ADDRESS: "-14",
+    INVALID_NETWORK_TYPE: "-15",
+    RPC_ERROR: "-16",
+    RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
+    RPC_SUBMIT_BTCTX_ERROR: "-18",
 };
 
 export const ERROR_MESSAGE = {
@@ -61,7 +65,6 @@ export const ERROR_MESSAGE = {
         message: "Can not find dummy UTXO in your wallet.",
         desc: "Can not find dummy UTXO in your wallet.",
     },
-
     [ERROR_CODE.SIGN_XVERSE_ERROR]: {
         message: "Can not sign with Xverse.",
         desc: "Can not sign with Xverse.",
@@ -78,8 +81,22 @@ export const ERROR_MESSAGE = {
         message: "Can not generate valid tap script address to inscribe.",
         desc: "Can not generate valid tap script address to inscribe.",
     },
-
-
+    [ERROR_CODE.INVALID_NETWORK_TYPE]: {
+        message: "Invalid network type params.",
+        desc: "Invalid network type params.",
+    },
+    [ERROR_CODE.RPC_ERROR]: {
+        message: "Call RPC TC node error.",
+        desc: "Call RPC TC node error.",
+    },
+    [ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR]: {
+        message: "Call RPC get inscribeable info error.",
+        desc: "Call RPC get inscribeable info error.",
+    },
+    [ERROR_CODE.RPC_SUBMIT_BTCTX_ERROR]: {
+        message: "Call RPC submit btc tx error.",
+        desc: "Call RPC submit btc tx error.",
+    },
 };
 
 class SDKError extends Error {

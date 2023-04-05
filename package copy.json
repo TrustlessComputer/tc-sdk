@@ -28,8 +28,7 @@
     "test-psbt": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/psbt.spec.ts'",
     "test-psbt-multi": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/psbtmulti.spec.ts'",
     "test-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/wallet.spec.ts'",
-    "test-tc": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/tc.spec.ts'",
-    "test-tc-client": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/tcclient.spec.ts'"
+    "test-tc": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/tc.spec.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",
@@ -83,18 +82,5 @@
     "*.json": [
       "yarn lint:json:fix"
     ]
-  },
-  "description": "This project is sdk of [Trustless Computer](https://trustless.computer/).",
-  "directories": {
-    "test": "test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TrustlessComputer/tc-sdk.git"
-  },
-  "author": "Trustless Computer Core Team",
-  "bugs": {
-    "url": "https://github.com/TrustlessComputer/tc-sdk/issues"
-  },
-  "homepage": "https://github.com/TrustlessComputer/tc-sdk#readme"
+  }
 }

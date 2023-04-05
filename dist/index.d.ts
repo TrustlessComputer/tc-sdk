@@ -868,6 +868,32 @@ declare const NetworkType: {
 };
 declare const setBTCNetwork: (netType: number) => void;
 
+/**
+* handleSignPsbtWithXverse calls Xverse signTransaction and finalizes signed raw psbt.
+* extract to msgTx (if isGetMsgTx is true)
+* @param base64Psbt the base64 encoded psbt need to sign
+* @param indicesToSign indices of inputs need to sign
+* @param address address of signer
+* @param sigHashType default is SIGHASH_DEFAULT
+* @param isGetMsgTx flag used to extract to msgTx or not
+* @param cancelFn callback function for handling cancel signing
+* @returns the base64 encode signed Psbt
+*/
+declare const handleSignPsbtWithSpecificWallet: ({ base64Psbt, indicesToSign, address, sigHashType, isGetMsgTx, walletType, cancelFn, }: {
+    base64Psbt: string;
+    indicesToSign: number[];
+    address: string;
+    sigHashType?: number | undefined;
+    isGetMsgTx?: boolean | undefined;
+    walletType?: number | undefined;
+    cancelFn: () => void;
+}) => Promise<{
+    base64SignedPsbt: string;
+    msgTx: Transaction;
+    msgTxID: string;
+    msgTxHex: string;
+}>;
+
 declare const ERROR_CODE: {
     INVALID_CODE: string;
     INVALID_PARAMS: string;
@@ -884,6 +910,10 @@ declare const ERROR_CODE: {
     SIGN_XVERSE_ERROR: string;
     CREATE_COMMIT_TX_ERR: string;
     INVALID_TAPSCRIPT_ADDRESS: string;
+    INVALID_NETWORK_TYPE: string;
+    RPC_ERROR: string;
+    RPC_GET_INSCRIBEABLE_INFO_ERROR: string;
+    RPC_SUBMIT_BTCTX_ERROR: string;
 };
 declare const ERROR_MESSAGE: {
     [x: string]: {
@@ -1003,4 +1033,22 @@ declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, dat
     totalFee: BigNumber;
 }>;
 
-export { BNZero, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, ISignPSBTResp, InputSize, Inscription, MinSats, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, SDKError, UTXO, Validator, Wallet, WalletType, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createDummyUTXOFromCardinal, createInscribeTx, createInscribeTxFromAnyWallet, createPSBTToBuy, createPSBTToSell, createRawPSBTToSell, createRawRevealTx, createRawTx, createRawTxDummyUTXOForSale, createRawTxDummyUTXOFromCardinal, createRawTxSendBTC, createRawTxSplitFundFromOrdinalUTXO, createRawTxToPrepareUTXOsToBuyMultiInscs, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSplitFundFromOrdinalUTXO, createTxWithSpecificUTXOs, decryptWallet, deriveETHWallet, derivePasswordWallet, deriveSegwitWallet, encryptWallet, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateInscribeContent, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getBTCBalance, getBitcoinKeySignContent, importBTCPrivateKey, prepareUTXOsToBuyMultiInscriptions, reqBuyInscription, reqBuyInscriptionFromAnyWallet, reqBuyMultiInscriptions, reqBuyMultiInscriptionsFromAnyWallet, reqListForSaleInscFromAnyWallet, reqListForSaleInscription, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, signByETHPrivKey, signPSBT, signPSBT2, start_taptree, tapTweakHash, toXOnly, tweakSigner };
+declare const Mainnet = "mainnet";
+declare const Testnet = "testnet";
+declare const Regtest = "regtest";
+declare class TcClient {
+    url: string;
+    network: string;
+    constructor(network: string, url: string);
+    constructor(network: string);
+    callRequest: (payload: any, methodType: string, method: string) => Promise<any>;
+    getNonceInscribeable: (tcAddress: string) => Promise<{
+        nonce: number;
+        gasPrice: number;
+    }>;
+    submitInscribeTx: (btcTxHex: string) => Promise<{
+        btcTxID: string;
+    }>;
+}
+
+export { BNZero, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, ISignPSBTResp, InputSize, Inscription, Mainnet, MinSats, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, SDKError, TcClient, Testnet, UTXO, Validator, Wallet, WalletType, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createDummyUTXOFromCardinal, createInscribeTx, createInscribeTxFromAnyWallet, createPSBTToBuy, createPSBTToSell, createRawPSBTToSell, createRawRevealTx, createRawTx, createRawTxDummyUTXOForSale, createRawTxDummyUTXOFromCardinal, createRawTxSendBTC, createRawTxSplitFundFromOrdinalUTXO, createRawTxToPrepareUTXOsToBuyMultiInscs, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSplitFundFromOrdinalUTXO, createTxWithSpecificUTXOs, decryptWallet, deriveETHWallet, derivePasswordWallet, deriveSegwitWallet, encryptWallet, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateInscribeContent, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getBTCBalance, getBitcoinKeySignContent, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, prepareUTXOsToBuyMultiInscriptions, reqBuyInscription, reqBuyInscriptionFromAnyWallet, reqBuyMultiInscriptions, reqBuyMultiInscriptionsFromAnyWallet, reqListForSaleInscFromAnyWallet, reqListForSaleInscription, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, signByETHPrivKey, signPSBT, signPSBT2, start_taptree, tapTweakHash, toXOnly, tweakSigner };
