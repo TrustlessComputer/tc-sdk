@@ -14,5 +14,8 @@ declare class TcClient {
     submitInscribeTx: (btcTxHex: string) => Promise<{
         btcTxID: string;
     }>;
+    getTapScriptInfo: (hashLockPubKey: string, tcTxID: string) => Promise<{
+        hashLockScriptHex: string;
+    }>;
 }
 export { TcClient, Mainnet, Testnet, Regtest, };

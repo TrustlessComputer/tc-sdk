@@ -6427,37 +6427,23 @@ const createLockScript = ({ internalPubKey, data, reImbursementTCAddress, }) => 
     };
 };
 
+const increaseGasPrice = (wei) => {
+    const res = wei.plus(new BigNumber(1000000000));
+    return res;
+};
+
 const Mainnet = "mainnet";
 const Testnet = "testnet";
 const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
-const DefaultEndpointTCNodeTestnet = "";
+const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
 const DefaultEndpointTCNodeMainnet = "";
-const DefaultEndpointTCNodeRegtest = "http://139.162.54.236:22225";
+const DefaultEndpointTCNodeRegtest = "";
 const MethodPost = "POST";
 class TcClient {
     constructor(...params) {
         this.url = DefaultEndpointTCNodeMainnet;
         this.network = Mainnet;
-        // client: any = new JSONRPCClient((jsonRPCRequest) =>
-        //     fetch(this.url, {
-        //         method: "POST",
-        //         headers: {
-        //             "content-type": "application/json",
-        //         },
-        //         body: JSON.stringify(jsonRPCRequest),
-        //     }).then((response) => {
-        //         console.log("response: ", response);
-        //         if (response.status === 200) {
-        //             // Use client.receive when you received a JSON-RPC response.
-        //             return response
-        //                 .json()
-        //                 .then((jsonRPCResponse) => this.client.receive(jsonRPCResponse));
-        //         } else if (jsonRPCRequest.id !== undefined) {
-        //             return Promise.reject(new Error(response.statusText));
-        //         }
-        //     })
-        // );
         this.callRequest = async (payload, methodType, method) => {
             // JSONRPCClient needs to know how to send a JSON-RPC request.
             // Tell it by passing a function to its constructor. The function must take a JSON-RPC request and send it.
@@ -6502,20 +6488,22 @@ class TcClient {
             if (strs.length !== 2) {
                 throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
             }
-            let gasPrice = Number(strs[1]);
-            if (gasPrice !== -1) {
-                gasPrice++;
+            const gasPrice = new BigNumber(strs[1]);
+            let gasPriceRes;
+            if (gasPrice.eq(BNZero)) {
+                gasPriceRes = -1;
+            }
+            else {
+                gasPriceRes = increaseGasPrice(gasPrice).toNumber();
             }
             return {
                 nonce: Number(strs[0]),
-                gasPrice,
+                gasPrice: gasPriceRes,
             };
         };
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.submitInscribeTx = async (btcTxHex) => {
-            const payload = {
-                btcTx: btcTxHex
-            };
+            const payload = [btcTxHex];
             const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
             console.log("Resp eth_submitBitcoinTx: ", resp);
             if (resp === "") {
@@ -6523,6 +6511,22 @@ class TcClient {
             }
             return {
                 btcTxID: resp,
+            };
+        };
+        // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+        this.getTapScriptInfo = async (hashLockPubKey, tcTxID) => {
+            const payload = {
+                hashLockPubKey: hashLockPubKey,
+                tcTxID: tcTxID,
+            };
+            // TODO
+            const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
+            console.log("Resp eth_submitBitcoinTx: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+            }
+            return {
+                hashLockScriptHex: resp,
             };
         };
         if (params.length === 0) {

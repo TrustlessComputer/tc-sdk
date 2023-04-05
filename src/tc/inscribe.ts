@@ -1,6 +1,6 @@
 import { BNZero, MinSats } from "../bitcoin/constants";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
-import { Inscription, SDKError, UTXO, createRawTxSendBTC, createTxSendBTC, estimateTxFee } from "..";
+import { Inscription, Regtest, SDKError, TcClient, UTXO, createRawTxSendBTC, createTxSendBTC, estimateTxFee } from "..";
 import { Psbt, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
@@ -510,7 +510,6 @@ const createInscribeTx = ({
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-
 const createInscribeTxFromAnyWallet = async ({
     pubKey,
     utxos,
@@ -548,6 +547,110 @@ const createInscribeTxFromAnyWallet = async ({
 
     // estimate fee and select UTXOs
 
+    const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
+
+    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
+
+    // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
+
+    if (script_p2tr.address === undefined || script_p2tr.address === "") {
+        throw new SDKError(ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS, "");
+    }
+
+    const { base64Psbt: commitPsbtB64, fee: commitTxFee, changeAmount, selectedUTXOs, indicesToSign } = createRawTxSendBTC({
+        pubKey,
+        utxos,
+        inscriptions,
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
+        feeRatePerByte,
+    });
+
+    // sign transaction 
+    const { msgTx: commitTx, msgTxID: commitTxID, msgTxHex: commitTxHex } = await handleSignPsbtWithSpecificWallet({
+        base64Psbt: commitPsbtB64,
+        indicesToSign: indicesToSign,
+        address: senderAddress,
+        isGetMsgTx: true,
+        cancelFn
+    });
+
+
+    console.log("commitTX: ", commitTx);
+    console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+
+    // create and sign reveal tx
+    const { revealTxHex, revealTxID } = createRawRevealTx({
+        internalPubKey: pubKey,
+        commitTxID,
+        hashLockKeyPair,
+        hashLockRedeem,
+        script_p2tr,
+        revealTxFee: estRevealTxFee,
+    });
+
+    return {
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee: new BigNumber(totalFee),
+    };
+};
+
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param data list of hex data need to inscribe
+* @param reImbursementTCAddress TC address of the inscriber to receive gas.
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeTxFromAnyWalletV2 = async ({
+    pubKey,
+    utxos,
+    inscriptions,
+    tcTxID,
+    feeRatePerByte,
+    tcClient,
+    cancelFn
+}: {
+    pubKey: Buffer,
+    utxos: UTXO[],
+    inscriptions: { [key: string]: Inscription[] },
+    tcTxID: string,
+    feeRatePerByte: number,
+    tcClient: TcClient,
+    cancelFn: () => void
+}): Promise<{
+    commitTxHex: string,
+    commitTxID: string,
+    revealTxHex: string,
+    revealTxID: string,
+    totalFee: BigNumber,
+}> => {
+
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    // const internalPubKey = toXOnly(keyPair.publicKey);
+    const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
+
+    // create lock script for commit tx
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScriptV2({
+        internalPubKey: pubKey,
+        tcTxID,
+        tcClient,
+    });
+
+    // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
 
     const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
@@ -646,6 +749,59 @@ const createLockScript = ({
     return {
         hashLockKeyPair,
         hashScriptAsm,
+        hashLockScript,
+        hashLockRedeem,
+        script_p2tr
+    };
+};
+
+
+const createLockScriptV2 = async ({
+    internalPubKey,
+    tcTxID,
+    tcClient,
+}: {
+    internalPubKey: Buffer,
+    tcTxID: string,
+    tcClient: TcClient,
+}): Promise<{
+    hashLockKeyPair: ECPairInterface,
+    hashLockScript: Buffer,
+    hashLockRedeem: Tapleaf,
+    script_p2tr: payments.Payment,
+}> => {
+    // Create a tap tree with two spend paths
+    // One path should allow spending using secret
+    // The other path should pay to another pubkey
+
+    // Make random key pair for hash_lock script
+    const hashLockKeyPair = ECPair.makeRandom({ network: Network });
+
+    // call TC node to get Tapscript and hash lock redeem
+    const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxID);
+
+    // generate inscribe content
+    // const dataHex = generateInscribeContent(ProtocolID, reImbursementTCAddress, data);
+    // // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
+    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_FALSE OP_IF ${dataHex} OP_ENDIF`;
+
+
+    const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
+    const hashLockRedeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+
+    const scriptTree: Taptree = hashLockRedeem;
+    const script_p2tr = payments.p2tr({
+        internalPubkey: internalPubKey,
+        scriptTree,
+        redeem: hashLockRedeem,
+        network: Network
+    });
+
+    return {
+        hashLockKeyPair,
         hashLockScript,
         hashLockRedeem,
         script_p2tr

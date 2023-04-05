@@ -1,8 +1,10 @@
 import { ERROR_CODE, ERROR_MESSAGE } from "../constants/error";
 import axios, { AxiosResponse } from "axios";
 
+import { BNZero } from "..";
+import BigNumber from "bignumber.js";
 import SDKError from "../constants/error";
-import { stringify } from "json5";
+import { increaseGasPrice } from "./utils";
 
 const Mainnet = "mainnet";
 const Testnet = "testnet";
@@ -10,9 +12,9 @@ const Regtest = "regtest";
 
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 
-const DefaultEndpointTCNodeTestnet = "";
+const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
 const DefaultEndpointTCNodeMainnet = "";
-const DefaultEndpointTCNodeRegtest = "http://139.162.54.236:22225";
+const DefaultEndpointTCNodeRegtest = "";
 
 const MethodGet = "GET";
 const MethodPost = "POST";
@@ -56,26 +58,6 @@ class TcClient {
             }
         }
     }
-
-    // client: any = new JSONRPCClient((jsonRPCRequest) =>
-    //     fetch(this.url, {
-    //         method: "POST",
-    //         headers: {
-    //             "content-type": "application/json",
-    //         },
-    //         body: JSON.stringify(jsonRPCRequest),
-    //     }).then((response) => {
-    //         console.log("response: ", response);
-    //         if (response.status === 200) {
-    //             // Use client.receive when you received a JSON-RPC response.
-    //             return response
-    //                 .json()
-    //                 .then((jsonRPCResponse) => this.client.receive(jsonRPCResponse));
-    //         } else if (jsonRPCRequest.id !== undefined) {
-    //             return Promise.reject(new Error(response.statusText));
-    //         }
-    //     })
-    // );
 
     callRequest = async (payload: any, methodType: string, method: string) => {
         // JSONRPCClient needs to know how to send a JSON-RPC request.
@@ -137,22 +119,23 @@ class TcClient {
             throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
         }
 
-        let gasPrice = Number(strs[1]);
-        if (gasPrice !== -1) {
-            gasPrice++;
-        }
+        const gasPrice = new BigNumber(strs[1]);
 
+        let gasPriceRes: number;
+        if (gasPrice.eq(BNZero)) {
+            gasPriceRes = -1;
+        } else {
+            gasPriceRes = increaseGasPrice(gasPrice).toNumber();
+        }
         return {
             nonce: Number(strs[0]),
-            gasPrice,
+            gasPrice: gasPriceRes,
         };
     };
 
     // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
     submitInscribeTx = async (btcTxHex: string): Promise<{ btcTxID: string }> => {
-        const payload = {
-            btcTx: btcTxHex
-        };
+        const payload = [btcTxHex];
         const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
         console.log("Resp eth_submitBitcoinTx: ", resp);
 
@@ -162,6 +145,25 @@ class TcClient {
 
         return {
             btcTxID: resp,
+        };
+    };
+
+    // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+    getTapScriptInfo = async (hashLockPubKey: string, tcTxID: string): Promise<{ hashLockScriptHex: string, }> => {
+        const payload = {
+            hashLockPubKey: hashLockPubKey,
+            tcTxID: tcTxID,
+        };
+        // TODO
+        const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
+        console.log("Resp eth_submitBitcoinTx: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+        }
+
+        return {
+            hashLockScriptHex: resp,
         };
     };
 }

@@ -1,4 +1,4 @@
-import { ECPair, Network, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx, generateInscribeContent, start_taptree } from "../src";
+import { ECPair, Network, NetworkType, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx, generateInscribeContent, setBTCNetwork, start_taptree } from "../src";
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -53,6 +53,19 @@ let sellerUTXOs = [
     // }
 ];
 
+let buyerUTXOs = [
+    {
+        tx_hash: "257211e1a557ba1f9b058aaf7cc1f7280e4cfdaeb76e68087010e04b0870ad55",
+        tx_output_n: 1,
+        value: new BigNumber(6000),
+    },
+    {
+        tx_hash: "a128032184d352256e12d81e60e70188cde9da67423439521eae8829f067274c",
+        tx_output_n: 0,
+        value: new BigNumber(6050),
+    },
+];
+
 describe("Sign msg Tx", async () => {
     it("create signed raw tc tx", async () => {
         // var web3 = new Web3(Web3.givenProvider);
@@ -95,17 +108,16 @@ describe("Sign msg Tx", async () => {
 
     })
     it("should return the raw commit tx", async () => {
-        const data = "0xf86d808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81872386f26fc100008082adaea00f9b5498dbbb514d896391ed0aff62fe381fcada60c4a24d50995217f4e5debfa0136bf98a811ff28e1b39cd0b4da2a91c65f2f8ccdf6602e894f5a1e67f896d5b";
+        const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
         const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        const pubKeyStr = "";
-        const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = createInscribeTx({
-            senderPrivateKey: sellerPrivateKey,
 
-            // internalPubKey: Buffer.from(pubKeyStr, "hex"),
+        setBTCNetwork(NetworkType.Testnet);
+        const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = createInscribeTx({
+            senderPrivateKey: buyerPrivateKey,
             data: [data],
-            utxos: sellerUTXOs,
+            utxos: buyerUTXOs,
             inscriptions: {},
-            feeRatePerByte: 6,
+            feeRatePerByte: 5,
             reImbursementTCAddress: tcAddress,
         });
         // console.log("commitTxB64: ", commitTxB64);
