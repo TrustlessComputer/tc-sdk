@@ -6480,19 +6480,25 @@ class TcClient {
             if (status !== 200) {
                 throw new SDKError(ERROR_CODE.RPC_ERROR, data);
             }
-            return response.data;
+            console.log("data: ", typeof (data));
+            console.log("data: ", data.result);
+            const dataResp = JSON.parse(data);
+            console.log("dataResp: ", dataResp);
+            if (dataResp.error || !dataResp.result) {
+                throw new SDKError(ERROR_CODE.RPC_ERROR, data.error);
+            }
+            return dataResp.result;
         };
         // call to tc node to get inscribeable nonce and gas price (if need to replace previous orphan tx(s))
         this.getNonceInscribeable = async (tcAddress) => {
-            const payload = {
-                addr: tcAddress
-            };
+            const payload = [tcAddress];
             const resp = await this.callRequest(payload, MethodPost, "eth_getInscribableInfo");
             console.log("Resp getNonceInscribeable: ", resp);
             if (resp === "") {
                 throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
             }
             const strs = resp.split(":");
+            console.log("strs: ", strs);
             if (strs.length !== 2) {
                 throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
             }

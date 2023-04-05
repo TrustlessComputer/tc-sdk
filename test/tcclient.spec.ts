@@ -59,10 +59,8 @@ describe("TC client", async () => {
         console.log("tcClient.network ", tcClient.network);
         console.log("tcClient.url ", tcClient.url);
         const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        const resp = await tcClient.getNonceInscribeable(tcAddress)
-
-
-
+        const resp = await tcClient.getNonceInscribeable(tcAddress);
+        console.log("Final resp: ", resp);
     })
 
 
