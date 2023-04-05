@@ -444,7 +444,7 @@ const createInscribeTx = ({
     const internalPubKey = toXOnly(keyPair.publicKey);
 
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScript({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScriptV0({
         internalPubKey,
         data,
         reImbursementTCAddress
@@ -510,7 +510,7 @@ const createInscribeTx = ({
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTxFromAnyWallet = async ({
+const createInscribeTxFromAnyWalletV0 = async ({
     pubKey,
     utxos,
     inscriptions,
@@ -539,7 +539,7 @@ const createInscribeTxFromAnyWallet = async ({
     const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
 
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScript({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScriptV0({
         internalPubKey: pubKey,
         data,
         reImbursementTCAddress
@@ -615,7 +615,7 @@ const createInscribeTxFromAnyWallet = async ({
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTxFromAnyWalletV2 = async ({
+const createInscribeTxFromAnyWallet = async ({
     pubKey,
     utxos,
     inscriptions,
@@ -644,7 +644,7 @@ const createInscribeTxFromAnyWalletV2 = async ({
     const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
 
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScriptV2({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey: pubKey,
         tcTxID,
         tcClient,
@@ -704,7 +704,7 @@ const createInscribeTxFromAnyWalletV2 = async ({
     };
 };
 
-const createLockScript = ({
+const createLockScriptV0 = ({
     internalPubKey,
     data,
     reImbursementTCAddress,
@@ -756,7 +756,7 @@ const createLockScript = ({
 };
 
 
-const createLockScriptV2 = async ({
+const createLockScript = async ({
     internalPubKey,
     tcTxID,
     tcClient,
@@ -813,5 +813,6 @@ export {
     generateInscribeContent,
     createRawRevealTx,
     createInscribeTx,
-    createInscribeTxFromAnyWallet
+    createInscribeTxFromAnyWallet,
+    createInscribeTxFromAnyWalletV0,
 };

@@ -1,4 +1,4 @@
-import { Inscription, UTXO } from "..";
+import { Inscription, TcClient, UTXO } from "..";
 import { payments } from "bitcoinjs-lib";
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
@@ -70,7 +70,7 @@ declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, data, 
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, data, reImbursementTCAddress, feeRatePerByte, cancelFn }: {
+declare const createInscribeTxFromAnyWalletV0: ({ pubKey, utxos, inscriptions, data, reImbursementTCAddress, feeRatePerByte, cancelFn }: {
     pubKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -87,4 +87,36 @@ declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, dat
     revealTxID: string;
     totalFee: BigNumber;
 }>;
-export { start_taptree, generateInscribeContent, createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet };
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param data list of hex data need to inscribe
+* @param reImbursementTCAddress TC address of the inscriber to receive gas.
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, cancelFn }: {
+    pubKey: Buffer;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    tcTxID: string;
+    feeRatePerByte: number;
+    tcClient: TcClient;
+    cancelFn: () => void;
+}) => Promise<{
+    commitTxHex: string;
+    commitTxID: string;
+    revealTxHex: string;
+    revealTxID: string;
+    totalFee: BigNumber;
+}>;
+export { start_taptree, generateInscribeContent, createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, createInscribeTxFromAnyWalletV0, };
