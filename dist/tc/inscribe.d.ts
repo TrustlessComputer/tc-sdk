@@ -30,8 +30,7 @@ declare const start_taptree: ({ privateKey, data, utxos, feeRatePerByte, reImbur
 * @param senderPrivateKey buffer private key of the inscriber
 * @param utxos list of utxos (include non-inscription and inscription utxos)
 * @param inscriptions list of inscription infos of the sender
-* @param data list of hex data need to inscribe
-* @param reImbursementTCAddress TC address of the inscriber to receive gas.
+* @param tcTxID TC txID need to be inscribed
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the hex commit transaction
 * @returns the commit transaction id
@@ -39,22 +38,22 @@ declare const start_taptree: ({ privateKey, data, utxos, feeRatePerByte, reImbur
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, data, reImbursementTCAddress, feeRatePerByte, }: {
+declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];
     };
-    data: string[];
-    reImbursementTCAddress: string;
+    tcTxID: string;
     feeRatePerByte: number;
-}) => {
+    tcClient: TcClient;
+}) => Promise<{
     commitTxHex: string;
     commitTxID: string;
     revealTxHex: string;
     revealTxID: string;
     totalFee: BigNumber;
-};
+}>;
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
 * NOTE: Currently, the function only supports sending from Taproot address.

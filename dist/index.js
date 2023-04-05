@@ -2986,6 +2986,7 @@ const ERROR_CODE = {
     RPC_ERROR: "-16",
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
+    RPC_GET_TAPSCRIPT_INFO: "-19",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -6272,8 +6273,7 @@ function getCommitVirtualSize(p2pk_p2tr, keypair, script_addr, tweakedSigner, ut
 * @param senderPrivateKey buffer private key of the inscriber
 * @param utxos list of utxos (include non-inscription and inscription utxos)
 * @param inscriptions list of inscription infos of the sender
-* @param data list of hex data need to inscribe
-* @param reImbursementTCAddress TC address of the inscriber to receive gas.
+* @param tcTxID TC txID need to be inscribed
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the hex commit transaction
 * @returns the commit transaction id
@@ -6281,14 +6281,14 @@ function getCommitVirtualSize(p2pk_p2tr, keypair, script_addr, tweakedSigner, ut
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = ({ senderPrivateKey, utxos, inscriptions, data, reImbursementTCAddress, feeRatePerByte, }) => {
+const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, }) => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScriptV0({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey,
-        data,
-        reImbursementTCAddress
+        tcTxID,
+        tcClient
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
@@ -6318,6 +6318,7 @@ const createInscribeTx = ({ senderPrivateKey, utxos, inscriptions, data, reImbur
         script_p2tr,
         revealTxFee: estRevealTxFee,
     });
+    await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     return {
         commitTxHex,
         commitTxID,
@@ -6503,10 +6504,6 @@ const createLockScript = async ({ internalPubKey, tcTxID, tcClient, }) => {
     const hashLockKeyPair = ECPair.makeRandom({ network: exports.Network });
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxID);
-    // generate inscribe content
-    // const dataHex = generateInscribeContent(ProtocolID, reImbursementTCAddress, data);
-    // // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
-    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_FALSE OP_IF ${dataHex} OP_ENDIF`;
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
     const hashLockRedeem = {
         output: hashLockScript,
@@ -6537,7 +6534,7 @@ const Testnet = "testnet";
 const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-const DefaultEndpointTCNodeMainnet = "";
+const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
 const DefaultEndpointTCNodeRegtest = "";
 const MethodPost = "POST";
 class TcClient {
@@ -6603,7 +6600,7 @@ class TcClient {
         };
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.submitInscribeTx = async (btcTxHex) => {
-            const payload = [btcTxHex];
+            const payload = btcTxHex;
             const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
             console.log("Resp eth_submitBitcoinTx: ", resp);
             if (resp === "") {
@@ -6615,15 +6612,12 @@ class TcClient {
         };
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.getTapScriptInfo = async (hashLockPubKey, tcTxID) => {
-            const payload = {
-                hashLockPubKey: hashLockPubKey,
-                tcTxID: tcTxID,
-            };
+            const payload = [hashLockPubKey, tcTxID];
             // TODO
-            const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
-            console.log("Resp eth_submitBitcoinTx: ", resp);
+            const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
+            console.log("Resp eth_getHashLockScript: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             return {
                 hashLockScriptHex: resp,
@@ -6659,9 +6653,6 @@ class TcClient {
         }
     }
 }
-// function fetch(arg0: string, arg1: { method: string; headers: { "content-type": string; }; body: string; }) {
-//     throw new Error("Function not implemented.");
-// }
 
 exports.BNZero = BNZero;
 exports.BlockStreamURL = BlockStreamURL;
@@ -6723,6 +6714,7 @@ exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
 exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
+exports.increaseGasPrice = increaseGasPrice;
 exports.prepareUTXOsToBuyMultiInscriptions = prepareUTXOsToBuyMultiInscriptions;
 exports.reqBuyInscription = reqBuyInscription;
 exports.reqBuyInscriptionFromAnyWallet = reqBuyInscriptionFromAnyWallet;

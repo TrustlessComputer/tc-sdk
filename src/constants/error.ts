@@ -18,6 +18,7 @@ export const ERROR_CODE = {
     RPC_ERROR: "-16",
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
+    RPC_GET_TAPSCRIPT_INFO: "-19",
 };
 
 export const ERROR_MESSAGE = {

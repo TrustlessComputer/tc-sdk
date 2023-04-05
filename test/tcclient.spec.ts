@@ -1,4 +1,4 @@
-import { ECPair, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx, generateInscribeContent, start_taptree } from "../src";
+import { ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx, generateInscribeContent, start_taptree } from "../src";
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -21,6 +21,9 @@ let buyerAddress = process.env.ADDRESS_2 || "";
 let buyerPrivateKey = convertPrivateKeyFromStr(buyerPrivateKeyWIF);
 console.log("buyerPrivateKeyWIF ", buyerPrivateKeyWIF);
 console.log("buyerAddress ", buyerAddress);
+
+
+const tcClient = new TcClient(Mainnet);
 
 let sellerUTXOs = [
     // inscription UTXOs
@@ -54,22 +57,26 @@ let sellerUTXOs = [
 ];
 
 describe("TC client", async () => {
-    // it("get inscribeable info", async () => {
-    //     const tcClient = new TcClient(Testnet);
-    //     console.log("tcClient.network ", tcClient.network);
-    //     console.log("tcClient.url ", tcClient.url);
-    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-    //     const resp = await tcClient.getNonceInscribeable(tcAddress);
-    //     console.log("Final resp: ", resp);
-    // });
-    it("submit btc tx", async () => {
-        const tcClient = new TcClient(Testnet);
-        console.log("tcClient.network ", tcClient.network);
-        console.log("tcClient.url ", tcClient.url);
-        const txHex = "02000000000101648b02c26cc94c337f279a4dbc785ae8b41f24c42415b6a659b598097afb6cc70000000000ffffffff01e8030000000000002251209296a808da18058233515c4d90a1b3bf24a136364a10306da503be88b2068f9203404294480ad4ed025635ca96d8a825e6cd61f258bb1f9b587697f479adf509b5e8f0fbf597676f102ce189d26b92c8dab96e42dd4875405e4d7f0c2addb485a820b420c7eedfdd229d60cc370a48d3daf470151eaadcf4de3f7cc9661427703996514eac00634c8d62766d763182268af8207117ddbcd8ce4e444263ccd8d1bf87000000e0f86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a6821c0a4314377c98855b0f3f86a8075a7f322a38b3b9505e4266647a8a5dc78f4fd5d00000000";
-        const resp = await tcClient.submitInscribeTx(txHex);
+    it("get inscribeable info", async () => {
+        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+        const resp = await tcClient.getNonceInscribeable(tcAddress);
         console.log("Final resp: ", resp);
     });
+    // it("submit btc tx", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     const txHex = "02000000000101151ea6af3c1921c403b7a90cf6ed210826b9d67075510c6ed15cd90dc2bc209e0000000000ffffffff01e8030000000000002251209296a808da18058233515c4d90a1b3bf24a136364a10306da503be88b2068f92034067c65f1a755678af18d282781133ebb3f0d65f46b0512ee39fdb15dcf0e05615b367cac0b7cbd5af79a61f40cc6a647d0396e2ea4cda1a1ec13fc7580d452f50b420bf84a4d2a625b606701635bbab25d5ea29357729c2354d1a0917bcf4850a9f8dac00634c8d62766d76316363ec9eab02866c69e5a28e675ed07cbfadb7f9000000e0f86e018502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb8188016345785d8a00008082adada0a3823c5c672dfe8def309ea6ecc8fd7906e1ce123fd3df17763f35988a400737a03417a5e31881d735d913065f01b6b28acfb43e0be3941b70c4488559c38209c26821c0a4314377c98855b0f3f86a8075a7f322a38b3b9505e4266647a8a5dc78f4fd5d00000000";
+    //     const resp = await tcClient.submitInscribeTx(txHex);
+    //     console.log("Final resp: ", resp);
+    // });
+
+    // it("submit btc tx", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     const hashLockKeyPair = ECPair.makeRandom();
+    //     const resp = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), "");
+    //     console.log("Final resp: ", resp);
+    // });
 
 
 });

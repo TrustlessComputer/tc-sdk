@@ -9,7 +9,6 @@ import { ECPairInterface } from "ecpair";
 import { ERROR_CODE } from "../constants/error";
 import { Network } from "../bitcoin/network";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
-import { randomBytes } from "crypto";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 
 const ProtocolID = "bvmv1";
@@ -407,6 +406,98 @@ function getCommitVirtualSize(p2pk_p2tr: any, keypair: any, script_addr: any, tw
 * @param senderPrivateKey buffer private key of the inscriber
 * @param utxos list of utxos (include non-inscription and inscription utxos)
 * @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeTx = async ({
+    senderPrivateKey,
+    utxos,
+    inscriptions,
+    tcTxID,
+    feeRatePerByte,
+    tcClient,
+}: {
+    senderPrivateKey: Buffer,
+    utxos: UTXO[],
+    inscriptions: { [key: string]: Inscription[] },
+    tcTxID: string,
+    feeRatePerByte: number,
+    tcClient: TcClient,
+}): Promise<{
+    commitTxHex: string,
+    commitTxID: string,
+    revealTxHex: string,
+    revealTxID: string,
+    totalFee: BigNumber,
+}> => {
+    const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    const internalPubKey = toXOnly(keyPair.publicKey);
+
+    // create lock script for commit tx
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
+        internalPubKey,
+        tcTxID,
+        tcClient
+    });
+
+    // estimate fee and select UTXOs
+
+    const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
+
+    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
+
+    // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
+
+    if (script_p2tr.address === undefined || script_p2tr.address === "") {
+        throw new SDKError(ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS, "");
+    }
+
+    const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
+        senderPrivateKey,
+        utxos,
+        inscriptions,
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
+        feeRatePerByte,
+    });
+
+    console.log("commitTX: ", tx);
+    console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+
+    // create and sign reveal tx
+    const { revealTxHex, revealTxID } = createRawRevealTx({
+        internalPubKey,
+        commitTxID,
+        hashLockKeyPair,
+        hashLockRedeem,
+        script_p2tr,
+        revealTxFee: estRevealTxFee,
+    });
+
+    await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+
+    return {
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee: new BigNumber(totalFee),
+    };
+};
+
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
 * @param data list of hex data need to inscribe
 * @param reImbursementTCAddress TC address of the inscriber to receive gas.
 * @param feeRatePerByte fee rate per byte (in satoshi)
@@ -417,7 +508,7 @@ function getCommitVirtualSize(p2pk_p2tr: any, keypair: any, script_addr: any, tw
 * @returns the total network fee
 */
 
-const createInscribeTx = ({
+const createInscribeTxV0 = ({
     senderPrivateKey,
     utxos,
     inscriptions,
@@ -755,7 +846,6 @@ const createLockScriptV0 = ({
     };
 };
 
-
 const createLockScript = async ({
     internalPubKey,
     tcTxID,
@@ -779,12 +869,6 @@ const createLockScript = async ({
 
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxID);
-
-    // generate inscribe content
-    // const dataHex = generateInscribeContent(ProtocolID, reImbursementTCAddress, data);
-    // // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
-    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_FALSE OP_IF ${dataHex} OP_ENDIF`;
-
 
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
     const hashLockRedeem = {

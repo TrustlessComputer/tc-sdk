@@ -11,8 +11,8 @@ declare class TcClient {
         nonce: number;
         gasPrice: number;
     }>;
-    submitInscribeTx: (btcTxHex: string) => Promise<{
-        btcTxID: string;
+    submitInscribeTx: (btcTxHex: string[]) => Promise<{
+        btcTxID: string[];
     }>;
     getTapScriptInfo: (hashLockPubKey: string, tcTxID: string) => Promise<{
         hashLockScriptHex: string;

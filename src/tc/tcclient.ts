@@ -13,7 +13,7 @@ const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-const DefaultEndpointTCNodeMainnet = "";
+const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
 const DefaultEndpointTCNodeRegtest = "";
 
 const MethodGet = "GET";
@@ -134,8 +134,8 @@ class TcClient {
     };
 
     // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
-    submitInscribeTx = async (btcTxHex: string): Promise<{ btcTxID: string }> => {
-        const payload = [btcTxHex];
+    submitInscribeTx = async (btcTxHex: string[],): Promise<{ btcTxID: string[] }> => {
+        const payload = btcTxHex;
         const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
         console.log("Resp eth_submitBitcoinTx: ", resp);
 
@@ -150,16 +150,14 @@ class TcClient {
 
     // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
     getTapScriptInfo = async (hashLockPubKey: string, tcTxID: string): Promise<{ hashLockScriptHex: string, }> => {
-        const payload = {
-            hashLockPubKey: hashLockPubKey,
-            tcTxID: tcTxID,
-        };
+        const payload = [hashLockPubKey, tcTxID];
+
         // TODO
-        const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
-        console.log("Resp eth_submitBitcoinTx: ", resp);
+        const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
+        console.log("Resp eth_getHashLockScript: ", resp);
 
         if (resp === "") {
-            throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
         }
 
         return {
@@ -175,7 +173,3 @@ export {
     Testnet,
     Regtest,
 };
-
-// function fetch(arg0: string, arg1: { method: string; headers: { "content-type": string; }; body: string; }) {
-//     throw new Error("Function not implemented.");
-// }
