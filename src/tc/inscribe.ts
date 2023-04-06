@@ -1,6 +1,14 @@
 import { BNZero, MinSats } from "../bitcoin/constants";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
-import { Inscription, Regtest, SDKError, TcClient, UTXO, createRawTxSendBTC, createTxSendBTC, estimateTxFee } from "..";
+import {
+    Inscription,
+    SDKError,
+    TcClient,
+    UTXO,
+    createRawTxSendBTC,
+    createTxSendBTC,
+    estimateTxFee,
+} from "..";
 import { Psbt, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 

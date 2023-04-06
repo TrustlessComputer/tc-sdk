@@ -6560,7 +6560,6 @@ class TcClient {
             const response = await client.post("", JSON.stringify(dataReq), {
                 headers: {
                     "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
                 },
             });
             const { status, data } = response;
