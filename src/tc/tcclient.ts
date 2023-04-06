@@ -74,6 +74,8 @@ class TcClient {
             params: payload,
         };
 
+        console.log("Data req: ", dataReq);
+
         const response: AxiosResponse = await client.post("",
             JSON.stringify(dataReq),
             {
@@ -82,7 +84,6 @@ class TcClient {
                     "Access-Control-Allow-Origin": "*"
                 },
             });
-
 
         const { status, data } = response;
         if (status !== 200) {
@@ -135,7 +136,7 @@ class TcClient {
 
     // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
     submitInscribeTx = async (btcTxHex: string[],): Promise<{ btcTxID: string[] }> => {
-        const payload = btcTxHex;
+        const payload = [btcTxHex];
         const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
         console.log("Resp eth_submitBitcoinTx: ", resp);
 

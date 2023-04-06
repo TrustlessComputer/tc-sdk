@@ -81,9 +81,9 @@ let buyerUTXOs = [
         value: new BigNumber(1000),
     },
     {
-        tx_hash: "4df03f8d428aeec015a8d0ee7f2bc03d0cd32f36479647683ab9192a1ba11fde",
+        tx_hash: "9e20bcc20dd95cd16e0c517570d6b9260821edf60ca9b703c421193cafa61e15",
         tx_output_n: 1,
-        value: new BigNumber(7956),
+        value: new BigNumber(5361),
     },
 
 
@@ -133,7 +133,7 @@ describe("Sign msg Tx", async () => {
     it("should return the raw commit tx", async () => {
         // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
         // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        const tcTxID = "0x2428ce1e5f01d7eb3183a82399214299dd729359392523f2581c0abb9ca29d8e"; // need to be inscribed
+        const tcTxID = "0xf21335719bf8359f60edff9304f789d6c1296f2a53030c57c99a0a4ba629eefd"; // need to be inscribed
 
         setBTCNetwork(NetworkType.Mainnet);
         const tcClient = new TcClient(Mainnet);

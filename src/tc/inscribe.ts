@@ -481,7 +481,11 @@ const createInscribeTx = async ({
         revealTxFee: estRevealTxFee,
     });
 
-    await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    console.log("commitTxHex: ", commitTxHex);
+    console.log("revealTxHex: ", revealTxHex);
+
+    const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    console.log("btcTxID: ", btcTxID);
 
     return {
         commitTxHex,

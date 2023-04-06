@@ -6318,7 +6318,10 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxID,
         script_p2tr,
         revealTxFee: estRevealTxFee,
     });
-    await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    console.log("commitTxHex: ", commitTxHex);
+    console.log("revealTxHex: ", revealTxHex);
+    const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    console.log("btcTxID: ", btcTxID);
     return {
         commitTxHex,
         commitTxID,
@@ -6553,6 +6556,7 @@ class TcClient {
                 method: method,
                 params: payload,
             };
+            console.log("Data req: ", dataReq);
             const response = await client.post("", JSON.stringify(dataReq), {
                 headers: {
                     "Content-Type": "application/json",
@@ -6600,7 +6604,7 @@ class TcClient {
         };
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.submitInscribeTx = async (btcTxHex) => {
-            const payload = btcTxHex;
+            const payload = [btcTxHex];
             const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
             console.log("Resp eth_submitBitcoinTx: ", resp);
             if (resp === "") {
