@@ -38,13 +38,13 @@ declare const start_taptree: ({ privateKey, data, utxos, feeRatePerByte, reImbur
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, }: {
+declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];
     };
-    tcTxID: string;
+    tcTxIDs: string[];
     feeRatePerByte: number;
     tcClient: TcClient;
 }) => Promise<{
@@ -101,13 +101,13 @@ declare const createInscribeTxFromAnyWalletV0: ({ pubKey, utxos, inscriptions, d
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, cancelFn }: {
+declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, cancelFn }: {
     pubKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];
     };
-    tcTxID: string;
+    tcTxIDs: string[];
     feeRatePerByte: number;
     tcClient: TcClient;
     cancelFn: () => void;

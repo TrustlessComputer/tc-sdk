@@ -6281,13 +6281,13 @@ function getCommitVirtualSize(p2pk_p2tr, keypair, script_addr, tweakedSigner, ut
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, }) => {
+const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, }) => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey,
-        tcTxID,
+        tcTxIDs,
         tcClient
     });
     // estimate fee and select UTXOs
@@ -6414,14 +6414,14 @@ const createInscribeTxFromAnyWalletV0 = async ({ pubKey, utxos, inscriptions, da
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTxID, feeRatePerByte, tcClient, cancelFn }) => {
+const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, cancelFn }) => {
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     // const internalPubKey = toXOnly(keyPair.publicKey);
     const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey: pubKey,
-        tcTxID,
+        tcTxIDs,
         tcClient,
     });
     // estimate fee and select UTXOs
@@ -6499,14 +6499,14 @@ const createLockScriptV0 = ({ internalPubKey, data, reImbursementTCAddress, }) =
         script_p2tr
     };
 };
-const createLockScript = async ({ internalPubKey, tcTxID, tcClient, }) => {
+const createLockScript = async ({ internalPubKey, tcTxIDs, tcClient, }) => {
     // Create a tap tree with two spend paths
     // One path should allow spending using secret
     // The other path should pay to another pubkey
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair.makeRandom({ network: exports.Network });
     // call TC node to get Tapscript and hash lock redeem
-    const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxID);
+    const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
     const hashLockRedeem = {
         output: hashLockScript,
@@ -6537,7 +6537,7 @@ const Testnet = "testnet";
 const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
+const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
 const DefaultEndpointTCNodeRegtest = "";
 const MethodPost = "POST";
 class TcClient {
@@ -6614,8 +6614,8 @@ class TcClient {
             };
         };
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
-        this.getTapScriptInfo = async (hashLockPubKey, tcTxID) => {
-            const payload = [hashLockPubKey, tcTxID];
+        this.getTapScriptInfo = async (hashLockPubKey, tcTxIDs) => {
+            const payload = [hashLockPubKey, tcTxIDs];
             // TODO
             const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
             console.log("Resp eth_getHashLockScript: ", resp);
@@ -6624,6 +6624,19 @@ class TcClient {
             }
             return {
                 hashLockScriptHex: resp,
+            };
+        };
+        // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+        this.getUnInscribedTransactionByAddress = async (tcAddress) => {
+            const payload = [tcAddress];
+            // TODO
+            const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionByAddress");
+            console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            return {
+                unInscribedTxIDs: resp,
             };
         };
         if (params.length === 0) {

@@ -13,7 +13,7 @@ const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
+const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
 const DefaultEndpointTCNodeRegtest = "";
 
 const MethodGet = "GET";
@@ -149,8 +149,8 @@ class TcClient {
     };
 
     // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
-    getTapScriptInfo = async (hashLockPubKey: string, tcTxID: string): Promise<{ hashLockScriptHex: string, }> => {
-        const payload = [hashLockPubKey, tcTxID];
+    getTapScriptInfo = async (hashLockPubKey: string, tcTxIDs: string[]): Promise<{ hashLockScriptHex: string, }> => {
+        const payload = [hashLockPubKey, tcTxIDs];
 
         // TODO
         const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
@@ -162,6 +162,23 @@ class TcClient {
 
         return {
             hashLockScriptHex: resp,
+        };
+    };
+
+    // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+    getUnInscribedTransactionByAddress = async (tcAddress: string): Promise<{ unInscribedTxIDs: string[] }> => {
+        const payload = [tcAddress];
+
+        // TODO
+        const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionByAddress");
+        console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+
+        return {
+            unInscribedTxIDs: resp,
         };
     };
 }

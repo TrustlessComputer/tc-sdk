@@ -426,14 +426,14 @@ const createInscribeTx = async ({
     senderPrivateKey,
     utxos,
     inscriptions,
-    tcTxID,
+    tcTxIDs,
     feeRatePerByte,
     tcClient,
 }: {
     senderPrivateKey: Buffer,
     utxos: UTXO[],
     inscriptions: { [key: string]: Inscription[] },
-    tcTxID: string,
+    tcTxIDs: string[],
     feeRatePerByte: number,
     tcClient: TcClient,
 }): Promise<{
@@ -449,7 +449,7 @@ const createInscribeTx = async ({
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey,
-        tcTxID,
+        tcTxIDs,
         tcClient
     });
 
@@ -722,7 +722,7 @@ const createInscribeTxFromAnyWallet = async ({
     pubKey,
     utxos,
     inscriptions,
-    tcTxID,
+    tcTxIDs,
     feeRatePerByte,
     tcClient,
     cancelFn
@@ -730,7 +730,7 @@ const createInscribeTxFromAnyWallet = async ({
     pubKey: Buffer,
     utxos: UTXO[],
     inscriptions: { [key: string]: Inscription[] },
-    tcTxID: string,
+    tcTxIDs: string[],
     feeRatePerByte: number,
     tcClient: TcClient,
     cancelFn: () => void
@@ -749,7 +749,7 @@ const createInscribeTxFromAnyWallet = async ({
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey: pubKey,
-        tcTxID,
+        tcTxIDs,
         tcClient,
     });
 
@@ -860,11 +860,11 @@ const createLockScriptV0 = ({
 
 const createLockScript = async ({
     internalPubKey,
-    tcTxID,
+    tcTxIDs,
     tcClient,
 }: {
     internalPubKey: Buffer,
-    tcTxID: string,
+    tcTxIDs: string[],
     tcClient: TcClient,
 }): Promise<{
     hashLockKeyPair: ECPairInterface,
@@ -880,7 +880,7 @@ const createLockScript = async ({
     const hashLockKeyPair = ECPair.makeRandom({ network: Network });
 
     // call TC node to get Tapscript and hash lock redeem
-    const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxID);
+    const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
 
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
     const hashLockRedeem = {

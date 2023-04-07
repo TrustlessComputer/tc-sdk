@@ -78,5 +78,13 @@ describe("TC client", async () => {
     //     console.log("Final resp: ", resp);
     // });
 
+    it("submit btc tx", async () => {
+        console.log("tcClient.network ", tcClient.network);
+        console.log("tcClient.url ", tcClient.url);
+        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+        const resp = await tcClient.getUnInscribedTransactionByAddress(tcAddress);
+        console.log("Final resp: ", resp);
+    });
+
 
 });
