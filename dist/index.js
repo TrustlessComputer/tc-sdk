@@ -6533,13 +6533,13 @@ const getRevealVirtualSizeByDataSize = (dataSize) => {
 /**
 * estimateInscribeFee estimate BTC amount need to inscribe for creating project.
 * NOTE: Currently, the function only supports sending from Taproot address.
-* @param htmlFileSizeByte size of html file from user (in byte)
+* @param tcTxSizeByte size of tc tx (in byte)
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
 const estimateInscribeFee = ({ tcTxSizeByte, feeRatePerByte, }) => {
     const estCommitTxFee = estimateTxFee(2, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSizeByDataSize(tcTxSizeByte / 4); // 24k for contract size
+    const revealVByte = getRevealVirtualSizeByDataSize(tcTxSizeByte / 4);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     return { totalFee: new BigNumber(totalFee) };

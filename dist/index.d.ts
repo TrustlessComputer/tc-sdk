@@ -1067,7 +1067,7 @@ declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcT
 /**
 * estimateInscribeFee estimate BTC amount need to inscribe for creating project.
 * NOTE: Currently, the function only supports sending from Taproot address.
-* @param htmlFileSizeByte size of html file from user (in byte)
+* @param tcTxSizeByte size of tc tx (in byte)
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
