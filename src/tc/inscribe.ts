@@ -1,4 +1,4 @@
-import { BNZero, MinSats } from "../bitcoin/constants";
+import { BNZero, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
 import {
     Inscription,
@@ -904,6 +904,35 @@ const createLockScript = async ({
     };
 };
 
+const getRevealVirtualSizeByDataSize = (dataSize: number): number => {
+    const inputSize = InputSize + dataSize;
+    return inputSize + OutputSize;
+};
+
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param htmlFileSizeByte size of html file from user (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+const estimateInscribeFee = ({
+    tcTxSizeByte,
+    feeRatePerByte,
+}: {
+    tcTxSizeByte: number,
+    feeRatePerByte: number,
+}): {
+    totalFee: BigNumber,
+} => {
+
+    const estCommitTxFee = estimateTxFee(2, 2, feeRatePerByte);
+    const revealVByte = getRevealVirtualSizeByDataSize(tcTxSizeByte / 4);  // 24k for contract size
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    return { totalFee: new BigNumber(totalFee) };
+};
+
 export {
     start_taptree,
     generateInscribeContent,
@@ -911,4 +940,5 @@ export {
     createInscribeTx,
     createInscribeTxFromAnyWallet,
     createInscribeTxFromAnyWalletV0,
+    estimateInscribeFee,
 };

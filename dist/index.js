@@ -6526,6 +6526,24 @@ const createLockScript = async ({ internalPubKey, tcTxIDs, tcClient, }) => {
         script_p2tr
     };
 };
+const getRevealVirtualSizeByDataSize = (dataSize) => {
+    const inputSize = InputSize + dataSize;
+    return inputSize + OutputSize;
+};
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param htmlFileSizeByte size of html file from user (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+const estimateInscribeFee = ({ tcTxSizeByte, feeRatePerByte, }) => {
+    const estCommitTxFee = estimateTxFee(2, 2, feeRatePerByte);
+    const revealVByte = getRevealVirtualSizeByDataSize(tcTxSizeByte / 4); // 24k for contract size
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    return { totalFee: new BigNumber(totalFee) };
+};
 
 const increaseGasPrice = (wei) => {
     const res = wei.plus(new BigNumber(1000000000));
@@ -6714,6 +6732,7 @@ exports.deriveETHWallet = deriveETHWallet;
 exports.derivePasswordWallet = derivePasswordWallet;
 exports.deriveSegwitWallet = deriveSegwitWallet;
 exports.encryptWallet = encryptWallet;
+exports.estimateInscribeFee = estimateInscribeFee;
 exports.estimateNumInOutputs = estimateNumInOutputs;
 exports.estimateNumInOutputsForBuyInscription = estimateNumInOutputsForBuyInscription;
 exports.estimateTxFee = estimateTxFee;

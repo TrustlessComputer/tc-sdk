@@ -118,4 +118,17 @@ declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcT
     revealTxID: string;
     totalFee: BigNumber;
 }>;
-export { start_taptree, generateInscribeContent, createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, createInscribeTxFromAnyWalletV0, };
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param htmlFileSizeByte size of html file from user (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+declare const estimateInscribeFee: ({ tcTxSizeByte, feeRatePerByte, }: {
+    tcTxSizeByte: number;
+    feeRatePerByte: number;
+}) => {
+    totalFee: BigNumber;
+};
+export { start_taptree, generateInscribeContent, createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, createInscribeTxFromAnyWalletV0, estimateInscribeFee, };
