@@ -1,14 +1,16 @@
 import { BNZero, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
-import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
 import {
+    BatchInscribeTxResp,
     Inscription,
     SDKError,
+    TCTxDetail,
     TcClient,
     UTXO,
     createRawTxSendBTC,
     createTxSendBTC,
     estimateTxFee,
 } from "..";
+import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
 import { Psbt, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
@@ -272,6 +274,89 @@ const createInscribeTx = async ({
 * @param senderPrivateKey buffer private key of the inscriber
 * @param utxos list of utxos (include non-inscription and inscription utxos)
 * @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createBatchInscribeTxs = async ({
+    senderPrivateKey,
+    utxos,
+    inscriptions,
+    tcTxDetails,
+    feeRatePerByte,
+    tcClient,
+}: {
+    senderPrivateKey: Buffer,
+    utxos: UTXO[],
+    inscriptions: { [key: string]: Inscription[] },
+    tcTxDetails: TCTxDetail[],
+    feeRatePerByte: number,
+    tcClient: TcClient,
+}): Promise<BatchInscribeTxResp[]> => {
+
+    // sort tc tx by inscreasing nonce
+    tcTxDetails = tcTxDetails.sort(
+        (a: TCTxDetail, b: TCTxDetail): number => {
+            if (a.Nonce > b.Nonce) {
+                return 1;
+            }
+            if (a.Nonce < b.Nonce) {
+                return -1;
+            }
+            return 0;
+        }
+    );
+
+    console.log("tcTxDetails after sort: ", tcTxDetails);
+
+    // create inscribe tx 
+    if (tcTxDetails.length === 0) {
+        console.log("There is no transaction to inscribe");
+        return [];
+    }
+
+    const inscribeableTxIDs: string[] = [tcTxDetails[0].Hash];
+    let prevNonce = tcTxDetails[0].Nonce;
+    for (let i = 1; i < tcTxDetails.length; i++) {
+        if (prevNonce + 1 === tcTxDetails[i].Nonce) {
+            inscribeableTxIDs.push(tcTxDetails[i].Hash);
+            prevNonce = tcTxDetails[i].Nonce;
+        } else {
+            break;
+        }
+    }
+    console.log("inscribeableTxIDs: ", inscribeableTxIDs);
+
+    const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeTx({
+        senderPrivateKey,
+        utxos,
+        inscriptions,
+        tcTxIDs: inscribeableTxIDs,
+        feeRatePerByte,
+        tcClient,
+    });
+
+    return [{
+        tcTxIDs: inscribeableTxIDs,
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee,
+    }];
+
+};
+
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
 * @param data list of hex data need to inscribe
 * @param reImbursementTCAddress TC address of the inscriber to receive gas.
 * @param feeRatePerByte fee rate per byte (in satoshi)
@@ -450,5 +535,6 @@ export {
     createInscribeTx,
     createInscribeTxFromAnyWallet,
     estimateInscribeFee,
-    createLockScript
+    createLockScript,
+    createBatchInscribeTxs
 };

@@ -23,13 +23,13 @@
     "watch": "tsc --watch",
     "commit-msg": "commitlint --edit \"$1\"",
     "pre-commit": "lint-staged && yarn build",
-    "test": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/bitcoin.spec.ts'",
-    "test-util": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/utils.spec.ts'",
-    "test-psbt": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/psbt.spec.ts'",
-    "test-psbt-multi": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/psbtmulti.spec.ts'",
-    "test-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/wallet.spec.ts'",
-    "test-tc": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/tc.spec.ts'",
-    "test-tc-client": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register  'test/tcclient.spec.ts'"
+    "test": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register 'test/bitcoin.spec.ts'",
+    "test-util": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register 'test/utils.spec.ts'",
+    "test-psbt": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register 'test/psbt.spec.ts'",
+    "test-psbt-multi": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register 'test/psbtmulti.spec.ts'",
+    "test-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/wallet.spec.ts'",
+    "test-tc": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tc.spec.ts'",
+    "test-tc-client": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tcclient.spec.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",

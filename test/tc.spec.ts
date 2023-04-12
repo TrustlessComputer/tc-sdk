@@ -1,5 +1,4 @@
-import { ECPair, Network, NetworkType, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx, generateInscribeContent, setBTCNetwork, start_taptree } from "../src";
-import { Mainnet, TcClient } from '..';
+import { ECPair, Mainnet, Network, NetworkType, TcClient, Testnet, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, setBTCNetwork } from "../src";
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -71,21 +70,20 @@ let buyerUTXOs = [
 
     // Mainnet
     {
-        tx_hash: "84755e27433a4fb910fc5571b5cb7286bb58e6f88d6997570693a7a3b14d3953",
-        tx_output_n: 4,
-        value: new BigNumber(2500),
-    },
-    {
-        tx_hash: "4a63bbd72143ab8831f86481af04800f23834b3dd62ffda68bce6eb99d84d83d",
-        tx_output_n: 2,
-        value: new BigNumber(1000),
-    },
-    {
-        tx_hash: "9e20bcc20dd95cd16e0c517570d6b9260821edf60ca9b703c421193cafa61e15",
+        tx_hash: "3c128c5ce078e266a2ac464204ccf1cd3154bee5bd1110371c56b30f12c0a93f",
         tx_output_n: 1,
-        value: new BigNumber(5361),
+        value: new BigNumber(443395),
     },
-
+    // {
+    //     tx_hash: "60e83a8c8b5ba2e4317253ee617d8fe3a5c8e6f2d61ff95df484e9605eac6228",
+    //     tx_output_n: 0,
+    //     value: new BigNumber(1000),
+    // },
+    // {
+    //     tx_hash: "2e10cccd862ef25e39db9c3b33ed0fd68a3a2e6c315077137ab6af6ba5de0cef",
+    //     tx_output_n: 0,
+    //     value: new BigNumber(1000),
+    // },
 
 ];
 
@@ -130,39 +128,70 @@ describe("Sign msg Tx", async () => {
         console.log("serialized: ", serialized);
 
     })
-    it("should return the raw commit tx", async () => {
+    // it("should return the raw commit tx", async () => {
+    //     // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
+    //     // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+    //     const tcTxIDs = ["0x3fcf0decf4b8740a82da6d8e78ff59b6ddc1c6b85696b9abeffbe3f22dceab73"]; // need to be inscribed
+
+    //     setBTCNetwork(NetworkType.Mainnet);
+    //     const tcClient = new TcClient(Mainnet);
+
+    //     const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeTx({
+    //         senderPrivateKey: buyerPrivateKey,
+    //         tcTxIDs,
+    //         utxos: buyerUTXOs,
+    //         inscriptions: {},
+    //         feeRatePerByte: 5,
+    //         tcClient: tcClient,
+    //     });
+    //     // console.log("commitTxB64: ", commitTxB64);
+    //     // console.log("hashLockRedeemScriptHex: ", hashLockRedeemScriptHex);
+    //     // console.log("revealVByte: ", revealVByte);
+    //     // console.log("hashLockPriKey: ", hashLockPriKey);
+    //     // const dataBuff = Buffer.from("f8698080825208949b9add2b5b572ccc43ef2660d8b81cfd0701435b8898a7d9b8314c000080823696a0ee3795a786dd6c4f028517f2f5dd7333f066b83d03ca7404d73b8b212454e123a0488ddfdb48101b5ac0647e1b823f98e05ba7310c3046810e3327d1d2ccc51434", "hex");
+
+    //     // console.log(dataBuff.length);
+
+    //     console.log("commitTxHex: ", commitTxHex);
+    //     console.log("commitTxID: ", commitTxID);
+    //     console.log("revealTxHex: ", revealTxHex);
+    //     console.log("revealTxID: ", revealTxID);
+    //     console.log("totalFee: ", totalFee);
+    // });
+
+
+    it("create batch inscribe txs", async () => {
         // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
-        // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        const tcTxID = "0xf21335719bf8359f60edff9304f789d6c1296f2a53030c57c99a0a4ba629eefd"; // need to be inscribed
+        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+        // const tcTxIDs = ["0x3fcf0decf4b8740a82da6d8e78ff59b6ddc1c6b85696b9abeffbe3f22dceab73"]; // need to be inscribed
 
         setBTCNetwork(NetworkType.Mainnet);
         const tcClient = new TcClient(Mainnet);
 
-        console.log("")
-        const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeTx({
+
+        const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+        console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
+
+        const resp = await createBatchInscribeTxs({
             senderPrivateKey: buyerPrivateKey,
-            tcTxID,
+            tcTxDetails: tcTxDetails.unInscribedTxDetails,
             utxos: buyerUTXOs,
             inscriptions: {},
             feeRatePerByte: 5,
             tcClient: tcClient,
         });
-        // console.log("commitTxB64: ", commitTxB64);
-        // console.log("hashLockRedeemScriptHex: ", hashLockRedeemScriptHex);
-        // console.log("revealVByte: ", revealVByte);
-        // console.log("hashLockPriKey: ", hashLockPriKey);
-        // const dataBuff = Buffer.from("f8698080825208949b9add2b5b572ccc43ef2660d8b81cfd0701435b8898a7d9b8314c000080823696a0ee3795a786dd6c4f028517f2f5dd7333f066b83d03ca7404d73b8b212454e123a0488ddfdb48101b5ac0647e1b823f98e05ba7310c3046810e3327d1d2ccc51434", "hex");
 
-        // console.log(dataBuff.length);
+        console.log("resp: ", resp);
 
-        console.log("commitTxHex: ", commitTxHex);
-        console.log("commitTxID: ", commitTxID);
-        console.log("revealTxHex: ", revealTxHex);
-        console.log("revealTxID: ", revealTxID);
-        console.log("totalFee: ", totalFee);
+        // if (resp !== null) {
+        //     const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = resp;
+        //     console.log("commitTxHex: ", commitTxHex);
+        //     console.log("commitTxID: ", commitTxID);
+        //     console.log("revealTxHex: ", revealTxHex);
+        //     console.log("revealTxID: ", revealTxID);
+        //     console.log("totalFee: ", totalFee);
 
-
-
+        // }
 
     });
     // it("finalize raw commit tx", async () => {

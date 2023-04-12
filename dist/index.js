@@ -6119,6 +6119,66 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
 * @param senderPrivateKey buffer private key of the inscriber
 * @param utxos list of utxos (include non-inscription and inscription utxos)
 * @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, }) => {
+    // sort tc tx by inscreasing nonce
+    tcTxDetails = tcTxDetails.sort((a, b) => {
+        if (a.Nonce > b.Nonce) {
+            return 1;
+        }
+        if (a.Nonce < b.Nonce) {
+            return -1;
+        }
+        return 0;
+    });
+    console.log("tcTxDetails after sort: ", tcTxDetails);
+    // create inscribe tx 
+    if (tcTxDetails.length === 0) {
+        console.log("There is no transaction to inscribe");
+        return [];
+    }
+    const inscribeableTxIDs = [tcTxDetails[0].Hash];
+    let prevNonce = tcTxDetails[0].Nonce;
+    for (let i = 1; i < tcTxDetails.length; i++) {
+        if (prevNonce + 1 === tcTxDetails[i].Nonce) {
+            inscribeableTxIDs.push(tcTxDetails[i].Hash);
+            prevNonce = tcTxDetails[i].Nonce;
+        }
+        else {
+            break;
+        }
+    }
+    console.log("inscribeableTxIDs: ", inscribeableTxIDs);
+    const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeTx({
+        senderPrivateKey,
+        utxos,
+        inscriptions,
+        tcTxIDs: inscribeableTxIDs,
+        feeRatePerByte,
+        tcClient,
+    });
+    return [{
+            tcTxIDs: inscribeableTxIDs,
+            commitTxHex,
+            commitTxID,
+            revealTxHex,
+            revealTxID,
+            totalFee,
+        }];
+};
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
 * @param data list of hex data need to inscribe
 * @param reImbursementTCAddress TC address of the inscriber to receive gas.
 * @param feeRatePerByte fee rate per byte (in satoshi)
@@ -6238,7 +6298,8 @@ const Testnet = "testnet";
 const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
+// const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
+const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
 const DefaultEndpointTCNodeRegtest = "";
 const MethodPost = "POST";
 class TcClient {
@@ -6264,13 +6325,12 @@ class TcClient {
                 },
             });
             const { status, data } = response;
+            console.log("data from response: ", data);
             if (status !== 200) {
                 throw new SDKError(ERROR_CODE.RPC_ERROR, data);
             }
-            console.log("data: ", typeof (data));
-            console.log("data: ", data.result);
             const dataResp = JSON.parse(data);
-            console.log("dataResp: ", dataResp);
+            console.log("Data resp: ", dataResp);
             if (dataResp.error || !dataResp.result) {
                 throw new SDKError(ERROR_CODE.RPC_ERROR, data.error);
             }
@@ -6317,7 +6377,6 @@ class TcClient {
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.getTapScriptInfo = async (hashLockPubKey, tcTxIDs) => {
             const payload = [hashLockPubKey, tcTxIDs];
-            // TODO
             const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
             console.log("Resp eth_getHashLockScript: ", resp);
             if (resp === "") {
@@ -6330,7 +6389,6 @@ class TcClient {
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.getUnInscribedTransactionByAddress = async (tcAddress) => {
             const payload = [tcAddress];
-            // TODO
             const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionByAddress");
             console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
             if (resp === "") {
@@ -6338,6 +6396,35 @@ class TcClient {
             }
             return {
                 unInscribedTxIDs: resp,
+            };
+        };
+        this.getUnInscribedTransactionDetailByAddress = async (tcAddress) => {
+            const payload = [tcAddress];
+            const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionDetailByAddress");
+            console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            const txDetails = [];
+            console.log("resp: ", resp);
+            for (const tx of resp) {
+                txDetails.push({
+                    Nonce: tx.Nonce,
+                    GasPrice: tx.GasPrice,
+                    Gas: tx.Gas,
+                    To: tx.To,
+                    Value: tx.Value,
+                    Input: tx.Input,
+                    V: tx.V,
+                    R: new BigNumber(tx.R),
+                    S: new BigNumber(tx.S),
+                    Hash: tx.Hash,
+                    From: tx.From,
+                    Type: tx.Type,
+                });
+            }
+            return {
+                unInscribedTxDetails: txDetails,
             };
         };
         if (params.length === 0) {
@@ -6391,6 +6478,7 @@ exports.WalletType = WalletType;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
+exports.createBatchInscribeTxs = createBatchInscribeTxs;
 exports.createDummyUTXOFromCardinal = createDummyUTXOFromCardinal;
 exports.createInscribeTx = createInscribeTx;
 exports.createInscribeTxFromAnyWallet = createInscribeTxFromAnyWallet;

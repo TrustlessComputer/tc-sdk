@@ -1,4 +1,4 @@
-import { Inscription, TcClient, UTXO } from "..";
+import { BatchInscribeTxResp, Inscription, TCTxDetail, TcClient, UTXO } from "..";
 import { payments } from "bitcoinjs-lib";
 import { Tapleaf } from "bitcoinjs-lib/src/types";
 import BigNumber from "bignumber.js";
@@ -44,6 +44,30 @@ declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID
     revealTxID: string;
     totalFee: BigNumber;
 }>;
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, }: {
+    senderPrivateKey: Buffer;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    tcTxDetails: TCTxDetail[];
+    feeRatePerByte: number;
+    tcClient: TcClient;
+}) => Promise<BatchInscribeTxResp[]>;
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
 * NOTE: Currently, the function only supports sending from Taproot address.
@@ -99,4 +123,4 @@ declare const estimateInscribeFee: ({ tcTxSizeByte, feeRatePerByte, }: {
 }) => {
     totalFee: BigNumber;
 };
-export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript };
+export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript, createBatchInscribeTxs };

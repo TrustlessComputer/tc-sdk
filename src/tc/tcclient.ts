@@ -4,6 +4,7 @@ import axios, { AxiosResponse } from "axios";
 import { BNZero } from "..";
 import BigNumber from "bignumber.js";
 import SDKError from "../constants/error";
+import { TCTxDetail } from "./types";
 import { increaseGasPrice } from "./utils";
 
 const Mainnet = "mainnet";
@@ -13,7 +14,8 @@ const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
+// const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
+const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
 const DefaultEndpointTCNodeRegtest = "";
 
 const MethodGet = "GET";
@@ -85,15 +87,13 @@ class TcClient {
             });
 
         const { status, data } = response;
+        console.log("data from response: ", data);
         if (status !== 200) {
             throw new SDKError(ERROR_CODE.RPC_ERROR, data);
         }
 
-        console.log("data: ", typeof (data));
-        console.log("data: ", data.result);
-
         const dataResp = JSON.parse(data);
-        console.log("dataResp: ", dataResp);
+        console.log("Data resp: ", dataResp);
 
         if (dataResp.error || !dataResp.result) {
             throw new SDKError(ERROR_CODE.RPC_ERROR, data.error);
@@ -152,7 +152,6 @@ class TcClient {
     getTapScriptInfo = async (hashLockPubKey: string, tcTxIDs: string[]): Promise<{ hashLockScriptHex: string, }> => {
         const payload = [hashLockPubKey, tcTxIDs];
 
-        // TODO
         const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
         console.log("Resp eth_getHashLockScript: ", resp);
 
@@ -169,7 +168,6 @@ class TcClient {
     getUnInscribedTransactionByAddress = async (tcAddress: string): Promise<{ unInscribedTxIDs: string[] }> => {
         const payload = [tcAddress];
 
-        // TODO
         const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionByAddress");
         console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
 
@@ -179,6 +177,41 @@ class TcClient {
 
         return {
             unInscribedTxIDs: resp,
+        };
+    };
+
+    getUnInscribedTransactionDetailByAddress = async (tcAddress: string): Promise<{ unInscribedTxDetails: TCTxDetail[] }> => {
+        const payload = [tcAddress];
+
+        const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionDetailByAddress");
+        console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+        const txDetails: TCTxDetail[] = [];
+
+        console.log("resp: ", resp);
+
+        for (const tx of resp) {
+            txDetails.push({
+                Nonce: tx.Nonce,
+                GasPrice: tx.GasPrice,
+                Gas: tx.Gas,
+                To: tx.To,
+                Value: tx.Value,
+                Input: tx.Input,
+                V: tx.V,
+                R: new BigNumber(tx.R),
+                S: new BigNumber(tx.S),
+                Hash: tx.Hash,
+                From: tx.From,
+                Type: tx.Type,
+            });
+        }
+
+        return {
+            unInscribedTxDetails: txDetails,
         };
     };
 }

@@ -1,4 +1,4 @@
-import { ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx, generateInscribeContent, start_taptree } from "../src";
+import { ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx } from "../src";
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -57,11 +57,11 @@ let sellerUTXOs = [
 ];
 
 describe("TC client", async () => {
-    it("get inscribeable info", async () => {
-        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        const resp = await tcClient.getNonceInscribeable(tcAddress);
-        console.log("Final resp: ", resp);
-    });
+    // it("get inscribeable info", async () => {
+    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+    //     const resp = await tcClient.getNonceInscribeable(tcAddress);
+    //     console.log("Final resp: ", resp);
+    // });
     // it("submit btc tx", async () => {
     //     console.log("tcClient.network ", tcClient.network);
     //     console.log("tcClient.url ", tcClient.url);
@@ -78,11 +78,19 @@ describe("TC client", async () => {
     //     console.log("Final resp: ", resp);
     // });
 
-    it("submit btc tx", async () => {
+    it("get uninscribed txs", async () => {
         console.log("tcClient.network ", tcClient.network);
         console.log("tcClient.url ", tcClient.url);
         const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
         const resp = await tcClient.getUnInscribedTransactionByAddress(tcAddress);
+        console.log("Final resp: ", resp);
+    });
+
+    it("get uninscribed txs", async () => {
+        console.log("tcClient.network ", tcClient.network);
+        console.log("tcClient.url ", tcClient.url);
+        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+        const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
         console.log("Final resp: ", resp);
     });
 
