@@ -1,10 +1,10 @@
 import { ERROR_CODE, ERROR_MESSAGE } from "../constants/error";
+import { GetTxByHashResp, TCTxDetail } from "./types";
 import axios, { AxiosResponse } from "axios";
 
 import { BNZero } from "..";
 import BigNumber from "bignumber.js";
 import SDKError from "../constants/error";
-import { TCTxDetail } from "./types";
 import { increaseGasPrice } from "./utils";
 
 const Mainnet = "mainnet";
@@ -183,7 +183,7 @@ class TcClient {
         const payload = [tcAddress];
 
         const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionDetailByAddress");
-        console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
+        console.log("Resp getUnInscribedTransactionDetailByAddress: ", resp);
 
         if (resp === "") {
             throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
@@ -212,6 +212,20 @@ class TcClient {
         return {
             unInscribedTxDetails: txDetails,
         };
+    };
+
+    // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+    getTCTxByHash = async (tcTxID: string): Promise<GetTxByHashResp> => {
+        const payload = [tcTxID];
+
+        const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionByHash");
+        console.log("Resp eth_getTransactionByHash: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+
+        return resp;
     };
 }
 

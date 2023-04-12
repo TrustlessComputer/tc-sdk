@@ -70,9 +70,9 @@ let buyerUTXOs = [
 
     // Mainnet
     {
-        tx_hash: "3c128c5ce078e266a2ac464204ccf1cd3154bee5bd1110371c56b30f12c0a93f",
+        tx_hash: "7b936229ad20dbcd2eed0fca2bf60838cf9be83ebc4994b9115093fa0072f8e1",
         tx_output_n: 1,
-        value: new BigNumber(443395),
+        value: new BigNumber(440655),
     },
     // {
     //     tx_hash: "60e83a8c8b5ba2e4317253ee617d8fe3a5c8e6f2d61ff95df484e9605eac6228",

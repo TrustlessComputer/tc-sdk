@@ -1,4 +1,4 @@
-import { TCTxDetail } from "./types";
+import { GetTxByHashResp, TCTxDetail } from "./types";
 declare const Mainnet = "mainnet";
 declare const Testnet = "testnet";
 declare const Regtest = "regtest";
@@ -24,5 +24,6 @@ declare class TcClient {
     getUnInscribedTransactionDetailByAddress: (tcAddress: string) => Promise<{
         unInscribedTxDetails: TCTxDetail[];
     }>;
+    getTCTxByHash: (tcTxID: string) => Promise<GetTxByHashResp>;
 }
 export { TcClient, Mainnet, Testnet, Regtest, };

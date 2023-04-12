@@ -6400,7 +6400,7 @@ class TcClient {
         this.getUnInscribedTransactionDetailByAddress = async (tcAddress) => {
             const payload = [tcAddress];
             const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionDetailByAddress");
-            console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
+            console.log("Resp getUnInscribedTransactionDetailByAddress: ", resp);
             if (resp === "") {
                 throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
@@ -6425,6 +6425,16 @@ class TcClient {
             return {
                 unInscribedTxDetails: txDetails,
             };
+        };
+        // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+        this.getTCTxByHash = async (tcTxID) => {
+            const payload = [tcTxID];
+            const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionByHash");
+            console.log("Resp eth_getTransactionByHash: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            return resp;
         };
         if (params.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS);

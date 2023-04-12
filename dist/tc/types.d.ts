@@ -21,4 +21,10 @@ interface BatchInscribeTxResp {
     revealTxID: string;
     totalFee: BigNumber;
 }
-export { TCTxDetail, BatchInscribeTxResp };
+interface GetTxByHashResp {
+    blockHash: string;
+    blockNumber: string;
+    transactionIndex: string;
+    hash: string;
+}
+export { TCTxDetail, BatchInscribeTxResp, GetTxByHashResp };
