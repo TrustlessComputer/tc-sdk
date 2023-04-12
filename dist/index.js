@@ -6298,8 +6298,7 @@ const Testnet = "testnet";
 const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
-// const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
-const DefaultEndpointTCNodeMainnet = "http://51.83.237.20:10002";
+const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
 const DefaultEndpointTCNodeRegtest = "";
 const MethodPost = "POST";
 class TcClient {
