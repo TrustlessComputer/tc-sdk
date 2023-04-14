@@ -245,16 +245,6 @@ class TcClient {
             btcTx.push(info.Reveal);
         }
 
-
-
-
-
-
-
-        // let msgTx = Transaction.fromHex("adb");
-        // msgTx.outs[0].
-
-
         return btcTx;
     };
 }

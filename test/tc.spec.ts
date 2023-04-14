@@ -160,46 +160,35 @@ describe("Sign msg Tx", async () => {
     // });
 
 
-    it("create batch inscribe txs", async () => {
-        // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
-        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        // const tcTxIDs = ["0x3fcf0decf4b8740a82da6d8e78ff59b6ddc1c6b85696b9abeffbe3f22dceab73"]; // need to be inscribed
+    // it("create batch inscribe txs", async () => {
+    //     // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
+    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+    //     // const tcTxIDs = ["0x3fcf0decf4b8740a82da6d8e78ff59b6ddc1c6b85696b9abeffbe3f22dceab73"]; // need to be inscribed
 
-        setBTCNetwork(NetworkType.Mainnet);
-        const tcClient = new TcClient(Mainnet);
+    //     setBTCNetwork(NetworkType.Mainnet);
+    //     const tcClient = new TcClient(Mainnet);
 
 
-        const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
-        console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
+    //     const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+    //     console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
 
-        const resp = await createBatchInscribeTxs({
-            senderPrivateKey: buyerPrivateKey,
-            tcTxDetails: tcTxDetails.unInscribedTxDetails,
-            utxos: buyerUTXOs,
-            inscriptions: {},
-            feeRatePerByte: 5,
-            tcClient: tcClient,
-        });
+    //     const resp = await createBatchInscribeTxs({
+    //         senderPrivateKey: buyerPrivateKey,
+    //         tcTxDetails: tcTxDetails.unInscribedTxDetails,
+    //         utxos: buyerUTXOs,
+    //         inscriptions: {},
+    //         feeRatePerByte: 5,
+    //         tcClient: tcClient,
+    //     });
 
-        console.log("resp: ", resp);
-
-        // if (resp !== null) {
-        //     const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = resp;
-        //     console.log("commitTxHex: ", commitTxHex);
-        //     console.log("commitTxID: ", commitTxID);
-        //     console.log("revealTxHex: ", revealTxHex);
-        //     console.log("revealTxID: ", revealTxID);
-        //     console.log("totalFee: ", totalFee);
-
-        // }
-
-    });
+    //     console.log("resp: ", resp);
+    // });
     it("aggregate utxos", async () => {
         // const { keyPair }
         const tcClient = new TcClient(Mainnet);
         const result = await aggregateUTXOs({
-            tcAddress: "",
-            btcPubKey: null,
+            tcAddress: "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87",
+            btcAddress: "bc1p3nfh4peeg770mhx4rueskzdmxgjxqcryypstrstcky8cy8g9sxusx8xfnn",
             utxos: [],
             tcClient,
         })

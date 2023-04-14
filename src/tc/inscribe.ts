@@ -565,20 +565,28 @@ const aggregateUTXOs = async ({
         }
     }
 
+    console.log("pendingUTXOs: ", pendingUTXOs);
+
     const newUTXOs: UTXO[] = [];
     for (const tx of txs) {
         const btcTxID = tx.BTCHash;
         for (let i = 0; i < tx.Vout.length; i++) {
             const vout = tx.Vout[i];
 
-            const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
-            console.log("receiverAddress: ", receiverAddress);
-            if (receiverAddress === btcAddress) {
-                newUTXOs.push({
-                    tx_hash: btcTxID,
-                    tx_output_n: i,
-                    value: new BigNumber(toSat(vout.value))
-                });
+            try {
+                const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+                console.log("receiverAddress: ", receiverAddress);
+                if (receiverAddress === btcAddress) {
+                    newUTXOs.push({
+                        tx_hash: btcTxID,
+                        tx_output_n: i,
+                        value: new BigNumber(toSat(vout.value))
+                    });
+
+                    console.log("value bn: ", toSat(vout.value));
+                }
+            } catch (e) {
+                continue;
             }
         }
     }
@@ -590,7 +598,7 @@ const aggregateUTXOs = async ({
     const result: UTXO[] = [];
     for (const utxo of tmpUTXOs) {
         const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
-            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === pendingUTXO.tx_output_n;
+            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
         });
         if (foundIndex === -1) {
             result.push(utxo);

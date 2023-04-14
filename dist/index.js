@@ -6314,19 +6314,26 @@ const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
             });
         }
     }
+    console.log("pendingUTXOs: ", pendingUTXOs);
     const newUTXOs = [];
     for (const tx of txs) {
         const btcTxID = tx.BTCHash;
         for (let i = 0; i < tx.Vout.length; i++) {
             const vout = tx.Vout[i];
-            const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from((_a = vout.scriptPubKey) === null || _a === void 0 ? void 0 : _a.hex, "hex"), exports.Network);
-            console.log("receiverAddress: ", receiverAddress);
-            if (receiverAddress === btcAddress) {
-                newUTXOs.push({
-                    tx_hash: btcTxID,
-                    tx_output_n: i,
-                    value: new BigNumber(toSat(vout.value))
-                });
+            try {
+                const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from((_a = vout.scriptPubKey) === null || _a === void 0 ? void 0 : _a.hex, "hex"), exports.Network);
+                console.log("receiverAddress: ", receiverAddress);
+                if (receiverAddress === btcAddress) {
+                    newUTXOs.push({
+                        tx_hash: btcTxID,
+                        tx_output_n: i,
+                        value: new BigNumber(toSat(vout.value))
+                    });
+                    console.log("value bn: ", toSat(vout.value));
+                }
+            }
+            catch (e) {
+                continue;
             }
         }
     }
@@ -6335,7 +6342,7 @@ const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
     const result = [];
     for (const utxo of tmpUTXOs) {
         const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
-            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === pendingUTXO.tx_output_n;
+            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
         });
         if (foundIndex === -1) {
             result.push(utxo);
@@ -6506,8 +6513,6 @@ class TcClient {
                 btcTx.push(info.Commit);
                 btcTx.push(info.Reveal);
             }
-            // let msgTx = Transaction.fromHex("adb");
-            // msgTx.outs[0].
             return btcTx;
         };
         if (params.length === 0) {
