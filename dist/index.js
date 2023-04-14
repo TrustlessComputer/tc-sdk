@@ -6301,8 +6301,8 @@ const estimateInscribeFee = ({ tcTxSizeByte, feeRatePerByte, }) => {
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
-const aggregateUTXOs = async ({ tcAddress, btcPubKey, utxos, tcClient, }) => {
-    var _a, _b;
+const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
+    var _a;
     const txs = await tcClient.getPendingInscribeTxs(tcAddress);
     const pendingUTXOs = [];
     for (const tx of txs) {
@@ -6314,15 +6314,14 @@ const aggregateUTXOs = async ({ tcAddress, btcPubKey, utxos, tcClient, }) => {
             });
         }
     }
-    const { p2pktr } = generateTaprootAddressFromPubKey(toXOnly(btcPubKey));
-    const scriptHex = (_a = p2pktr.output) === null || _a === void 0 ? void 0 : _a.toString("hex");
-    console.log("scriptHex: ", scriptHex);
     const newUTXOs = [];
     for (const tx of txs) {
         const btcTxID = tx.BTCHash;
         for (let i = 0; i < tx.Vout.length; i++) {
             const vout = tx.Vout[i];
-            if (((_b = vout.scriptPubKey) === null || _b === void 0 ? void 0 : _b.hex) === scriptHex) {
+            const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from((_a = vout.scriptPubKey) === null || _a === void 0 ? void 0 : _a.hex, "hex"), exports.Network);
+            console.log("receiverAddress: ", receiverAddress);
+            if (receiverAddress === btcAddress) {
                 newUTXOs.push({
                     tx_hash: btcTxID,
                     tx_output_n: i,

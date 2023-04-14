@@ -1,4 +1,4 @@
-import { ECPair, Mainnet, Network, NetworkType, TcClient, Testnet, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, setBTCNetwork } from "../src";
+import { ECPair, Mainnet, Network, NetworkType, TcClient, Testnet, aggregateUTXOs, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, setBTCNetwork } from "../src";
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -194,6 +194,20 @@ describe("Sign msg Tx", async () => {
         // }
 
     });
+    it("aggregate utxos", async () => {
+        // const { keyPair }
+        const tcClient = new TcClient(Mainnet);
+        const result = await aggregateUTXOs({
+            tcAddress: "",
+            btcPubKey: null,
+            utxos: [],
+            tcClient,
+        })
+
+        console.log("result: ", result);
+    });
+
+
     // it("finalize raw commit tx", async () => {
     //     const signedCommitTxB64 = "cHNidP8BAIkCAAAAAd4foRsqGbk6aEeWRzYv0ww9wCt/7tCoFcDuikKNP/BNAAAAAAD/////AsYHAAAAAAAAIlEgydBhfWmBPkcNjiD8mMF7+yxJskRnbs4Nhrk3RuzO5SyuGwAAAAAAACJRIIwBcHKBtuPNaLYvJMGzVoV0l9y6m0oYFTJFCJBSfZf4AAAAAAABASsQJwAAAAAAACJRIIwBcHKBtuPNaLYvJMGzVoV0l9y6m0oYFTJFCJBSfZf4ARNAIghJb5aBPBsiWMmurMp8bVvpno9TsPeLIZm8MlQvkYlSDiUqOao8Vux3fm+S+If4O4P+IHUYDxeZ8vPLC8//7QEXIJO8b4pdMKXOlGH5JToh0FFIinmYG051yiKI+QFa1fYVAAAA";
 

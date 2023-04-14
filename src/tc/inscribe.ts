@@ -12,7 +12,7 @@ import {
     toSat,
 } from "..";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
-import { Psbt, payments, script } from "bitcoinjs-lib";
+import { Psbt, address, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
 import BigNumber from "bignumber.js";
@@ -542,12 +542,12 @@ const estimateInscribeFee = ({
 */
 const aggregateUTXOs = async ({
     tcAddress,
-    btcPubKey,
+    btcAddress,
     utxos,
     tcClient,
 }: {
     tcAddress: string,
-    btcPubKey: Buffer,
+    btcAddress: string,
     utxos: UTXO[],
     tcClient: TcClient,
 }): Promise<UTXO[]> => {
@@ -565,17 +565,15 @@ const aggregateUTXOs = async ({
         }
     }
 
-    const { p2pktr } = generateTaprootAddressFromPubKey(toXOnly(btcPubKey));
-
-    const scriptHex = p2pktr.output?.toString("hex");
-    console.log("scriptHex: ", scriptHex);
-
     const newUTXOs: UTXO[] = [];
     for (const tx of txs) {
         const btcTxID = tx.BTCHash;
         for (let i = 0; i < tx.Vout.length; i++) {
             const vout = tx.Vout[i];
-            if (vout.scriptPubKey?.hex === scriptHex) {
+
+            const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+            console.log("receiverAddress: ", receiverAddress);
+            if (receiverAddress === btcAddress) {
                 newUTXOs.push({
                     tx_hash: btcTxID,
                     tx_output_n: i,
