@@ -60,9 +60,14 @@ const fromSat = (sat: number): number => {
     return sat / 1e8;
 };
 
+const toSat = (value: number): number => {
+    return value * 1e8;
+};
+
 export {
     estimateTxFee,
     estimateNumInOutputs,
     estimateNumInOutputsForBuyInscription,
     fromSat,
+    toSat,
 };

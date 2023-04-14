@@ -31,4 +31,5 @@ declare const estimateNumInOutputsForBuyInscription: (estNumInputsFromBuyer: num
     numOuts: number;
 };
 declare const fromSat: (sat: number) => number;
-export { estimateTxFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, fromSat, };
+declare const toSat: (value: number) => number;
+export { estimateTxFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, fromSat, toSat, };

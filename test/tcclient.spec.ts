@@ -86,11 +86,21 @@ describe("TC client", async () => {
     //     console.log("Final resp: ", resp);
     // });
 
-    it("get uninscribed txs", async () => {
+    // it("get uninscribed txs", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+    //     const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+    //     console.log("Final resp: ", resp);
+    // });
+
+    it("get tx by hash", async () => {
         console.log("tcClient.network ", tcClient.network);
         console.log("tcClient.url ", tcClient.url);
-        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-        const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+        // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+
+
+        const resp = await tcClient.getTCTxByHash("0x32365f6a8bca72ab46ebb738e934edf7e53679e328cfc056697f4715235a34b3");
         console.log("Final resp: ", resp);
     });
 

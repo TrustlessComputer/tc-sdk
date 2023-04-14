@@ -9,6 +9,7 @@ import {
     createRawTxSendBTC,
     createTxSendBTC,
     estimateTxFee,
+    toSat,
 } from "..";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
 import { Psbt, payments, script } from "bitcoinjs-lib";
@@ -20,6 +21,8 @@ import { ERROR_CODE } from "../constants/error";
 import { Network } from "../bitcoin/network";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
+
+const _ = require("underscore");
 
 const remove0x = (data: string): string => {
     if (data.startsWith("0x")) data = data.slice(2);
@@ -530,11 +533,83 @@ const estimateInscribeFee = ({
     return { totalFee: new BigNumber(totalFee) };
 };
 
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param tcTxSizeByte size of tc tx (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+const aggregateUTXOs = async ({
+    tcAddress,
+    btcPubKey,
+    utxos,
+    tcClient,
+}: {
+    tcAddress: string,
+    btcPubKey: Buffer,
+    utxos: UTXO[],
+    tcClient: TcClient,
+}): Promise<UTXO[]> => {
+
+    const txs = await tcClient.getPendingInscribeTxs(tcAddress);
+
+    const pendingUTXOs: UTXO[] = [];
+    for (const tx of txs) {
+        for (const vin of tx.Vin) {
+            pendingUTXOs.push({
+                tx_hash: vin.txid,
+                tx_output_n: vin.vout,
+                value: BNZero
+            });
+        }
+    }
+
+    const { p2pktr } = generateTaprootAddressFromPubKey(toXOnly(btcPubKey));
+
+    const scriptHex = p2pktr.output?.toString("hex");
+    console.log("scriptHex: ", scriptHex);
+
+    const newUTXOs: UTXO[] = [];
+    for (const tx of txs) {
+        const btcTxID = tx.BTCHash;
+        for (let i = 0; i < tx.Vout.length; i++) {
+            const vout = tx.Vout[i];
+            if (vout.scriptPubKey?.hex === scriptHex) {
+                newUTXOs.push({
+                    tx_hash: btcTxID,
+                    tx_output_n: i,
+                    value: new BigNumber(toSat(vout.value))
+                });
+            }
+        }
+    }
+
+    const tmpUTXOs = _.uniq([...utxos, ...newUTXOs]);
+
+    console.log("tmpUTXOs ", tmpUTXOs);
+
+    const result: UTXO[] = [];
+    for (const utxo of tmpUTXOs) {
+        const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
+            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === pendingUTXO.tx_output_n;
+        });
+        if (foundIndex === -1) {
+            result.push(utxo);
+        }
+    }
+
+    console.log("result: ", result);
+
+    return result;
+};
+
 export {
     createRawRevealTx,
     createInscribeTx,
     createInscribeTxFromAnyWallet,
     estimateInscribeFee,
     createLockScript,
-    createBatchInscribeTxs
+    createBatchInscribeTxs,
+    aggregateUTXOs
 };

@@ -13,9 +13,7 @@ interface TCTxDetail {
     Hash: string,
     From: string,
     Type: number
-
 }
-
 
 interface BatchInscribeTxResp {
     tcTxIDs: string[],
@@ -32,6 +30,9 @@ interface GetTxByHashResp {
     transactionIndex: string,
     hash: string,
 }
+
+
+
 
 export {
     TCTxDetail,

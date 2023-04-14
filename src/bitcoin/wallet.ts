@@ -50,7 +50,10 @@ const convertPrivateKeyFromStr = (str: string): Buffer => {
 };
 
 function toXOnly(pubkey: Buffer): Buffer {
-    return pubkey.subarray(1, 33);
+    if (pubkey.length === 33) {
+        return pubkey.subarray(1, 33);
+    }
+    return pubkey;
 }
 
 function tweakSigner(signer: Signer, opts: any = {}): Signer {

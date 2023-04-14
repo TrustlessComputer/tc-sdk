@@ -1,8 +1,8 @@
+import { BNZero, UTXO } from "../bitcoin";
 import { ERROR_CODE, ERROR_MESSAGE } from "../constants/error";
 import { GetTxByHashResp, TCTxDetail } from "./types";
 import axios, { AxiosResponse } from "axios";
 
-import { BNZero } from "..";
 import BigNumber from "bignumber.js";
 import SDKError from "../constants/error";
 import { increaseGasPrice } from "./utils";
@@ -214,7 +214,7 @@ class TcClient {
         };
     };
 
-    // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+    // getTCTxByHash get TC tx 
     getTCTxByHash = async (tcTxID: string): Promise<GetTxByHashResp> => {
         const payload = [tcTxID];
 
@@ -226,6 +226,36 @@ class TcClient {
         }
 
         return resp;
+    };
+
+    // getPendingInscribeTxs returns pending BTC inscribe txs in TC node (both broadcasted and holding)
+    getPendingInscribeTxs = async (tcAddress: string) => {
+        const payload = [tcAddress];
+
+        const resp = await this.callRequest(payload, MethodPost, "eth_getPendingInscribedUTXOByAddress");
+        console.log("Resp eth_getPendingInscribedUTXOByAddress: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+
+        const btcTx = [];
+        for (const info of resp) {
+            btcTx.push(info.Commit);
+            btcTx.push(info.Reveal);
+        }
+
+
+
+
+
+
+
+        // let msgTx = Transaction.fromHex("adb");
+        // msgTx.outs[0].
+
+
+        return btcTx;
     };
 }
 

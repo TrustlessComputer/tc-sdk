@@ -3128,6 +3128,9 @@ const estimateNumInOutputsForBuyInscription = (estNumInputsFromBuyer, estNumOutp
 const fromSat = (sat) => {
     return sat / 1e8;
 };
+const toSat = (value) => {
+    return value * 1e8;
+};
 
 /**
 * selectUTXOs selects the most reasonable UTXOs to create the transaction.
@@ -3456,7 +3459,10 @@ const convertPrivateKeyFromStr = (str) => {
     return res === null || res === void 0 ? void 0 : res.privateKey;
 };
 function toXOnly(pubkey) {
-    return pubkey.subarray(1, 33);
+    if (pubkey.length === 33) {
+        return pubkey.subarray(1, 33);
+    }
+    return pubkey;
 }
 function tweakSigner(signer, opts = {}) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -5975,6 +5981,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
+const _ = require("underscore");
 const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }) => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
     const tapLeafScript = {
@@ -6287,6 +6294,57 @@ const estimateInscribeFee = ({ tcTxSizeByte, feeRatePerByte, }) => {
     const totalFee = estCommitTxFee + estRevealTxFee;
     return { totalFee: new BigNumber(totalFee) };
 };
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param tcTxSizeByte size of tc tx (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+const aggregateUTXOs = async ({ tcAddress, btcPubKey, utxos, tcClient, }) => {
+    var _a, _b;
+    const txs = await tcClient.getPendingInscribeTxs(tcAddress);
+    const pendingUTXOs = [];
+    for (const tx of txs) {
+        for (const vin of tx.Vin) {
+            pendingUTXOs.push({
+                tx_hash: vin.txid,
+                tx_output_n: vin.vout,
+                value: BNZero
+            });
+        }
+    }
+    const { p2pktr } = generateTaprootAddressFromPubKey(toXOnly(btcPubKey));
+    const scriptHex = (_a = p2pktr.output) === null || _a === void 0 ? void 0 : _a.toString("hex");
+    console.log("scriptHex: ", scriptHex);
+    const newUTXOs = [];
+    for (const tx of txs) {
+        const btcTxID = tx.BTCHash;
+        for (let i = 0; i < tx.Vout.length; i++) {
+            const vout = tx.Vout[i];
+            if (((_b = vout.scriptPubKey) === null || _b === void 0 ? void 0 : _b.hex) === scriptHex) {
+                newUTXOs.push({
+                    tx_hash: btcTxID,
+                    tx_output_n: i,
+                    value: new BigNumber(toSat(vout.value))
+                });
+            }
+        }
+    }
+    const tmpUTXOs = _.uniq([...utxos, ...newUTXOs]);
+    console.log("tmpUTXOs ", tmpUTXOs);
+    const result = [];
+    for (const utxo of tmpUTXOs) {
+        const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
+            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === pendingUTXO.tx_output_n;
+        });
+        if (foundIndex === -1) {
+            result.push(utxo);
+        }
+    }
+    console.log("result: ", result);
+    return result;
+};
 
 const increaseGasPrice = (wei) => {
     const res = wei.plus(new BigNumber(1000000000));
@@ -6426,7 +6484,7 @@ class TcClient {
                 unInscribedTxDetails: txDetails,
             };
         };
-        // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
+        // getTCTxByHash get TC tx 
         this.getTCTxByHash = async (tcTxID) => {
             const payload = [tcTxID];
             const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionByHash");
@@ -6435,6 +6493,23 @@ class TcClient {
                 throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             return resp;
+        };
+        // getPendingInscribeTxs returns pending BTC inscribe txs in TC node (both broadcasted and holding)
+        this.getPendingInscribeTxs = async (tcAddress) => {
+            const payload = [tcAddress];
+            const resp = await this.callRequest(payload, MethodPost, "eth_getPendingInscribedUTXOByAddress");
+            console.log("Resp eth_getPendingInscribedUTXOByAddress: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            const btcTx = [];
+            for (const info of resp) {
+                btcTx.push(info.Commit);
+                btcTx.push(info.Reveal);
+            }
+            // let msgTx = Transaction.fromHex("adb");
+            // msgTx.outs[0].
+            return btcTx;
         };
         if (params.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS);
@@ -6484,6 +6559,7 @@ exports.TcClient = TcClient;
 exports.Testnet = Testnet;
 exports.Validator = Validator;
 exports.WalletType = WalletType;
+exports.aggregateUTXOs = aggregateUTXOs;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
@@ -6546,6 +6622,7 @@ exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
 exports.signPSBT2 = signPSBT2;
 exports.tapTweakHash = tapTweakHash;
+exports.toSat = toSat;
 exports.toXOnly = toXOnly;
 exports.tweakSigner = tweakSigner;
 //# sourceMappingURL=index.js.map

@@ -123,4 +123,17 @@ declare const estimateInscribeFee: ({ tcTxSizeByte, feeRatePerByte, }: {
 }) => {
     totalFee: BigNumber;
 };
-export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript, createBatchInscribeTxs };
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param tcTxSizeByte size of tc tx (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+declare const aggregateUTXOs: ({ tcAddress, btcPubKey, utxos, tcClient, }: {
+    tcAddress: string;
+    btcPubKey: Buffer;
+    utxos: UTXO[];
+    tcClient: TcClient;
+}) => Promise<UTXO[]>;
+export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript, createBatchInscribeTxs, aggregateUTXOs };

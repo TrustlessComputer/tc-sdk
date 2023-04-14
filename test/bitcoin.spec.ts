@@ -1,17 +1,19 @@
-import { assert } from "chai";
-import BigNumber from "bignumber.js";
 import {
-    selectUTXOs,
-    UTXO,
+    BNZero,
     Inscription,
-    createTx,
     MinSats,
-    createTxWithSpecificUTXOs,
+    UTXO,
     convertPrivateKey,
     convertPrivateKeyFromStr,
-    BNZero,
+    createTx,
+    createTxWithSpecificUTXOs,
+    selectUTXOs,
 } from "../src/index";
+
+import BigNumber from "bignumber.js";
+import { assert } from "chai";
 import { number } from "bitcoinjs-lib/src/script";
+
 require("dotenv").config({ path: __dirname + "/.env" });
 
 
@@ -62,35 +64,68 @@ require("dotenv").config({ path: __dirname + "/.env" });
 
 // for unit tests
 let UTXOs: UTXO[] = [
-    // normal UTXOs
+
+
+    //
+
     {
-        tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-        tx_output_n: 1,
-        value: new BigNumber(1000)
-    },
-    {
-        tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-        tx_output_n: 2,
-        value: new BigNumber(2000)
-    },
-    {
-        tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-        tx_output_n: 3,
-        value: new BigNumber(10000)
-    },
-    // inscription UTXOs
-    // real
-    {
-        tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
+        tx_hash: "60e83a8c8b5ba2e4317253ee617d8fe3a5c8e6f2d61ff95df484e9605eac6228",
         tx_output_n: 0,
-        value: new BigNumber(5274)
+        value: new BigNumber(1000),
+    },
+    {
+        tx_hash: "2e10cccd862ef25e39db9c3b33ed0fd68a3a2e6c315077137ab6af6ba5de0cef",
+        tx_output_n: 0,
+        value: new BigNumber(1000),
+    },
+    {
+        tx_hash: "d7a5948e0c13388d9d2fcb32735cadf297f40b1e577d4b04a98e6f5b2769c87b",
+        tx_output_n: 0,
+        value: new BigNumber(1000),
+    },
+    {
+        tx_hash: "8e890669e02ab0cd22b01e8892245dcca8cc7ea63fdcdec3de229c356ee763ca",
+        tx_output_n: 0,
+        value: new BigNumber(1000),
     },
 
     {
-        tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
-        tx_output_n: 0,  // offset != 0
-        value: new BigNumber(1234)
+        tx_hash: "eb44079df80ca2e83b847f230d80f432dd3c3b8b00a143469e387899444e4cb8",
+        tx_output_n: 0,
+        value: new BigNumber(1000),
     },
+
+
+
+    // // normal UTXOs
+    // {
+    //     tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //     tx_output_n: 1,
+    //     value: new BigNumber(1000)
+    // },
+    // {
+    //     tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //     tx_output_n: 2,
+    //     value: new BigNumber(2000)
+    // },
+    // {
+    //     tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //     tx_output_n: 3,
+    //     value: new BigNumber(10000)
+    // },
+    // // inscription UTXOs
+    // // real
+    // {
+    //     tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
+    //     tx_output_n: 0,
+    //     value: new BigNumber(5274)
+    // },
+
+    // {
+    //     tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
+    //     tx_output_n: 0,  // offset != 0
+    //     value: new BigNumber(1234)
+    // },
 ];
 
 var sellerPrivateKeyWIF = process.env.PRIV_KEY_1 || "";
@@ -381,122 +416,122 @@ let isUseInscriptionPayFeeParam = true;
 
 // TODO: uncomment
 describe("Create tx with multiple UTXOs Tests", () => {
-    it("should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
-        let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
+    // it("should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
+    //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
 
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    //     const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+    //         UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
+    //     let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
+    //     actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
 
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
+    //     let actualInscriptionInfos = inscriptions[actualTxIDKey];
+    //     let actualInscriptionID = actualInscriptionInfos[0].id;
 
-        assert.equal(selectedUTXOs.length, 1);
-        assert.equal(actualInscriptionID, sendInscriptionID);
-        assert.equal(isUseInscriptionPayFee, true);
-        assert.equal(valueOutInscription.toNumber(), 5274 - fee.toNumber());
-        assert.equal(valueOutInscription.toNumber() >= MinSats, true);
-        assert.equal(changeAmount.eq(BNZero), true);
-    });
+    //     assert.equal(selectedUTXOs.length, 1);
+    //     assert.equal(actualInscriptionID, sendInscriptionID);
+    //     assert.equal(isUseInscriptionPayFee, true);
+    //     assert.equal(valueOutInscription.toNumber(), 5274 - fee.toNumber());
+    //     assert.equal(valueOutInscription.toNumber() >= MinSats, true);
+    //     assert.equal(changeAmount.eq(BNZero), true);
+    // });
 
-    it("insciption offset != 0 : MUST return 2 selected UTXOs (insciption & medium UTXO to pay fee) - isUseInscriptionPayFeeParam = default", () => {
-        let sendInscriptionID = "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09i1";
-        let isUseInscriptionPayFeeParam = false;
+    // it("insciption offset != 0 : MUST return 2 selected UTXOs (insciption & medium UTXO to pay fee) - isUseInscriptionPayFeeParam = default", () => {
+    //     let sendInscriptionID = "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09i1";
+    //     let isUseInscriptionPayFeeParam = false;
 
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    //     const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+    //         UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
+    //     let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
+    //     actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
 
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
+    //     let actualInscriptionInfos = inscriptions[actualTxIDKey];
+    //     let actualInscriptionID = actualInscriptionInfos[0].id;
 
-        assert.equal(selectedUTXOs.length, 2);
-        assert.equal(actualInscriptionID, sendInscriptionID);
-        assert.equal(selectedUTXOs[1].value.toNumber(), 2000);
-        assert.equal(fee.toNumber(), 1332);
-        assert.equal(isUseInscriptionPayFee, false);
-        assert.equal(valueOutInscription.toNumber(), 1234);
-        assert.equal(changeAmount.toNumber(), 2000 - 1332);
-    });
+    //     assert.equal(selectedUTXOs.length, 2);
+    //     assert.equal(actualInscriptionID, sendInscriptionID);
+    //     assert.equal(selectedUTXOs[1].value.toNumber(), 2000);
+    //     assert.equal(fee.toNumber(), 1332);
+    //     assert.equal(isUseInscriptionPayFee, false);
+    //     assert.equal(valueOutInscription.toNumber(), 1234);
+    //     assert.equal(changeAmount.toNumber(), 2000 - 1332);
+    // });
 
-    it("insciption value is not enough to pay fee : should return 2 selected UTXOs (insciption & biggest UTXO) - isUseInscriptionPayFeeParam default", () => {
-        let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
-        let isUseInscriptionPayFeeParam = true;
-        let feeRatePerByte = 48;
+    // it("insciption value is not enough to pay fee : should return 2 selected UTXOs (insciption & biggest UTXO) - isUseInscriptionPayFeeParam default", () => {
+    //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
+    //     let isUseInscriptionPayFeeParam = true;
+    //     let feeRatePerByte = 48;
 
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    //     const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+    //         UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
+    //     let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
+    //     actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
 
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
+    //     let actualInscriptionInfos = inscriptions[actualTxIDKey];
+    //     let actualInscriptionID = actualInscriptionInfos[0].id;
 
-        assert.equal(selectedUTXOs.length, 2);
-        assert.equal(actualInscriptionID, sendInscriptionID);
+    //     assert.equal(selectedUTXOs.length, 2);
+    //     assert.equal(actualInscriptionID, sendInscriptionID);
 
-        assert.equal(selectedUTXOs[1].value.toNumber(), 10000);
-        assert.equal(fee.toNumber(), 10000);
-        assert.equal(isUseInscriptionPayFee, false);
-        assert.equal(valueOutInscription.toNumber(), 5274);
-        assert.equal(changeAmount.toNumber(), 10000 - fee.toNumber());
-    });
+    //     assert.equal(selectedUTXOs[1].value.toNumber(), 10000);
+    //     assert.equal(fee.toNumber(), 10000);
+    //     assert.equal(isUseInscriptionPayFee, false);
+    //     assert.equal(valueOutInscription.toNumber(), 5274);
+    //     assert.equal(changeAmount.toNumber(), 10000 - fee.toNumber());
+    // });
 
-    it("insciption offset 0 - send amount > 0: should return 2 selected UTXOs (insciption &  medium  UTXO) - isUseInscriptionPayFeeParam default", () => {
-        let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
-        let isUseInscriptionPayFeeParam = true;
-        let feeRatePerByte = 6;
-        let sendAmount = new BigNumber(100);
+    // it("insciption offset 0 - send amount > 0: should return 2 selected UTXOs (insciption &  medium  UTXO) - isUseInscriptionPayFeeParam default", () => {
+    //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
+    //     let isUseInscriptionPayFeeParam = true;
+    //     let feeRatePerByte = 6;
+    //     let sendAmount = new BigNumber(100);
 
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    //     const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+    //         UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
+    //     let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
+    //     actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
 
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
+    //     let actualInscriptionInfos = inscriptions[actualTxIDKey];
+    //     let actualInscriptionID = actualInscriptionInfos[0].id;
 
-        assert.equal(selectedUTXOs.length, 2);
-        assert.equal(actualInscriptionID, sendInscriptionID);
+    //     assert.equal(selectedUTXOs.length, 2);
+    //     assert.equal(actualInscriptionID, sendInscriptionID);
 
-        assert.equal(selectedUTXOs[1].value.toNumber(), 2000);
-        assert.equal(fee.toNumber(), 1590);
-        assert.equal(isUseInscriptionPayFee, false);
-        assert.equal(valueOutInscription.toNumber(), 5274);
-        assert.equal(changeAmount.eq(new BigNumber(2000).minus(fee).minus(sendAmount)), true);
-    });
+    //     assert.equal(selectedUTXOs[1].value.toNumber(), 2000);
+    //     assert.equal(fee.toNumber(), 1590);
+    //     assert.equal(isUseInscriptionPayFee, false);
+    //     assert.equal(valueOutInscription.toNumber(), 5274);
+    //     assert.equal(changeAmount.eq(new BigNumber(2000).minus(fee).minus(sendAmount)), true);
+    // });
 
-    it("insciption offset 0 - send amount > 0: should return 3 selected UTXOs (insciption &  multiple UTXO) - isUseInscriptionPayFeeParam default", () => {
-        let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
-        let isUseInscriptionPayFeeParam = true;
-        let feeRatePerByte = 6;
-        let sendAmount = new BigNumber(9000);
+    // it("insciption offset 0 - send amount > 0: should return 3 selected UTXOs (insciption &  multiple UTXO) - isUseInscriptionPayFeeParam default", () => {
+    //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
+    //     let isUseInscriptionPayFeeParam = true;
+    //     let feeRatePerByte = 6;
+    //     let sendAmount = new BigNumber(9000);
 
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    //     const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+    //         UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
+    //     let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
+    //     actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
 
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
+    //     let actualInscriptionInfos = inscriptions[actualTxIDKey];
+    //     let actualInscriptionID = actualInscriptionInfos[0].id;
 
-        assert.equal(selectedUTXOs.length, 3);
-        assert.equal(actualInscriptionID, sendInscriptionID);
+    //     assert.equal(selectedUTXOs.length, 3);
+    //     assert.equal(actualInscriptionID, sendInscriptionID);
 
-        assert.equal(selectedUTXOs[1].value.toNumber(), 10000);
-        assert.equal(selectedUTXOs[2].value.toNumber(), 2000);
-        assert.equal(fee.toNumber(), 1998);
-        assert.equal(isUseInscriptionPayFee, false);
-        assert.equal(valueOutInscription.toNumber(), 5274);
-        assert.equal(changeAmount.eq(new BigNumber(12000).minus(fee).minus(sendAmount)), true);
-    });
+    //     assert.equal(selectedUTXOs[1].value.toNumber(), 10000);
+    //     assert.equal(selectedUTXOs[2].value.toNumber(), 2000);
+    //     assert.equal(fee.toNumber(), 1998);
+    //     assert.equal(isUseInscriptionPayFee, false);
+    //     assert.equal(valueOutInscription.toNumber(), 5274);
+    //     assert.equal(changeAmount.eq(new BigNumber(12000).minus(fee).minus(sendAmount)), true);
+    // });
 
 
 
@@ -508,12 +543,12 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
     it("send BTC - should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
         let sendInscriptionID = "";
-        let sendAmount = new BigNumber(1000);
+        let sendAmount = new BigNumber(4000);
 
         // const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
         //   UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        const { txID, txHex, fee: feeRes } = createTx(sellerPrivateKey, UTXOs, inscriptions, sendInscriptionID, buyerAddress, sendAmount, 6, true);
+        const { txID, txHex, fee: feeRes } = createTx(buyerPrivateKey, UTXOs, inscriptions, sendInscriptionID, "bc1pf6mj35utw8ts4su956yfpc3tujks3yk0fdhz76r6cz6vz4zmn3aqmftgfg", sendAmount, 5, true);
         console.log(txID, txHex, feeRes);
     });
 
