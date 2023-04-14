@@ -61,7 +61,7 @@ const fromSat = (sat: number): number => {
 };
 
 const toSat = (value: number): number => {
-    return value * 1e8;
+    return Math.round(value * 1e8);
 };
 
 export {

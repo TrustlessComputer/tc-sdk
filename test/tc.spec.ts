@@ -189,7 +189,13 @@ describe("Sign msg Tx", async () => {
         const result = await aggregateUTXOs({
             tcAddress: "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87",
             btcAddress: "bc1p3nfh4peeg770mhx4rueskzdmxgjxqcryypstrstcky8cy8g9sxusx8xfnn",
-            utxos: [],
+            utxos: [
+                {
+                    tx_hash: "67d3cf1188a08796020b9addaa449636017a578d4e6e7d5e1584dd284ba7dc1f",
+                    tx_output_n: 1,
+                    value: BigNumber(1000)
+                }
+            ],
             tcClient,
         })
 

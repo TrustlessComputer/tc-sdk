@@ -1,4 +1,5 @@
 import { ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx } from "../src";
+import { UTXO, aggregateUTXOs } from '..';
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -100,8 +101,33 @@ describe("TC client", async () => {
         // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
 
 
-        const resp = await tcClient.getTCTxByHash("0x32365f6a8bca72ab46ebb738e934edf7e53679e328cfc056697f4715235a34b3");
-        console.log("Final resp: ", resp);
+        let tmpUTXOs: UTXO[] = [{
+            tx_hash: "abc",
+            tx_output_n: 1,
+            value: new BigNumber(1000),
+
+        },
+        {
+            tx_hash: "abc",
+            tx_output_n: 1,
+            value: new BigNumber(1000),
+
+        }];
+        tmpUTXOs = tmpUTXOs.filter((item, i, arr) => {
+            console.log(arr.indexOf(item));
+            return arr.indexOf(item) === i;
+        });
+
+        console.log("tmpUTXOs: ", tmpUTXOs);
+
+
+
+
+
+
+
+        // const resp = await tcClient.getTCTxByHash("0x32365f6a8bca72ab46ebb738e934edf7e53679e328cfc056697f4715235a34b3");
+        // console.log("Final resp: ", resp);
     });
 
 

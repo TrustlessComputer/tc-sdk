@@ -69,30 +69,9 @@ let UTXOs: UTXO[] = [
     //
 
     {
-        tx_hash: "60e83a8c8b5ba2e4317253ee617d8fe3a5c8e6f2d61ff95df484e9605eac6228",
-        tx_output_n: 0,
-        value: new BigNumber(1000),
-    },
-    {
-        tx_hash: "2e10cccd862ef25e39db9c3b33ed0fd68a3a2e6c315077137ab6af6ba5de0cef",
-        tx_output_n: 0,
-        value: new BigNumber(1000),
-    },
-    {
-        tx_hash: "d7a5948e0c13388d9d2fcb32735cadf297f40b1e577d4b04a98e6f5b2769c87b",
-        tx_output_n: 0,
-        value: new BigNumber(1000),
-    },
-    {
-        tx_hash: "8e890669e02ab0cd22b01e8892245dcca8cc7ea63fdcdec3de229c356ee763ca",
-        tx_output_n: 0,
-        value: new BigNumber(1000),
-    },
-
-    {
-        tx_hash: "eb44079df80ca2e83b847f230d80f432dd3c3b8b00a143469e387899444e4cb8",
-        tx_output_n: 0,
-        value: new BigNumber(1000),
+        tx_hash: "7deea7842794148388bac980192bd4f5c32ec366e44509dc698384551c3d223e",
+        tx_output_n: 1,
+        value: new BigNumber(396267),
     },
 
 
@@ -543,12 +522,12 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
     it("send BTC - should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
         let sendInscriptionID = "";
-        let sendAmount = new BigNumber(4000);
+        let sendAmount = new BigNumber(24000);
 
         // const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
         //   UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        const { txID, txHex, fee: feeRes } = createTx(buyerPrivateKey, UTXOs, inscriptions, sendInscriptionID, "bc1pf6mj35utw8ts4su956yfpc3tujks3yk0fdhz76r6cz6vz4zmn3aqmftgfg", sendAmount, 5, true);
+        const { txID, txHex, fee: feeRes } = createTx(buyerPrivateKey, UTXOs, inscriptions, sendInscriptionID, "bc1pgvzr6m0cxv488prlzxcr7myk22pfewzq0vtyryx7uvna9mgnh9hsecq0lx", sendAmount, 4, true);
         console.log(txID, txHex, feeRes);
     });
 

@@ -575,15 +575,12 @@ const aggregateUTXOs = async ({
 
             try {
                 const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
-                console.log("receiverAddress: ", receiverAddress);
                 if (receiverAddress === btcAddress) {
                     newUTXOs.push({
                         tx_hash: btcTxID,
                         tx_output_n: i,
                         value: new BigNumber(toSat(vout.value))
                     });
-
-                    console.log("value bn: ", toSat(vout.value));
                 }
             } catch (e) {
                 continue;
@@ -591,12 +588,27 @@ const aggregateUTXOs = async ({
         }
     }
 
-    const tmpUTXOs = _.uniq([...utxos, ...newUTXOs]);
+    const tmpUTXOs = [...utxos, ...newUTXOs];
 
-    console.log("tmpUTXOs ", tmpUTXOs);
+    console.log("tmpUTXOs: ", tmpUTXOs);
+    const ids: string[] = [];
+    const tmpUniqUTXOs: UTXO[] = [];
+
+    for (const utxo of tmpUTXOs) {
+        const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+        console.log("id: ", id);
+        if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
+            continue;
+        } else {
+            tmpUniqUTXOs.push(utxo);
+            ids.push(id);
+        }
+    }
+
+    console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
 
     const result: UTXO[] = [];
-    for (const utxo of tmpUTXOs) {
+    for (const utxo of tmpUniqUTXOs) {
         const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
             return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
         });

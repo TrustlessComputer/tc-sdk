@@ -3129,7 +3129,7 @@ const fromSat = (sat) => {
     return sat / 1e8;
 };
 const toSat = (value) => {
-    return value * 1e8;
+    return Math.round(value * 1e8);
 };
 
 /**
@@ -5981,7 +5981,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const _ = require("underscore");
+require("underscore");
 const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }) => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
     const tapLeafScript = {
@@ -6322,14 +6322,12 @@ const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
             const vout = tx.Vout[i];
             try {
                 const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from((_a = vout.scriptPubKey) === null || _a === void 0 ? void 0 : _a.hex, "hex"), exports.Network);
-                console.log("receiverAddress: ", receiverAddress);
                 if (receiverAddress === btcAddress) {
                     newUTXOs.push({
                         tx_hash: btcTxID,
                         tx_output_n: i,
                         value: new BigNumber(toSat(vout.value))
                     });
-                    console.log("value bn: ", toSat(vout.value));
                 }
             }
             catch (e) {
@@ -6337,10 +6335,24 @@ const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
             }
         }
     }
-    const tmpUTXOs = _.uniq([...utxos, ...newUTXOs]);
-    console.log("tmpUTXOs ", tmpUTXOs);
-    const result = [];
+    const tmpUTXOs = [...utxos, ...newUTXOs];
+    console.log("tmpUTXOs: ", tmpUTXOs);
+    const ids = [];
+    const tmpUniqUTXOs = [];
     for (const utxo of tmpUTXOs) {
+        const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+        console.log("id: ", id);
+        if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
+            continue;
+        }
+        else {
+            tmpUniqUTXOs.push(utxo);
+            ids.push(id);
+        }
+    }
+    console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
+    const result = [];
+    for (const utxo of tmpUniqUTXOs) {
         const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
             return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
         });
