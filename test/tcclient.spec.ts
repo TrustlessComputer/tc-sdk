@@ -82,7 +82,7 @@ describe("TC client", async () => {
     // it("get uninscribed txs", async () => {
     //     console.log("tcClient.network ", tcClient.network);
     //     console.log("tcClient.url ", tcClient.url);
-    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+    //     const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
     //     const resp = await tcClient.getUnInscribedTransactionByAddress(tcAddress);
     //     console.log("Final resp: ", resp);
     // });
@@ -90,45 +90,122 @@ describe("TC client", async () => {
     // it("get uninscribed txs", async () => {
     //     console.log("tcClient.network ", tcClient.network);
     //     console.log("tcClient.url ", tcClient.url);
-    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+    //     const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
     //     const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
     //     console.log("Final resp: ", resp);
     // });
 
-    it("get tx by hash", async () => {
+    // it("get uninscribed txs", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+    //     const resp = await tcClient.getPendingInscribeTxs(tcAddress);
+    //     console.log("Final resp: ", resp);
+    // });
+
+    it("get uninscribed txs", async () => {
         console.log("tcClient.network ", tcClient.network);
         console.log("tcClient.url ", tcClient.url);
-        // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+        const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+        const txID = "0xc69d9a3890b174387e98d47be9894bd4f91735cb18c8be230fd77dd377b891a3";
+        const resp = await tcClient.getTCTxReceipt(txID);
+        console.log("Final resp: ", resp);
 
 
-        let tmpUTXOs: UTXO[] = [{
-            tx_hash: "abc",
-            tx_output_n: 1,
-            value: new BigNumber(1000),
-
-        },
-        {
-            tx_hash: "abc",
-            tx_output_n: 1,
-            value: new BigNumber(1000),
-
-        }];
-        tmpUTXOs = tmpUTXOs.filter((item, i, arr) => {
-            console.log(arr.indexOf(item));
-            return arr.indexOf(item) === i;
-        });
-
-        console.log("tmpUTXOs: ", tmpUTXOs);
-
-
-
-
-
-
-
-        // const resp = await tcClient.getTCTxByHash("0x32365f6a8bca72ab46ebb738e934edf7e53679e328cfc056697f4715235a34b3");
-        // console.log("Final resp: ", resp);
+        const respGetTxByHash = await tcClient.getTCTxByHash(txID);
+        console.log("respGetTxByHash: ", respGetTxByHash);
     });
+
+
+    // it("get uninscribed txs", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+    //     const btcAddress = "bc1pf6mj35utw8ts4su956yfpc3tujks3yk0fdhz76r6cz6vz4zmn3aqmftgfg";
+    //     const utxos: UTXO[] = [
+    //         {
+    //             tx_hash: "16ce2667b7297b8981d178c32692a5a230fb432aecbfba3ed29e0a17caf23690",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(1000),
+    //         },
+    //         {
+    //             tx_hash: "1e0e2b64290bf286a09c789e2c951c2c5a6b32e1e362095b44da63501826b863",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(1000),
+    //         },
+    //         {
+    //             tx_hash: "05d6fbe5dd3d724bad0a068a50a0d16138efa870911e984e43075fb88cdf5b5f",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(1000),
+    //         },
+    //         {
+    //             tx_hash: "7e53a650080cf5611d293e92616e0877517ae3aa5e50f7f9133db1677336e881",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(1000),
+    //         },
+    //         {
+    //             tx_hash: "cc1108930e056c9f4f604cd45ad945fd003574e3d6b14011d6b84bbc84bd5691",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(1000),
+    //         },
+    //         {
+    //             tx_hash: "628263db284c34a28c66cca49f8632614ba8898746ce38de44000bbdfcb1229d",
+    //             tx_output_n: 1,
+    //             value: new BigNumber(79243),
+    //         },
+    //         {
+    //             tx_hash: "6eb6d532e0ff26f769eb9cd29c46ab858b3eef5d35a83854a0bc37a6c2c9c6d3",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(1000),
+    //         },
+    //         {
+    //             tx_hash: "9e8a702e545af40bd20e214ba0bd74afc69d2fb57cef61f37b41cef957402a8f",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(4000),
+    //         },
+
+    //     ];
+    //     const resp = await aggregateUTXOs({ tcAddress, btcAddress, utxos, tcClient });
+    //     console.log("Final resp: ", resp);
+    // });
+
+
+
+
+    // it("get tx by hash", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
+
+
+    //     let tmpUTXOs: UTXO[] = [{
+    //         tx_hash: "abc",
+    //         tx_output_n: 1,
+    //         value: new BigNumber(1000),
+
+    //     },
+    //     {
+    //         tx_hash: "abc",
+    //         tx_output_n: 1,
+    //         value: new BigNumber(1000),
+
+    //     }];
+    //     tmpUTXOs = tmpUTXOs.filter((item, i, arr) => {
+    //         console.log(arr.indexOf(item));
+    //         return arr.indexOf(item) === i;
+    //     });
+
+    //     console.log("tmpUTXOs: ", tmpUTXOs);
+
+
+
+
+
+
+
+    //     // const resp = await tcClient.getTCTxByHash("0x32365f6a8bca72ab46ebb738e934edf7e53679e328cfc056697f4715235a34b3");
+    //     // console.log("Final resp: ", resp);
+    // });
 
 
 });

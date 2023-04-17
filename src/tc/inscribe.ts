@@ -587,6 +587,7 @@ const aggregateUTXOs = async ({
             }
         }
     }
+    console.log("newUTXOs: ", newUTXOs);
 
     const tmpUTXOs = [...utxos, ...newUTXOs];
 

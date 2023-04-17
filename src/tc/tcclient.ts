@@ -225,6 +225,25 @@ class TcClient {
             throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
         }
 
+        if (resp.blockHash !== "") {
+            const receipt = await this.getTCTxReceipt(tcTxID);
+            resp.status = receipt.status;
+        }
+
+        return resp;
+    };
+
+    // getTCTxReceipt get TC tx receipt
+    getTCTxReceipt = async (tcTxID: string) => {
+        const payload = [tcTxID];
+
+        const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionReceipt");
+        console.log("Resp eth_getTransactionByHash: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+
         return resp;
     };
 

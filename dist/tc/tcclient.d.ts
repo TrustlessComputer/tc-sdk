@@ -25,6 +25,7 @@ declare class TcClient {
         unInscribedTxDetails: TCTxDetail[];
     }>;
     getTCTxByHash: (tcTxID: string) => Promise<GetTxByHashResp>;
+    getTCTxReceipt: (tcTxID: string) => Promise<any>;
     getPendingInscribeTxs: (tcAddress: string) => Promise<any[]>;
 }
 export { TcClient, Mainnet, Testnet, Regtest, };
