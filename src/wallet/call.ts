@@ -9,9 +9,9 @@ export const signTransaction = async (payload: CallWalletPayload) => {
     new Validator("Method", payload.method).string().required();
     const _target: Target = payload.target || "_blank";
     if (window && URLSearchParams) {
-        let params = `hash=${payload.hash}?method=${payload.method}?dappURL=${payload.dappURL}`;
+        let params = `?hash=${payload.hash}&method=${payload.method}&dappURL=${payload.dappURL}`;
         if (payload.isRedirect) {
-            params += `?isRedirect=${payload.isRedirect}`;
+            params += `&isRedirect=${payload.isRedirect}`;
         }
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
