@@ -1,2 +1,2 @@
-declare const URL = "";
+declare const URL = "https://trustlesswallet.io";
 export { URL };

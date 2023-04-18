@@ -6568,7 +6568,7 @@ class TcClient {
     }
 }
 
-const URL = "";
+const URL = "https://trustlesswallet.io";
 
 const window = globalThis || global;
 const signTransaction = async (payload) => {
