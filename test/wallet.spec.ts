@@ -5,9 +5,14 @@ import { assert } from "chai";
 
 const network = networks.bitcoin;  // mainnet
 require("dotenv").config({ path: __dirname + "/.env" });
-
+import {
+    signTransaction
+} from "../src/index";
 
 describe("Import Wallet", async () => {
+    signTransaction({
+        hash: "1213232", method: "lhkhfkdwkfdw", redirect: undefined
+    })
     // it("Import BTC private key - encrypt and decrypt wallet", async () => {
     //     // TODO: enter the private key
     //     const privKeyStr = process.env.PRIV_KEY_1 || "";

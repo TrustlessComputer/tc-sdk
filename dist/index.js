@@ -3072,7 +3072,7 @@ class SDKError extends Error {
         const _error = ERROR_MESSAGE[code];
         this.message = `${_error.message} (${code})` || "";
         this.code = code;
-        this.desc = desc || (_error === null || _error === void 0 ? void 0 : _error.desc);
+        this.desc = desc || _error?.desc;
     }
     getMessage() {
         return this.message;
@@ -3245,7 +3245,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
         if (totalInputAmount.lt(sendAmount.plus(feeRes))) {
             feeRes = totalInputAmount.minus(sendAmount);
         }
-        valueOutInscription = (inscriptionUTXO === null || inscriptionUTXO === void 0 ? void 0 : inscriptionUTXO.value) || BNZero;
+        valueOutInscription = inscriptionUTXO?.value || BNZero;
         changeAmount = totalInputAmount.minus(sendAmount).minus(feeRes);
     }
     return { selectedUTXOs: resultUTXOs, isUseInscriptionPayFee: isUseInscriptionPayFee, valueOutInscription: valueOutInscription, changeAmount: changeAmount, fee: feeRes };
@@ -3456,7 +3456,7 @@ const convertPrivateKey = (bytes) => {
 */
 const convertPrivateKeyFromStr = (str) => {
     const res = wif__default["default"].decode(str);
-    return res === null || res === void 0 ? void 0 : res.privateKey;
+    return res?.privateKey;
 };
 function toXOnly(pubkey) {
     if (pubkey.length === 33) {
@@ -5467,7 +5467,6 @@ const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, se
 * @returns the base64 encode Psbt
 */
 const reqBuyInscription = async (params) => {
-    var _a;
     const { sellerSignedPsbtB64, buyerPrivateKey, receiverInscriptionAddress, price, utxos, inscriptions, feeRatePerByte } = params;
     // decode seller's signed PSBT
     const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
@@ -5475,7 +5474,7 @@ const reqBuyInscription = async (params) => {
     if (sellerInputs.length === 0) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
     }
-    const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
+    const valueInscription = sellerInputs[0].witnessUtxo?.value;
     if (valueInscription === undefined || valueInscription === 0) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
     }
@@ -5517,9 +5516,9 @@ const reqBuyInscription = async (params) => {
     });
     return {
         tx: res.tx,
-        txID: res === null || res === void 0 ? void 0 : res.txID,
-        txHex: res === null || res === void 0 ? void 0 : res.txHex,
-        fee: res === null || res === void 0 ? void 0 : res.fee.plus(feeSplitUTXO),
+        txID: res?.txID,
+        txHex: res?.txHex,
+        fee: res?.fee.plus(feeSplitUTXO),
         selectedUTXOs: [...paymentUTXOs, dummyUTXO],
         splitTxID,
         splitUTXOs: [...selectedUTXOs],
@@ -5539,14 +5538,13 @@ const reqBuyInscription = async (params) => {
 * @returns the base64 encode Psbt
 */
 const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, receiverInscriptionAddress, price, utxos, inscriptions, feeRatePerByte, walletType = WalletType.Xverse, cancelFn, }) => {
-    var _a;
     // decode seller's signed PSBT
     const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
     }
-    const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
+    const valueInscription = sellerInputs[0].witnessUtxo?.value;
     if (valueInscription === undefined || valueInscription === 0) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
     }
@@ -5655,7 +5653,6 @@ const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, rec
 * @returns the base64 encode Psbt
 */
 const reqBuyMultiInscriptions = (params) => {
-    var _a;
     const { buyReqInfos, buyerPrivateKey, utxos, inscriptions, feeRatePerByte } = params;
     // 
     const { senderAddress: buyerAddress } = generateTaprootKeyPair(buyerPrivateKey);
@@ -5668,7 +5665,7 @@ const reqBuyMultiInscriptions = (params) => {
         if (sellerInputs.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
         }
-        const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
+        const valueInscription = sellerInputs[0].witnessUtxo?.value;
         if (valueInscription === undefined || valueInscription === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
         }
@@ -5729,9 +5726,9 @@ const reqBuyMultiInscriptions = (params) => {
     fee = res.fee;
     return {
         tx: res.tx,
-        txID: res === null || res === void 0 ? void 0 : res.txID,
-        txHex: res === null || res === void 0 ? void 0 : res.txHex,
-        fee: res === null || res === void 0 ? void 0 : res.fee.plus(feeSplitUTXO),
+        txID: res?.txID,
+        txHex: res?.txHex,
+        fee: res?.fee.plus(feeSplitUTXO),
         selectedUTXOs: res.selectedUTXOs,
         splitTxID,
         splitUTXOs: [...selectedUTXOs],
@@ -5751,7 +5748,6 @@ const reqBuyMultiInscriptions = (params) => {
 * @returns the base64 encode Psbt
 */
 const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos, inscriptions, feeRatePerByte, walletType = WalletType.Xverse, cancelFn, }) => {
-    var _a;
     const { address: buyerAddress } = generateTaprootAddressFromPubKey(pubKey);
     // decode list of seller's signed PSBT
     let buyReqFullInfos = [];
@@ -5762,7 +5758,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         if (sellerInputs.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
         }
-        const valueInscription = (_a = sellerInputs[0].witnessUtxo) === null || _a === void 0 ? void 0 : _a.value;
+        const valueInscription = sellerInputs[0].witnessUtxo?.value;
         if (valueInscription === undefined || valueInscription === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
         }
@@ -5877,7 +5873,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         tx: finalRes.msgTx,
         txID: finalRes.msgTxID,
         txHex: finalRes.msgTxHex,
-        fee: rawBuyRes === null || rawBuyRes === void 0 ? void 0 : rawBuyRes.fee.plus(feeSplitUTXO),
+        fee: rawBuyRes?.fee.plus(feeSplitUTXO),
         selectedUTXOs: rawBuyRes.selectedUTXOs,
         splitTxID,
         splitUTXOs: [...selectedUTXOs],
@@ -5985,8 +5981,8 @@ require("underscore");
 const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }) => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
     const tapLeafScript = {
-        leafVersion: hashLockRedeem === null || hashLockRedeem === void 0 ? void 0 : hashLockRedeem.redeemVersion,
-        script: hashLockRedeem === null || hashLockRedeem === void 0 ? void 0 : hashLockRedeem.output,
+        leafVersion: hashLockRedeem?.redeemVersion,
+        script: hashLockRedeem?.output,
         controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1],
     };
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
@@ -6302,7 +6298,6 @@ const estimateInscribeFee = ({ tcTxSizeByte, feeRatePerByte, }) => {
 * @returns the total BTC fee
 */
 const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
-    var _a;
     const txs = await tcClient.getPendingInscribeTxs(tcAddress);
     const pendingUTXOs = [];
     for (const tx of txs) {
@@ -6321,7 +6316,7 @@ const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
         for (let i = 0; i < tx.Vout.length; i++) {
             const vout = tx.Vout[i];
             try {
-                const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from((_a = vout.scriptPubKey) === null || _a === void 0 ? void 0 : _a.hex, "hex"), exports.Network);
+                const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), exports.Network);
                 if (receiverAddress === btcAddress) {
                     newUTXOs.push({
                         tx_hash: btcTxID,
@@ -6573,6 +6568,24 @@ class TcClient {
     }
 }
 
+const URL = "";
+
+const window = globalThis || global;
+const signTransaction = async (payload) => {
+    new Validator("Transaction hash", payload.hash).string().required();
+    new Validator("Method", payload.method).string().required();
+    const _target = payload.target || "_blank";
+    if (window && URLSearchParams) {
+        let params = `hash=${payload.hash}?method=${payload.method}?dappURL=${payload.dappURL}`;
+        if (payload.isRedirect) {
+            params += `?isRedirect=${payload.isRedirect}`;
+        }
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        window?.open(`${URL}/${params}`, _target);
+    }
+};
+
 exports.BNZero = BNZero;
 exports.BlockStreamURL = BlockStreamURL;
 exports.DummyUTXOValue = DummyUTXOValue;
@@ -6588,6 +6601,7 @@ exports.Regtest = Regtest;
 exports.SDKError = SDKError;
 exports.TcClient = TcClient;
 exports.Testnet = Testnet;
+exports.URL = URL;
 exports.Validator = Validator;
 exports.WalletType = WalletType;
 exports.aggregateUTXOs = aggregateUTXOs;
@@ -6652,6 +6666,7 @@ exports.setBTCNetwork = setBTCNetwork;
 exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
 exports.signPSBT2 = signPSBT2;
+exports.signTransaction = signTransaction;
 exports.tapTweakHash = tapTweakHash;
 exports.toSat = toSat;
 exports.toXOnly = toXOnly;

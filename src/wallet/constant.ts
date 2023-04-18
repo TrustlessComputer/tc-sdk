@@ -1,0 +1,5 @@
+const URL = "";
+
+export {
+    URL
+};

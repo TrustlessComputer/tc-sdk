@@ -4,12 +4,14 @@
     "moduleResolution": "node",
     "removeComments": false,
     "sourceMap": true,
-    "target": "es2018",
+    "target": "es2020",
     "outDir": "build/compiled",
     "declaration": true,
     "strict": true,
     "noEmitOnError": true,
-    "lib": ["es2017"],
+    "lib": [
+      "es2020",
+    ],
     "esModuleInterop": true,
     "baseUrl": "./src",
     "paths": {
