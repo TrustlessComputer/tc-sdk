@@ -22,8 +22,6 @@ import { Network } from "../bitcoin/network";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 
-const _ = require("underscore");
-
 const remove0x = (data: string): string => {
     if (data.startsWith("0x")) data = data.slice(2);
     return data;
@@ -209,6 +207,8 @@ const createInscribeTx = async ({
     revealTxHex: string,
     revealTxID: string,
     totalFee: BigNumber,
+    selectedUTXOs: UTXO[],
+    newUTXOs: UTXO[],
 }> => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly(keyPair.publicKey);
@@ -243,6 +243,18 @@ const createInscribeTx = async ({
         feeRatePerByte,
     });
 
+
+    const newUTXOs: UTXO[] = [];
+    if (changeAmount.gt(BNZero)) {
+        newUTXOs.push({
+            tx_hash: commitTxID,
+            tx_output_n: 1,
+            value: changeAmount
+        });
+    }
+
+
+
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
 
@@ -259,6 +271,12 @@ const createInscribeTx = async ({
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
 
+    newUTXOs.push({
+        tx_hash: revealTxID,
+        tx_output_n: 0,
+        value: new BigNumber(MinSats),
+    });
+
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
 
@@ -268,7 +286,52 @@ const createInscribeTx = async ({
         revealTxHex,
         revealTxID,
         totalFee: new BigNumber(totalFee),
+        selectedUTXOs: selectedUTXOs,
+        newUTXOs: newUTXOs,
     };
+};
+
+const splitBatchInscribeTx = ({
+    tcTxDetails
+}: {
+    tcTxDetails: TCTxDetail[]
+}): string[][] => {
+    // sort tc tx by inscreasing nonce
+    tcTxDetails = tcTxDetails.sort(
+        (a: TCTxDetail, b: TCTxDetail): number => {
+            if (a.Nonce > b.Nonce) {
+                return 1;
+            }
+            if (a.Nonce < b.Nonce) {
+                return -1;
+            }
+            return 0;
+        }
+    );
+
+    console.log("tcTxDetails after sort: ", tcTxDetails);
+
+    // create inscribe tx 
+    if (tcTxDetails.length === 0) {
+        console.log("There is no transaction to inscribe");
+        return [];
+    }
+
+    const batchInscribeTxIDs: string[][] = [];
+    let inscribeableTxIDs: string[] = [tcTxDetails[0].Hash];
+    let prevNonce = tcTxDetails[0].Nonce;
+    for (let i = 1; i < tcTxDetails.length; i++) {
+        if (prevNonce + 1 === tcTxDetails[i].Nonce) {
+            inscribeableTxIDs.push(tcTxDetails[i].Hash);
+        } else {
+            batchInscribeTxIDs.push([...inscribeableTxIDs]);
+            inscribeableTxIDs = [tcTxDetails[i].Hash];
+        }
+        prevNonce = tcTxDetails[i].Nonce;
+    }
+    batchInscribeTxIDs.push([...inscribeableTxIDs]);
+    console.log("batchInscribeTxIDs: ", batchInscribeTxIDs);
+    return batchInscribeTxIDs;
 };
 
 /**
@@ -301,56 +364,55 @@ const createBatchInscribeTxs = async ({
     tcClient: TcClient,
 }): Promise<BatchInscribeTxResp[]> => {
 
-    // sort tc tx by inscreasing nonce
-    tcTxDetails = tcTxDetails.sort(
-        (a: TCTxDetail, b: TCTxDetail): number => {
-            if (a.Nonce > b.Nonce) {
-                return 1;
+    const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
+
+    const result: BatchInscribeTxResp[] = [];
+
+    const newUTXOs = [...utxos];
+
+    for (const batch of batchInscribeTxIDs) {
+
+        console.log("HHH New UTXOs for creating new tx: ", newUTXOs);
+
+
+        try {
+            const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
+                senderPrivateKey,
+                utxos: newUTXOs,
+                inscriptions,
+                tcTxIDs: batch,
+                feeRatePerByte,
+                tcClient,
+            });
+            result.push({
+                tcTxIDs: batch,
+                commitTxHex,
+                commitTxID,
+                revealTxHex,
+                revealTxID,
+                totalFee,
+            });
+            console.log("HHH Selected UTXOs: ", selectedUTXOs);
+            console.log("HHH newUTXOsTmp: ", newUTXOsTmp);
+
+            // remove selected UTXOs to create next txs
+            if (selectedUTXOs.length > 0) {
+                for (const selectedUtxo of selectedUTXOs) {
+                    const index = newUTXOs.findIndex((utxo) => utxo.tx_hash === selectedUtxo.tx_hash && utxo.tx_output_n === selectedUtxo.tx_output_n);
+                    newUTXOs.splice(index, 1);
+                }
             }
-            if (a.Nonce < b.Nonce) {
-                return -1;
+
+            // append change UTXOs to create next txs
+            if (newUTXOsTmp.length > 0) {
+                newUTXOs.push(...newUTXOsTmp);
             }
-            return 0;
-        }
-    );
-
-    console.log("tcTxDetails after sort: ", tcTxDetails);
-
-    // create inscribe tx 
-    if (tcTxDetails.length === 0) {
-        console.log("There is no transaction to inscribe");
-        return [];
-    }
-
-    const inscribeableTxIDs: string[] = [tcTxDetails[0].Hash];
-    let prevNonce = tcTxDetails[0].Nonce;
-    for (let i = 1; i < tcTxDetails.length; i++) {
-        if (prevNonce + 1 === tcTxDetails[i].Nonce) {
-            inscribeableTxIDs.push(tcTxDetails[i].Hash);
-            prevNonce = tcTxDetails[i].Nonce;
-        } else {
-            break;
+        } catch (e) {
+            console.log("Error when create inscribe batch txs: ", e);
+            return result;
         }
     }
-    console.log("inscribeableTxIDs: ", inscribeableTxIDs);
-
-    const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeTx({
-        senderPrivateKey,
-        utxos,
-        inscriptions,
-        tcTxIDs: inscribeableTxIDs,
-        feeRatePerByte,
-        tcClient,
-    });
-
-    return [{
-        tcTxIDs: inscribeableTxIDs,
-        commitTxHex,
-        commitTxID,
-        revealTxHex,
-        revealTxID,
-        totalFee,
-    }];
+    return result;
 
 };
 
@@ -630,5 +692,6 @@ export {
     estimateInscribeFee,
     createLockScript,
     createBatchInscribeTxs,
-    aggregateUTXOs
+    aggregateUTXOs,
+    splitBatchInscribeTx
 };

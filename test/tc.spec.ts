@@ -1,8 +1,7 @@
-import { ECPair, Mainnet, Network, NetworkType, TcClient, Testnet, aggregateUTXOs, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, setBTCNetwork } from "../src";
+import { Mainnet, TcClient, Testnet, aggregateUTXOs, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, splitBatchInscribeTx } from "../src/tc";
+import { Network, NetworkType, convertPrivateKeyFromStr, setBTCNetwork, } from "../src/bitcoin";
 
 import BigNumber from 'bignumber.js';
-import { ECPairInterface } from 'ecpair';
-import { Psbt } from "bitcoinjs-lib";
 import { assert } from 'chai';
 import { ethers } from "ethers";
 
@@ -160,29 +159,67 @@ describe("Sign msg Tx", async () => {
     // });
 
 
-    // it("create batch inscribe txs", async () => {
-    //     // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
-    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-    //     // const tcTxIDs = ["0x3fcf0decf4b8740a82da6d8e78ff59b6ddc1c6b85696b9abeffbe3f22dceab73"]; // need to be inscribed
+    it("create batch inscribe txs", async () => {
+        // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
+        const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
 
-    //     setBTCNetwork(NetworkType.Mainnet);
-    //     const tcClient = new TcClient(Mainnet);
+        setBTCNetwork(NetworkType.Mainnet);
+        const tcClient = new TcClient(Mainnet);
 
 
-    //     const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
-    //     console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
+        // const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+        // console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
 
-    //     const resp = await createBatchInscribeTxs({
-    //         senderPrivateKey: buyerPrivateKey,
-    //         tcTxDetails: tcTxDetails.unInscribedTxDetails,
-    //         utxos: buyerUTXOs,
-    //         inscriptions: {},
-    //         feeRatePerByte: 5,
-    //         tcClient: tcClient,
-    //     });
 
-    //     console.log("resp: ", resp);
-    // });
+        const UTXOs = [
+            {
+                tx_hash: "7b936229ad20dbcd2eed0fca2bf60838cf9be83ebc4994b9115093fa0072f8e1",
+                tx_output_n: 1,
+                value: new BigNumber(440655),
+            },
+            {
+                tx_hash: "60e83a8c8b5ba2e4317253ee617d8fe3a5c8e6f2d61ff95df484e9605eac6228",
+                tx_output_n: 0,
+                value: new BigNumber(1000),
+            },
+            {
+                tx_hash: "2e10cccd862ef25e39db9c3b33ed0fd68a3a2e6c315077137ab6af6ba5de0cef",
+                tx_output_n: 0,
+                value: new BigNumber(1000),
+            },
+        ]
+
+        const tcTxDetails: any[] = [{
+            Nonce: 19,
+            Hash: "0x264342a77e4f254b30a1ae4ae88e16dc061e7c3f7be5ecabee0c3a72eca634d4",
+        },
+        {
+            Nonce: 18,
+            Hash: "0xa8fe6e1c3cb6061633de0d1999794deb0deda85c4720171809c96652a6e12637",
+        },
+        {
+            Nonce: 8,
+            Hash: "0xf464e5545a8901b1dd796346cb7664d523cce456371e96709e7405302dc5f61a",
+        },
+        {
+            Nonce: 16,
+            Hash: "0x16a9994fe6db5e418e77c4ddf1a89401b62a2e153c73fa02f564c1ce777572e5",
+        }];
+
+
+
+        const resp = await createBatchInscribeTxs({
+            senderPrivateKey: buyerPrivateKey,
+            tcTxDetails: tcTxDetails,
+            utxos: UTXOs,
+            inscriptions: {},
+            feeRatePerByte: 5,
+            tcClient: tcClient,
+        });
+
+        console.log("resp: ", resp);
+    });
+
     it("aggregate utxos", async () => {
         // const { keyPair }
         const tcClient = new TcClient(Mainnet);
@@ -200,6 +237,76 @@ describe("Sign msg Tx", async () => {
         })
 
         console.log("result: ", result);
+    });
+
+
+    it("split batch inscribe tx ids - multiple batch", async () => {
+        const tcTxDetails: any[] = [{
+            Nonce: 1,
+            Hash: "a",
+        },
+        {
+            Nonce: 2,
+            Hash: "b",
+        },
+        {
+            Nonce: 4,
+            Hash: "c",
+        },
+        {
+            Nonce: 6,
+            Hash: "d",
+        },
+        {
+            Nonce: 7,
+            Hash: "e",
+        },];
+
+        const result = await splitBatchInscribeTx({
+            tcTxDetails,
+        })
+
+        console.log("result splitBatchInscribeTx: ", result);
+
+        assert.deepEqual(result, [['a', 'b'], ['c'], ['d', 'e']]);
+    });
+
+    it("split batch inscribe tx ids - one batch multiple txs", async () => {
+        const tcTxDetails: any[] = [{
+            Nonce: 1,
+            Hash: "a",
+        },
+        {
+            Nonce: 2,
+            Hash: "b",
+        },
+        {
+            Nonce: 3,
+            Hash: "c",
+        }];
+
+        const result = await splitBatchInscribeTx({
+            tcTxDetails,
+        })
+
+        console.log("result splitBatchInscribeTx: ", result);
+
+        assert.deepEqual(result, [['a', 'b', 'c']]);
+    });
+
+    it("split batch inscribe tx ids - one batch one tx", async () => {
+        const tcTxDetails: any[] = [{
+            Nonce: 1,
+            Hash: "a",
+        }];
+
+        const result = await splitBatchInscribeTx({
+            tcTxDetails,
+        })
+
+        console.log("result splitBatchInscribeTx: ", result);
+
+        assert.deepEqual(result, [['a']]);
     });
 
 

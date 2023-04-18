@@ -6,6 +6,7 @@ import { ECPairInterface } from 'ecpair';
 import { Psbt } from "bitcoinjs-lib";
 import { assert } from 'chai';
 import { ethers } from "ethers";
+import { time } from "console";
 
 require("dotenv").config({ path: __dirname + "/.env" });
 console.log(__dirname + "../test/.env");
@@ -57,6 +58,9 @@ let sellerUTXOs = [
     // }
 ];
 
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 describe("TC client", async () => {
     // it("get inscribeable info", async () => {
     //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
@@ -87,13 +91,18 @@ describe("TC client", async () => {
     //     console.log("Final resp: ", resp);
     // });
 
-    // it("get uninscribed txs", async () => {
-    //     console.log("tcClient.network ", tcClient.network);
-    //     console.log("tcClient.url ", tcClient.url);
-    //     const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
-    //     const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
-    //     console.log("Final resp: ", resp);
-    // });
+    it("get uninscribed txs", async () => {
+        console.log("tcClient.network ", tcClient.network);
+        console.log("tcClient.url ", tcClient.url);
+        const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+
+        for (let i = 0; i < 100; i++) {
+            const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+            console.log("HHH Length: ", resp.unInscribedTxDetails.length);
+            sleep(1000);
+        }
+
+    });
 
     // it("get uninscribed txs", async () => {
     //     console.log("tcClient.network ", tcClient.network);
@@ -103,18 +112,18 @@ describe("TC client", async () => {
     //     console.log("Final resp: ", resp);
     // });
 
-    it("get uninscribed txs", async () => {
-        console.log("tcClient.network ", tcClient.network);
-        console.log("tcClient.url ", tcClient.url);
-        const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
-        const txID = "0xc69d9a3890b174387e98d47be9894bd4f91735cb18c8be230fd77dd377b891a3";
-        const resp = await tcClient.getTCTxReceipt(txID);
-        console.log("Final resp: ", resp);
+    // it("get uninscribed txs", async () => {
+    //     console.log("tcClient.network ", tcClient.network);
+    //     console.log("tcClient.url ", tcClient.url);
+    //     const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+    //     const txID = "0xc69d9a3890b174387e98d47be9894bd4f91735cb18c8be230fd77dd377b891a3";
+    //     const resp = await tcClient.getTCTxReceipt(txID);
+    //     console.log("Final resp: ", resp);
 
 
-        const respGetTxByHash = await tcClient.getTCTxByHash(txID);
-        console.log("respGetTxByHash: ", respGetTxByHash);
-    });
+    //     const respGetTxByHash = await tcClient.getTCTxByHash(txID);
+    //     console.log("respGetTxByHash: ", respGetTxByHash);
+    // });
 
 
     // it("get uninscribed txs", async () => {

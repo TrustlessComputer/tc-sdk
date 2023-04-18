@@ -43,7 +43,12 @@ declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID
     revealTxHex: string;
     revealTxID: string;
     totalFee: BigNumber;
+    selectedUTXOs: UTXO[];
+    newUTXOs: UTXO[];
 }>;
+declare const splitBatchInscribeTx: ({ tcTxDetails }: {
+    tcTxDetails: TCTxDetail[];
+}) => string[][];
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
 * NOTE: Currently, the function only supports sending from Taproot address.
@@ -136,4 +141,4 @@ declare const aggregateUTXOs: ({ tcAddress, btcAddress, utxos, tcClient, }: {
     utxos: UTXO[];
     tcClient: TcClient;
 }) => Promise<UTXO[]>;
-export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript, createBatchInscribeTxs, aggregateUTXOs };
+export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript, createBatchInscribeTxs, aggregateUTXOs, splitBatchInscribeTx };

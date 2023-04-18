@@ -5981,7 +5981,6 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-require("underscore");
 const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }) => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
     const tapLeafScript = {
@@ -6097,6 +6096,14 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
     });
+    const newUTXOs = [];
+    if (changeAmount.gt(BNZero)) {
+        newUTXOs.push({
+            tx_hash: commitTxID,
+            tx_output_n: 1,
+            value: changeAmount
+        });
+    }
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
@@ -6110,6 +6117,11 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
     });
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
+    newUTXOs.push({
+        tx_hash: revealTxID,
+        tx_output_n: 0,
+        value: new BigNumber(MinSats),
+    });
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
     return {
@@ -6118,23 +6130,11 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         revealTxHex,
         revealTxID,
         totalFee: new BigNumber(totalFee),
+        selectedUTXOs: selectedUTXOs,
+        newUTXOs: newUTXOs,
     };
 };
-/**
-* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
-* NOTE: Currently, the function only supports sending from Taproot address.
-* @param senderPrivateKey buffer private key of the inscriber
-* @param utxos list of utxos (include non-inscription and inscription utxos)
-* @param inscriptions list of inscription infos of the sender
-* @param tcTxID TC txID need to be inscribed
-* @param feeRatePerByte fee rate per byte (in satoshi)
-* @returns the hex commit transaction
-* @returns the commit transaction id
-* @returns the hex reveal transaction
-* @returns the reveal transaction id
-* @returns the total network fee
-*/
-const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, }) => {
+const splitBatchInscribeTx = ({ tcTxDetails }) => {
     // sort tc tx by inscreasing nonce
     tcTxDetails = tcTxDetails.sort((a, b) => {
         if (a.Nonce > b.Nonce) {
@@ -6151,34 +6151,80 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
         console.log("There is no transaction to inscribe");
         return [];
     }
-    const inscribeableTxIDs = [tcTxDetails[0].Hash];
+    const batchInscribeTxIDs = [];
+    let inscribeableTxIDs = [tcTxDetails[0].Hash];
     let prevNonce = tcTxDetails[0].Nonce;
     for (let i = 1; i < tcTxDetails.length; i++) {
         if (prevNonce + 1 === tcTxDetails[i].Nonce) {
             inscribeableTxIDs.push(tcTxDetails[i].Hash);
-            prevNonce = tcTxDetails[i].Nonce;
         }
         else {
-            break;
+            batchInscribeTxIDs.push([...inscribeableTxIDs]);
+            inscribeableTxIDs = [tcTxDetails[i].Hash];
+        }
+        prevNonce = tcTxDetails[i].Nonce;
+    }
+    batchInscribeTxIDs.push([...inscribeableTxIDs]);
+    console.log("batchInscribeTxIDs: ", batchInscribeTxIDs);
+    return batchInscribeTxIDs;
+};
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, }) => {
+    const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
+    const result = [];
+    const newUTXOs = [...utxos];
+    for (const batch of batchInscribeTxIDs) {
+        console.log("HHH New UTXOs for creating new tx: ", newUTXOs);
+        try {
+            const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
+                senderPrivateKey,
+                utxos: newUTXOs,
+                inscriptions,
+                tcTxIDs: batch,
+                feeRatePerByte,
+                tcClient,
+            });
+            result.push({
+                tcTxIDs: batch,
+                commitTxHex,
+                commitTxID,
+                revealTxHex,
+                revealTxID,
+                totalFee,
+            });
+            console.log("HHH Selected UTXOs: ", selectedUTXOs);
+            console.log("HHH newUTXOsTmp: ", newUTXOsTmp);
+            // remove selected UTXOs to create next txs
+            if (selectedUTXOs.length > 0) {
+                for (const selectedUtxo of selectedUTXOs) {
+                    const index = newUTXOs.findIndex((utxo) => utxo.tx_hash === selectedUtxo.tx_hash && utxo.tx_output_n === selectedUtxo.tx_output_n);
+                    newUTXOs.splice(index, 1);
+                }
+            }
+            // append change UTXOs to create next txs
+            if (newUTXOsTmp.length > 0) {
+                newUTXOs.push(...newUTXOsTmp);
+            }
+        }
+        catch (e) {
+            console.log("Error when create inscribe batch txs: ", e);
+            return result;
         }
     }
-    console.log("inscribeableTxIDs: ", inscribeableTxIDs);
-    const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeTx({
-        senderPrivateKey,
-        utxos,
-        inscriptions,
-        tcTxIDs: inscribeableTxIDs,
-        feeRatePerByte,
-        tcClient,
-    });
-    return [{
-            tcTxIDs: inscribeableTxIDs,
-            commitTxHex,
-            commitTxID,
-            revealTxHex,
-            revealTxID,
-            totalFee,
-        }];
+    return result;
 };
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
@@ -6652,6 +6698,7 @@ exports.setBTCNetwork = setBTCNetwork;
 exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
 exports.signPSBT2 = signPSBT2;
+exports.splitBatchInscribeTx = splitBatchInscribeTx;
 exports.tapTweakHash = tapTweakHash;
 exports.toSat = toSat;
 exports.toXOnly = toXOnly;
