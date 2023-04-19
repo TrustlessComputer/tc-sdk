@@ -6187,7 +6187,7 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
     const result = [];
     const newUTXOs = [...utxos];
     for (const batch of batchInscribeTxIDs) {
-        console.log("HHH New UTXOs for creating new tx: ", newUTXOs);
+        console.log("[BatchInscribe] New UTXOs for creating new tx: ", newUTXOs);
         try {
             const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
                 senderPrivateKey,
@@ -6205,8 +6205,6 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
                 revealTxID,
                 totalFee,
             });
-            console.log("HHH Selected UTXOs: ", selectedUTXOs);
-            console.log("HHH newUTXOsTmp: ", newUTXOsTmp);
             // remove selected UTXOs to create next txs
             if (selectedUTXOs.length > 0) {
                 for (const selectedUtxo of selectedUTXOs) {
@@ -6221,6 +6219,9 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
         }
         catch (e) {
             console.log("Error when create inscribe batch txs: ", e);
+            if (result.length === 0) {
+                throw e;
+            }
             return result;
         }
     }

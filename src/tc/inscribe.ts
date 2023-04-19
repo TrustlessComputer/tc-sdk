@@ -253,8 +253,6 @@ const createInscribeTx = async ({
         });
     }
 
-
-
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
 
@@ -371,10 +369,7 @@ const createBatchInscribeTxs = async ({
     const newUTXOs = [...utxos];
 
     for (const batch of batchInscribeTxIDs) {
-
-        console.log("HHH New UTXOs for creating new tx: ", newUTXOs);
-
-
+        console.log("[BatchInscribe] New UTXOs for creating new tx: ", newUTXOs);
         try {
             const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
                 senderPrivateKey,
@@ -392,8 +387,6 @@ const createBatchInscribeTxs = async ({
                 revealTxID,
                 totalFee,
             });
-            console.log("HHH Selected UTXOs: ", selectedUTXOs);
-            console.log("HHH newUTXOsTmp: ", newUTXOsTmp);
 
             // remove selected UTXOs to create next txs
             if (selectedUTXOs.length > 0) {
@@ -409,6 +402,9 @@ const createBatchInscribeTxs = async ({
             }
         } catch (e) {
             console.log("Error when create inscribe batch txs: ", e);
+            if (result.length === 0) {
+                throw e;
+            }
             return result;
         }
     }
@@ -543,8 +539,8 @@ const createLockScript = async ({
 
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
-
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
+
     const hashLockRedeem = {
         output: hashLockScript,
         redeemVersion: 192,
