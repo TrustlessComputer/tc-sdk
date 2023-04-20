@@ -6667,12 +6667,12 @@ const requestAccountResponse = async (payload) => {
     new Validator("Missing tc address", payload.tcAddress).string().required();
     new Validator("Missing taproot address", payload.tpAddress).string().required();
     const _target = payload.target || "parent";
-    let redirectURL = payload.redirectURL;
-    const lastChar = redirectURL.substr(redirectURL.length - 1);
-    const divide = "/";
-    if (lastChar !== divide) {
-        redirectURL = redirectURL + divide;
-    }
+    const redirectURL = payload.redirectURL;
+    // const lastChar = redirectURL.substr(redirectURL.length - 1);
+    // const divide = "/";
+    // if (lastChar !== divide) {
+    //     redirectURL = redirectURL + divide;
+    // }
     if (window && URLSearchParams) {
         const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}`;
         openWindow({
