@@ -6615,21 +6615,71 @@ class TcClient {
     }
 }
 
+exports.RequestFunction = void 0;
+(function (RequestFunction) {
+    RequestFunction["sign"] = "sign";
+    RequestFunction["request"] = "request";
+})(exports.RequestFunction || (exports.RequestFunction = {}));
+exports.RequestMethod = void 0;
+(function (RequestMethod) {
+    RequestMethod["account"] = "account";
+})(exports.RequestMethod || (exports.RequestMethod = {}));
+
 const URL = "https://trustlesswallet.io";
 
 const window = globalThis || global;
-const signTransaction = async (payload) => {
+const openWindow = ({ url = URL, search, target }) => {
+    if (window) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        window?.open(`${url}/${search}`, target);
+    }
+};
+const signTransaction = (payload) => {
     new Validator("Transaction hash", payload.hash).string().required();
     new Validator("Method", payload.method).string().required();
     const _target = payload.target || "_blank";
     if (window && URLSearchParams) {
-        let params = `?hash=${payload.hash}&method=${payload.method}&dappURL=${payload.dappURL}`;
+        let search = `?function=${exports.RequestFunction.sign}&hash=${payload.hash}&method=${payload.method}&dappURL=${payload.dappURL}`;
         if (payload.isRedirect) {
-            params += `&isRedirect=${payload.isRedirect}`;
+            search += `&isRedirect=${payload.isRedirect}`;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        window?.open(`${URL}/${params}`, _target);
+        openWindow({
+            search,
+            target: _target
+        });
+    }
+};
+const actionRequest = async (payload) => {
+    new Validator("Missing method", payload.method).string().required();
+    new Validator("Missing redirect url", payload.redirectURL).string().required();
+    const _target = payload.target || "parent";
+    if (window && URLSearchParams) {
+        const search = `?function=${exports.RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
+        openWindow({
+            search,
+            target: _target
+        });
+    }
+};
+const requestAccountResponse = async (payload) => {
+    new Validator("Missing redirect url", payload.redirectURL).string().required();
+    new Validator("Missing tc address", payload.tcAddress).string().required();
+    new Validator("Missing taproot address", payload.tpAddress).string().required();
+    const _target = payload.target || "parent";
+    let redirectURL = payload.redirectURL;
+    const lastChar = redirectURL.substr(redirectURL.length - 1);
+    const divide = "/";
+    if (lastChar !== divide) {
+        redirectURL = redirectURL + divide;
+    }
+    if (window && URLSearchParams) {
+        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}`;
+        openWindow({
+            url: redirectURL,
+            search: search,
+            target: _target
+        });
     }
 };
 
@@ -6651,6 +6701,7 @@ exports.Testnet = Testnet;
 exports.URL = URL;
 exports.Validator = Validator;
 exports.WalletType = WalletType;
+exports.actionRequest = actionRequest;
 exports.aggregateUTXOs = aggregateUTXOs;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey;
@@ -6704,6 +6755,7 @@ exports.reqBuyMultiInscriptions = reqBuyMultiInscriptions;
 exports.reqBuyMultiInscriptionsFromAnyWallet = reqBuyMultiInscriptionsFromAnyWallet;
 exports.reqListForSaleInscFromAnyWallet = reqListForSaleInscFromAnyWallet;
 exports.reqListForSaleInscription = reqListForSaleInscription;
+exports.requestAccountResponse = requestAccountResponse;
 exports.selectCardinalUTXOs = selectCardinalUTXOs;
 exports.selectInscriptionUTXO = selectInscriptionUTXO;
 exports.selectTheSmallestUTXO = selectTheSmallestUTXO;
