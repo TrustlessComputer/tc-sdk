@@ -6553,7 +6553,7 @@ class TcClient {
             if (resp === "") {
                 throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
-            if (resp.blockHash !== "") {
+            if (resp.blockHash) {
                 const receipt = await this.getTCTxReceipt(tcTxID);
                 resp.status = receipt.status;
             }
