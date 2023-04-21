@@ -1,15 +1,14 @@
+import { BNZero, MinSats } from "./constants";
 import { Inscription, UTXO } from "./types";
-import { MinSats, BNZero } from "./constants";
 import SDKError, { ERROR_CODE } from "../constants/error";
-import BigNumber from "bignumber.js";
 import {
-    estimateTxFee,
     estimateNumInOutputs,
-    estimateNumInOutputsForBuyInscription
+    estimateNumInOutputsForBuyInscription,
+    estimateTxFee
 } from "./utils";
-import {
-    Psbt,
-} from "bitcoinjs-lib";
+
+import BigNumber from "bignumber.js";
+import { Psbt } from "bitcoinjs-lib";
 
 /**
 * selectUTXOs selects the most reasonable UTXOs to create the transaction. 
@@ -88,44 +87,71 @@ const selectUTXOs = (
     if (!isUseInscriptionPayFee) {
         totalSendAmount = totalSendAmount.plus(estFee);
     }
-
     let totalInputAmount = BNZero;
+
     if (totalSendAmount.gt(BNZero)) {
-        if (normalUTXOs.length === 0) {
-            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalSendAmount);
+        resultUTXOs.push(...selectedUTXOs);
+        totalInputAmount = amt;
+        console.log("selectedUTXOs: ", selectedUTXOs);
+        console.log("isUseInscriptionPayFee: ", isUseInscriptionPayFee);
+        console.log("totalInputAmount: ", totalInputAmount.toNumber());
+
+        if (!isUseInscriptionPayFee) {
+            // re-estimate fee with exact number of inputs and outputs
+            const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+            const feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, reNumOuts, feeRatePerByte));
+
+            console.log("feeRes: ", feeRes);
+
+            if (sendAmount.plus(feeRes).gt(totalInputAmount)) {
+                // need to select extra UTXOs
+                const { selectedUTXOs: extraUTXOs, totalInputAmount: extraAmt } = selectCardinalUTXOs(remainUTXOs, {}, sendAmount.plus(feeRes).minus(totalInputAmount));
+                resultUTXOs.push(...extraUTXOs);
+                console.log("extraUTXOs: ", extraUTXOs);
+
+                totalInputAmount = totalInputAmount.plus(extraAmt);
+            }
         }
 
-        if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
-            // select the smallest utxo
-            resultUTXOs.push(normalUTXOs[normalUTXOs.length - 1]);
-            totalInputAmount = normalUTXOs[normalUTXOs.length - 1].value;
-        } else if (normalUTXOs[0].value.lt(totalSendAmount)) {
-            // select multiple UTXOs
-            for (let i = 0; i < normalUTXOs.length; i++) {
-                const utxo = normalUTXOs[i];
-                resultUTXOs.push(utxo);
-                totalInputAmount = totalInputAmount.plus(utxo.value);
-                if (totalInputAmount.gte(totalSendAmount)) {
-                    break;
-                }
-            }
-            if (totalInputAmount.lt(totalSendAmount)) {
-                throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
-            }
-        } else {
-            // select the nearest UTXO
-            let selectedUTXO = normalUTXOs[0];
-            for (let i = 1; i < normalUTXOs.length; i++) {
-                if (normalUTXOs[i].value.lt(totalSendAmount)) {
-                    resultUTXOs.push(selectedUTXO);
-                    totalInputAmount = selectedUTXO.value;
-                    break;
-                }
 
-                selectedUTXO = normalUTXOs[i];
-            }
-        }
+        // if (normalUTXOs.length === 0) {
+        //     throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        // }
+
+        // if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
+        //     // select the smallest utxo
+        //     resultUTXOs.push(normalUTXOs[normalUTXOs.length - 1]);
+        //     totalInputAmount = normalUTXOs[normalUTXOs.length - 1].value;
+        // } else if (normalUTXOs[0].value.lt(totalSendAmount)) {
+        //     // select multiple UTXOs
+        //     for (let i = 0; i < normalUTXOs.length; i++) {
+        //         const utxo = normalUTXOs[i];
+        //         resultUTXOs.push(utxo);
+        //         totalInputAmount = totalInputAmount.plus(utxo.value);
+        //         if (totalInputAmount.gte(totalSendAmount)) {
+        //             break;
+        //         }
+        //     }
+        //     if (totalInputAmount.lt(totalSendAmount)) {
+        //         throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        //     }
+        // } else {
+        //     // select the nearest UTXO
+        //     let selectedUTXO = normalUTXOs[0];
+        //     for (let i = 1; i < normalUTXOs.length; i++) {
+        //         if (normalUTXOs[i].value.lt(totalSendAmount)) {
+        //             resultUTXOs.push(selectedUTXO);
+        //             totalInputAmount = selectedUTXO.value;
+        //             break;
+        //         }
+
+        //         selectedUTXO = normalUTXOs[i];
+        //     }
+        // }
     }
+
+
 
     // re-estimate fee with exact number of inputs and outputs
     const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
