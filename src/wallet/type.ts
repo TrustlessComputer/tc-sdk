@@ -1,4 +1,9 @@
-type Target = "_blank" | "parent"
+type Target = "_blank" | "_parent" | "_self" | "_top";
+
+enum RequestFunction {
+    sign= "sign",
+    request = "request"
+}
 
 interface CallWalletPayload {
     method: string;
@@ -8,7 +13,28 @@ interface CallWalletPayload {
     target?: Target
 }
 
+enum RequestMethod {
+    account = "account"
+}
+
+interface RequestPayload {
+    method: RequestMethod;
+    redirectURL: string;
+    target?: Target
+}
+
+interface RequestAccountResponse {
+    redirectURL: string;
+    target?: Target;
+    tcAddress: string;
+    tpAddress: string;
+}
+
 export {
+    RequestFunction,
     CallWalletPayload,
-    Target
+    Target,
+    RequestMethod,
+    RequestPayload,
+    RequestAccountResponse
 };
