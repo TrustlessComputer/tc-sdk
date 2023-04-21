@@ -6653,7 +6653,7 @@ const signTransaction = (payload) => {
 const actionRequest = async (payload) => {
     new Validator("Missing method", payload.method).string().required();
     new Validator("Missing redirect url", payload.redirectURL).string().required();
-    const _target = payload.target || "parent";
+    const _target = payload.target || "_parent";
     if (window && URLSearchParams) {
         const search = `?function=${exports.RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
         openWindow({
@@ -6666,7 +6666,7 @@ const requestAccountResponse = async (payload) => {
     new Validator("Missing redirect url", payload.redirectURL).string().required();
     new Validator("Missing tc address", payload.tcAddress).string().required();
     new Validator("Missing taproot address", payload.tpAddress).string().required();
-    const _target = payload.target || "parent";
+    const _target = payload.target || "_parent";
     const redirectURL = payload.redirectURL;
     // const lastChar = redirectURL.substr(redirectURL.length - 1);
     // const divide = "/";
@@ -6674,7 +6674,7 @@ const requestAccountResponse = async (payload) => {
     //     redirectURL = redirectURL + divide;
     // }
     if (window && URLSearchParams) {
-        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}`;
+        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}&target=${_target}`;
         openWindow({
             url: redirectURL,
             search: search,

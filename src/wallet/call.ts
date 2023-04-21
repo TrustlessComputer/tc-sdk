@@ -31,7 +31,7 @@ export const signTransaction = (payload: CallWalletPayload) => {
 export const actionRequest = async (payload: RequestPayload) => {
     new Validator("Missing method", payload.method).string().required();
     new Validator("Missing redirect url", payload.redirectURL).string().required();
-    const _target: Target = payload.target || "parent";
+    const _target: Target = payload.target || "_parent";
     if (window && URLSearchParams) {
         const search = `?function=${RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
         openWindow({
@@ -45,7 +45,7 @@ export const requestAccountResponse = async (payload: RequestAccountResponse) =>
     new Validator("Missing redirect url", payload.redirectURL).string().required();
     new Validator("Missing tc address", payload.tcAddress).string().required();
     new Validator("Missing taproot address", payload.tpAddress).string().required();
-    const _target: Target = payload.target || "parent";
+    const _target: Target = payload.target || "_parent";
 
     const redirectURL = payload.redirectURL;
     // const lastChar = redirectURL.substr(redirectURL.length - 1);
@@ -55,7 +55,7 @@ export const requestAccountResponse = async (payload: RequestAccountResponse) =>
     // }
 
     if (window && URLSearchParams) {
-        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}`;
+        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}&target=${_target}`;
         openWindow({
             url: redirectURL,
             search: search,

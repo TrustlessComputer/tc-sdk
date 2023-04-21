@@ -1150,7 +1150,7 @@ declare class TcClient {
 
 declare const increaseGasPrice: (wei: BigNumber) => BigNumber;
 
-type Target = "_blank" | "parent";
+type Target = "_blank" | "_parent" | "_self" | "_top";
 declare enum RequestFunction {
     sign = "sign",
     request = "request"
