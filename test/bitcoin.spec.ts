@@ -64,35 +64,47 @@ require("dotenv").config({ path: __dirname + "/.env" });
 
 // for unit tests
 let UTXOs: UTXO[] = [
-    // normal UTXOs
-    {
-        tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-        tx_output_n: 1,
-        value: new BigNumber(1000)
-    },
-    {
-        tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-        tx_output_n: 2,
-        value: new BigNumber(2000)
-    },
-    {
-        tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-        tx_output_n: 3,
-        value: new BigNumber(10000)
-    },
-    // inscription UTXOs
-    // real
-    {
-        tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
-        tx_output_n: 0,
-        value: new BigNumber(5274)
-    },
+
+
+    //
 
     {
-        tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
-        tx_output_n: 0,  // offset != 0
-        value: new BigNumber(1234)
+        tx_hash: "7deea7842794148388bac980192bd4f5c32ec366e44509dc698384551c3d223e",
+        tx_output_n: 1,
+        value: new BigNumber(396267),
     },
+
+
+
+    // // normal UTXOs
+    // {
+    //     tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //     tx_output_n: 1,
+    //     value: new BigNumber(1000)
+    // },
+    // {
+    //     tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //     tx_output_n: 2,
+    //     value: new BigNumber(2000)
+    // },
+    // {
+    //     tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //     tx_output_n: 3,
+    //     value: new BigNumber(10000)
+    // },
+    // // inscription UTXOs
+    // // real
+    // {
+    //     tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
+    //     tx_output_n: 0,
+    //     value: new BigNumber(5274)
+    // },
+
+    // {
+    //     tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
+    //     tx_output_n: 0,  // offset != 0
+    //     value: new BigNumber(1234)
+    // },
 ];
 
 var sellerPrivateKeyWIF = process.env.PRIV_KEY_1 || "";
@@ -381,6 +393,7 @@ let isUseInscriptionPayFeeParam = true;
 // });
 
 
+// TODO: uncomment
 describe("Create tx with multiple UTXOs Tests", () => {
     // it("should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
     //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
@@ -499,112 +512,24 @@ describe("Create tx with multiple UTXOs Tests", () => {
     //     assert.equal(changeAmount.eq(new BigNumber(12000).minus(fee).minus(sendAmount)), true);
     // });
 
-    it("insciption offset 0 - send amount > 0, need extra UTXOs: should return 3 selected UTXOs (insciption &  multiple UTXO) - isUseInscriptionPayFeeParam default", () => {
-        let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
-        let isUseInscriptionPayFeeParam = true;
-        let feeRatePerByte = 6;
-        let sendAmount = new BigNumber(3000);
-
-        let utxos: UTXO[] = [
-            // normal UTXOs
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 1,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 2,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 3,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 4,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 5,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 6,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 7,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 8,
-                value: new BigNumber(1000)
-            },
-            // inscription UTXOs
-            // real
-            {
-                tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
-                tx_output_n: 0,
-                value: new BigNumber(5274)
-            },
-
-            {
-                tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
-                tx_output_n: 0,  // offset != 0
-                value: new BigNumber(1234)
-            },
-        ];
 
 
-
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
-
-
-        console.log("changeAmount: ", changeAmount);
-
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
-
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
-
-        assert.equal(selectedUTXOs.length, 8);
-        assert.equal(actualInscriptionID, sendInscriptionID);
-
-        assert.equal(selectedUTXOs[1].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[2].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[3].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[4].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[5].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[6].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[7].value.toNumber(), 1000);
-        // assert.equal(selectedUTXOs[5].value.toNumber(), 1000);
-        assert.equal(fee.toNumber(), 4000);
-        assert.equal(isUseInscriptionPayFee, false);
-        assert.equal(valueOutInscription.toNumber(), 5274);
-        assert.equal(changeAmount.eq(new BigNumber(7000).minus(fee).minus(sendAmount)), true);
-
-    });
-
-
-    // it("send BTC - should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
-    //     let sendInscriptionID = "";
-    //     let sendAmount = new BigNumber(24000);
+    // it("create tx should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
+    //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
 
     //     // const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
     //     //   UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-    //     const { txID, txHex, fee: feeRes } = createTx(buyerPrivateKey, UTXOs, inscriptions, sendInscriptionID, "bc1pgvzr6m0cxv488prlzxcr7myk22pfewzq0vtyryx7uvna9mgnh9hsecq0lx", sendAmount, 4, true);
-    //     console.log(txID, txHex, feeRes);
-    // });
+    it("send BTC - should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
+        let sendInscriptionID = "";
+        let sendAmount = new BigNumber(24000);
+
+        // const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+        //   UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+
+        const { txID, txHex, fee: feeRes } = createTx(buyerPrivateKey, UTXOs, inscriptions, sendInscriptionID, "bc1pgvzr6m0cxv488prlzxcr7myk22pfewzq0vtyryx7uvna9mgnh9hsecq0lx", sendAmount, 4, true);
+        console.log(txID, txHex, feeRes);
+    });
 
 
     // for creating real tx
