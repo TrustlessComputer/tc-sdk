@@ -6,9 +6,11 @@ const window = globalThis || global;
 
 const openWindow = ({ url = URL, search, target }: { url?: string, search: string, target: Target }) => {
     if (window) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        window?.open(`${url}/${search}`, target);
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window?.open(`${url}/${search}`, target);
+        }, 500);
     }
 };
 
