@@ -2,6 +2,7 @@ import { ECPair, Network, toXOnly, tweakSigner } from "../bitcoin";
 import SDKError, { ERROR_CODE } from "../constants/error";
 
 import { payments } from "bitcoinjs-lib";
+import { utils } from "ethers";
 
 function isPrivateKey(privateKey: Buffer) {
     let isValid = false;
@@ -92,6 +93,13 @@ class Validator {
     privateKey(message = "Invalid private key") {
         return this._onCondition(
             () => this.buffer() && isPrivateKey(this.value),
+            message
+        );
+    }
+
+    mnemonic(message = "Invalid mnemonic") {
+        return this._onCondition(
+            () => utils.isValidMnemonic(this.value),
             message
         );
     }

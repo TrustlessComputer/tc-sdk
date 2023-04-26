@@ -14,5 +14,6 @@ declare class Validator {
     number(message?: string): this;
     array(message?: string): this;
     privateKey(message?: string): this;
+    mnemonic(message?: string): this;
 }
 export default Validator;

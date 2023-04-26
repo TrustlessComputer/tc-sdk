@@ -3,7 +3,7 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var ecc = require('@bitcoinerlab/secp256k1');
-var cryptoJs = require('crypto-js');
+var CryptoJS = require('crypto-js');
 var ecpair = require('ecpair');
 var bitcoinjsLib = require('bitcoinjs-lib');
 var ethers = require('ethers');
@@ -37,6 +37,7 @@ function _interopNamespace(e) {
 }
 
 var ecc__namespace = /*#__PURE__*/_interopNamespace(ecc);
+var CryptoJS__namespace = /*#__PURE__*/_interopNamespace(CryptoJS);
 var BIP32Factory__default = /*#__PURE__*/_interopDefaultLegacy(BIP32Factory);
 var Web3__default = /*#__PURE__*/_interopDefaultLegacy(Web3);
 var wif__default = /*#__PURE__*/_interopDefaultLegacy(wif);
@@ -2966,7 +2967,7 @@ const setBTCNetwork = (netType) => {
     }
 };
 
-const ERROR_CODE = {
+const ERROR_CODE$1 = {
     INVALID_CODE: "0",
     INVALID_PARAMS: "-1",
     NOT_SUPPORT_SEND: "-2",
@@ -2987,89 +2988,99 @@ const ERROR_CODE = {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
+    RESTORE_HD_WALLET: "-20",
+    DECRYPT: "-21"
 };
-const ERROR_MESSAGE = {
-    [ERROR_CODE.INVALID_CODE]: {
+const ERROR_MESSAGE$1 = {
+    [ERROR_CODE$1.INVALID_CODE]: {
         message: "Something went wrong.",
         desc: "Something went wrong.",
     },
-    [ERROR_CODE.INVALID_PARAMS]: {
+    [ERROR_CODE$1.INVALID_PARAMS]: {
         message: "Invalid input params.",
         desc: "Invalid input params.",
     },
-    [ERROR_CODE.NOT_SUPPORT_SEND]: {
+    [ERROR_CODE$1.NOT_SUPPORT_SEND]: {
         message: "This inscription is not supported to send.",
         desc: "This inscription is not supported to send.",
     },
-    [ERROR_CODE.NOT_FOUND_INSCRIPTION]: {
+    [ERROR_CODE$1.NOT_FOUND_INSCRIPTION]: {
         message: "Can not find inscription UTXO in your wallet.",
         desc: "Can not find inscription UTXO in your wallet.",
     },
-    [ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND]: {
+    [ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND]: {
         message: "Your balance is insufficient. Please top up BTC to your wallet.",
         desc: "Your balance is insufficient. Please top up BTC to your wallet.",
     },
-    [ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE]: {
+    [ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE]: {
         message: "Your balance is insufficient. Please top up BTC to pay network fee.",
         desc: "Your balance is insufficient. Please top up BTC to pay network fee.",
     },
-    [ERROR_CODE.ERR_BROADCAST_TX]: {
+    [ERROR_CODE$1.ERR_BROADCAST_TX]: {
         message: "There was an issue when broadcasting the transaction to the BTC network.",
         desc: "There was an issue when broadcasting the transaction to the BTC network.",
     },
-    [ERROR_CODE.INVALID_SIG]: {
+    [ERROR_CODE$1.INVALID_SIG]: {
         message: "Signature is invalid in the partially signed bitcoin transaction.",
         desc: "Signature is invalid in the partially signed bitcoin transaction.",
     },
-    [ERROR_CODE.INVALID_VALIDATOR_LABEL]: {
+    [ERROR_CODE$1.INVALID_VALIDATOR_LABEL]: {
         message: "Missing or invalid label.",
         desc: "Missing or invalid label.",
     },
-    [ERROR_CODE.NOT_FOUND_UTXO]: {
+    [ERROR_CODE$1.NOT_FOUND_UTXO]: {
         message: "Can not find UTXO with exact value.",
         desc: "Can not find UTXO with exact value.",
     },
-    [ERROR_CODE.NOT_FOUND_DUMMY_UTXO]: {
+    [ERROR_CODE$1.NOT_FOUND_DUMMY_UTXO]: {
         message: "Can not find dummy UTXO in your wallet.",
         desc: "Can not find dummy UTXO in your wallet.",
     },
-    [ERROR_CODE.SIGN_XVERSE_ERROR]: {
+    [ERROR_CODE$1.SIGN_XVERSE_ERROR]: {
         message: "Can not sign with Xverse.",
         desc: "Can not sign with Xverse.",
     },
-    [ERROR_CODE.WALLET_NOT_SUPPORT]: {
+    [ERROR_CODE$1.WALLET_NOT_SUPPORT]: {
         message: "Your wallet is not supported currently.",
         desc: "Your wallet is not supported currently.",
     },
-    [ERROR_CODE.CREATE_COMMIT_TX_ERR]: {
+    [ERROR_CODE$1.CREATE_COMMIT_TX_ERR]: {
         message: "Create commit tx error.",
         desc: "Create commit tx error.",
     },
-    [ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS]: {
+    [ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS]: {
         message: "Can not generate valid tap script address to inscribe.",
         desc: "Can not generate valid tap script address to inscribe.",
     },
-    [ERROR_CODE.INVALID_NETWORK_TYPE]: {
+    [ERROR_CODE$1.INVALID_NETWORK_TYPE]: {
         message: "Invalid network type params.",
         desc: "Invalid network type params.",
     },
-    [ERROR_CODE.RPC_ERROR]: {
+    [ERROR_CODE$1.RPC_ERROR]: {
         message: "Call RPC TC node error.",
         desc: "Call RPC TC node error.",
     },
-    [ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR]: {
+    [ERROR_CODE$1.RPC_GET_INSCRIBEABLE_INFO_ERROR]: {
         message: "Call RPC get inscribeable info error.",
         desc: "Call RPC get inscribeable info error.",
     },
-    [ERROR_CODE.RPC_SUBMIT_BTCTX_ERROR]: {
+    [ERROR_CODE$1.RPC_SUBMIT_BTCTX_ERROR]: {
         message: "Call RPC submit btc tx error.",
         desc: "Call RPC submit btc tx error.",
     },
+    [ERROR_CODE$1.RESTORE_HD_WALLET]: {
+        message: "Restore hd wallet error.",
+        desc: "Restore hd wallet error.",
+    },
+    [ERROR_CODE$1.DECRYPT]: {
+        message: "Decrypt error.",
+        desc: "Decrypt error.",
+    },
 };
-class SDKError extends Error {
+class SDKError$1 extends Error {
     constructor(code, desc) {
         super();
-        const _error = ERROR_MESSAGE[code];
+        const _error = ERROR_MESSAGE$1[code];
         this.message = `${_error.message} (${code})` || "";
         this.code = code;
         this.desc = desc || _error?.desc;
@@ -3179,7 +3190,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
     }
     if (sendInscriptionID !== "") {
         if (inscriptionUTXO === null || inscriptionInfo == null) {
-            throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
+            throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_INSCRIPTION);
         }
         // if value is not enough to pay fee, MUST use normal UTXOs to pay fee
         if (isUseInscriptionPayFee && maxAmountInsTransfer.lt(estFee)) {
@@ -3280,7 +3291,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
 */
 const selectInscriptionUTXO = (utxos, inscriptions, inscriptionID) => {
     if (inscriptionID === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "InscriptionID must not be an empty string");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "InscriptionID must not be an empty string");
     }
     // filter normal UTXO and inscription UTXO to send
     for (const utxo of utxos) {
@@ -3294,13 +3305,13 @@ const selectInscriptionUTXO = (utxos, inscriptions, inscriptionID) => {
             if (inscription !== undefined) {
                 // don't support send tx with outcoin that includes more than one inscription
                 if (inscriptionInfos.length > 1) {
-                    throw new SDKError(ERROR_CODE.NOT_SUPPORT_SEND);
+                    throw new SDKError$1(ERROR_CODE$1.NOT_SUPPORT_SEND);
                 }
                 return { inscriptionUTXO: utxo, inscriptionInfo: inscription };
             }
         }
     }
-    throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
+    throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_INSCRIPTION);
 };
 /**
 * selectCardinalUTXOs selects the most reasonable UTXOs to create the transaction.
@@ -3322,7 +3333,7 @@ const selectCardinalUTXOs = (utxos, inscriptions, sendAmount) => {
     const totalSendAmount = sendAmount;
     if (totalSendAmount.gt(BNZero)) {
         if (normalUTXOs.length === 0) {
-            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
         }
         if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
             // select the smallest utxo
@@ -3342,7 +3353,7 @@ const selectCardinalUTXOs = (utxos, inscriptions, sendAmount) => {
                 }
             }
             if (totalInputAmount.lt(totalSendAmount)) {
-                throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+                throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
             }
         }
         else {
@@ -3395,7 +3406,7 @@ const selectUTXOsToCreateBuyTx = (params) => {
 const selectTheSmallestUTXO = (utxos, inscriptions) => {
     const { cardinalUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
     if (cardinalUTXOs.length === 0) {
-        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
     }
     return cardinalUTXOs[cardinalUTXOs.length - 1];
 };
@@ -3450,11 +3461,11 @@ const findExactValueUTXO = (cardinalUTXOs, value) => {
             return { utxo };
         }
     }
-    throw new SDKError(ERROR_CODE.NOT_FOUND_UTXO, value.toString());
+    throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_UTXO, value.toString());
 };
 
 bitcoinjsLib.initEccLib(ecc__namespace);
-const ECPair = ecpair.ECPairFactory(ecc__namespace);
+const ECPair$1 = ecpair.ECPairFactory(ecc__namespace);
 const bip32 = BIP32Factory__default["default"](ecc__namespace);
 const ETHWalletDefaultPath = "m/44'/60'/0'/0/0";
 const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
@@ -3475,13 +3486,13 @@ const convertPrivateKeyFromStr = (str) => {
     const res = wif__default["default"].decode(str);
     return res?.privateKey;
 };
-function toXOnly(pubkey) {
+function toXOnly$1(pubkey) {
     if (pubkey.length === 33) {
         return pubkey.subarray(1, 33);
     }
     return pubkey;
 }
-function tweakSigner(signer, opts = {}) {
+function tweakSigner$1(signer, opts = {}) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     let privateKey = signer.privateKey;
@@ -3491,20 +3502,20 @@ function tweakSigner(signer, opts = {}) {
     if (signer.publicKey[0] === 3) {
         privateKey = ecc__namespace.privateNegate(privateKey);
     }
-    const tweakedPrivateKey = ecc__namespace.privateAdd(privateKey, tapTweakHash(toXOnly(signer.publicKey), opts.tweakHash));
+    const tweakedPrivateKey = ecc__namespace.privateAdd(privateKey, tapTweakHash$1(toXOnly$1(signer.publicKey), opts.tweakHash));
     if (!tweakedPrivateKey) {
         throw new Error("Invalid tweaked private key!");
     }
-    return ECPair.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
+    return ECPair$1.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
         network: opts.network,
     });
 }
-function tapTweakHash(pubKey, h) {
+function tapTweakHash$1(pubKey, h) {
     return bitcoinjsLib.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]));
 }
 const generateTaprootAddress = (privateKey) => {
-    const keyPair = ECPair.fromPrivateKey(privateKey, { network: exports.Network });
-    const internalPubkey = toXOnly(keyPair.publicKey);
+    const keyPair = ECPair$1.fromPrivateKey(privateKey, { network: exports.Network });
+    const internalPubkey = toXOnly$1(keyPair.publicKey);
     const { address } = bitcoinjsLib.payments.p2tr({
         internalPubkey,
         network: exports.Network,
@@ -3522,12 +3533,12 @@ const generateTaprootAddressFromPubKey = (pubKey) => {
 };
 const generateTaprootKeyPair = (privateKey) => {
     // init key pair from senderPrivateKey
-    const keyPair = ECPair.fromPrivateKey(privateKey, { network: exports.Network });
+    const keyPair = ECPair$1.fromPrivateKey(privateKey, { network: exports.Network });
     // Tweak the original keypair
-    const tweakedSigner = tweakSigner(keyPair, { network: exports.Network });
+    const tweakedSigner = tweakSigner$1(keyPair, { network: exports.Network });
     // Generate an address from the tweaked public key
     const p2pktr = bitcoinjsLib.payments.p2tr({
-        pubkey: toXOnly(tweakedSigner.publicKey),
+        pubkey: toXOnly$1(tweakedSigner.publicKey),
         network: exports.Network
     });
     const senderAddress = p2pktr.address ? p2pktr.address : "";
@@ -3538,7 +3549,7 @@ const generateTaprootKeyPair = (privateKey) => {
 };
 const generateP2PKHKeyPair = (privateKey) => {
     // init key pair from senderPrivateKey
-    const keyPair = ECPair.fromPrivateKey(privateKey, { network: exports.Network });
+    const keyPair = ECPair$1.fromPrivateKey(privateKey, { network: exports.Network });
     // Generate an address from the tweaked public key
     const p2pkh = bitcoinjsLib.payments.p2pkh({
         pubkey: keyPair.publicKey,
@@ -3645,7 +3656,7 @@ const derivePasswordWallet = async (evmAddress, provider) => {
 const encryptWallet = (wallet, password) => {
     // convert wallet to string
     const walletStr = JSON.stringify(wallet);
-    const ciphertext = cryptoJs.AES.encrypt(walletStr, password).toString();
+    const ciphertext = CryptoJS.AES.encrypt(walletStr, password).toString();
     return ciphertext;
 };
 /**
@@ -3655,9 +3666,9 @@ const encryptWallet = (wallet, password) => {
 * @returns the Wallet object
 */
 const decryptWallet = (ciphertext, password) => {
-    const plaintextBytes = cryptoJs.AES.decrypt(ciphertext, password);
+    const plaintextBytes = CryptoJS.AES.decrypt(ciphertext, password);
     // parse to wallet object
-    const wallet = JSON.parse(plaintextBytes.toString(cryptoJs.enc.Utf8));
+    const wallet = JSON.parse(plaintextBytes.toString(CryptoJS.enc.Utf8));
     return wallet;
 };
 
@@ -3715,14 +3726,14 @@ const handleSignPsbtWithXverse = async ({ base64Psbt, indicesToSign, address, si
             }
             else {
                 // sign unsuccessfully
-                throw new SDKError(ERROR_CODE.SIGN_XVERSE_ERROR, response);
+                throw new SDKError$1(ERROR_CODE$1.SIGN_XVERSE_ERROR, response);
             }
         },
         onCancel: cancelFn,
     };
     await satsConnect.signTransaction(signPsbtOptions);
     if (base64SignedPsbt === "") {
-        throw new SDKError(ERROR_CODE.SIGN_XVERSE_ERROR, "Response is empty");
+        throw new SDKError$1(ERROR_CODE$1.SIGN_XVERSE_ERROR, "Response is empty");
     }
     const finalizedPsbt = finalizeSignedPsbt({ signedRawPsbtB64: base64SignedPsbt, indicesToSign });
     let msgTx;
@@ -3763,7 +3774,7 @@ const handleSignPsbtWithSpecificWallet = async ({ base64Psbt, indicesToSign, add
             });
         }
         default: {
-            throw new SDKError(ERROR_CODE.WALLET_NOT_SUPPORT);
+            throw new SDKError$1(ERROR_CODE$1.WALLET_NOT_SUPPORT);
         }
     }
 };
@@ -3985,7 +3996,7 @@ const createTx = (senderPrivateKey, utxos, inscriptions, sendInscriptionID = "",
     // init key pair and tweakedSigner from senderPrivateKey
     const { keyPair } = generateTaprootKeyPair(senderPrivateKey);
     const { base64Psbt, fee, changeAmount, selectedUTXOs, indicesToSign } = createRawTx({
-        pubKey: toXOnly(keyPair.publicKey),
+        pubKey: toXOnly$1(keyPair.publicKey),
         utxos,
         inscriptions,
         sendInscriptionID,
@@ -4021,7 +4032,7 @@ const createRawTx = ({ pubKey, utxos, inscriptions, sendInscriptionID = "", rece
  }) => {
     // validation
     if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
     }
     // select UTXOs
     const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
@@ -4138,7 +4149,7 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
         if (info.amount.gt(BNZero) && info.amount.lt(MinSats)) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
         }
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
@@ -4154,7 +4165,7 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
             hash: input.tx_hash,
             index: input.tx_output_n,
             witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly(keyPair.publicKey),
+            tapInternalKey: toXOnly$1(keyPair.publicKey),
         });
     }
     // add outputs send BTC
@@ -4207,7 +4218,7 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
         if (info.amount.gt(BNZero) && info.amount.lt(MinSats)) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
         }
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
@@ -4272,17 +4283,17 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
 const createTxWithSpecificUTXOs = (senderPrivateKey, utxos, sendInscriptionID = "", receiverInsAddress, sendAmount, valueOutInscription, changeAmount, fee) => {
     const selectedUTXOs = utxos;
     // init key pair from senderPrivateKey
-    const keypair = ECPair.fromPrivateKey(senderPrivateKey, { network: exports.Network });
+    const keypair = ECPair$1.fromPrivateKey(senderPrivateKey, { network: exports.Network });
     // Tweak the original keypair
-    const tweakedSigner = tweakSigner(keypair, { network: exports.Network });
+    const tweakedSigner = tweakSigner$1(keypair, { network: exports.Network });
     // Generate an address from the tweaked public key
     const p2pktr = bitcoinjsLib.payments.p2tr({
-        pubkey: toXOnly(tweakedSigner.publicKey),
+        pubkey: toXOnly$1(tweakedSigner.publicKey),
         network: exports.Network,
     });
     const senderAddress = p2pktr.address ? p2pktr.address : "";
     if (senderAddress === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Can not get the sender address from the private key");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Can not get the sender address from the private key");
     }
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
     // add inputs
@@ -4291,7 +4302,7 @@ const createTxWithSpecificUTXOs = (senderPrivateKey, utxos, sendInscriptionID = 
             hash: input.tx_hash,
             index: input.tx_output_n,
             witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly(keypair.publicKey),
+            tapInternalKey: toXOnly$1(keypair.publicKey),
         });
     }
     // add outputs
@@ -4345,7 +4356,7 @@ const createTxWithSpecificUTXOs = (senderPrivateKey, utxos, sendInscriptionID = 
 const createTxSplitFundFromOrdinalUTXO = (senderPrivateKey, inscriptionUTXO, inscriptionInfo, sendAmount, feeRatePerByte) => {
     const { keyPair } = generateTaprootKeyPair(senderPrivateKey);
     const { resRawTx, newValueInscription } = createRawTxSplitFundFromOrdinalUTXO({
-        pubKey: toXOnly(keyPair.publicKey),
+        pubKey: toXOnly$1(keyPair.publicKey),
         inscriptionUTXO, inscriptionInfo,
         sendAmount,
         feeRatePerByte,
@@ -4377,14 +4388,14 @@ const createTxSplitFundFromOrdinalUTXO = (senderPrivateKey, inscriptionUTXO, ins
 const createRawTxSplitFundFromOrdinalUTXO = ({ pubKey, inscriptionUTXO, inscriptionInfo, sendAmount, feeRatePerByte, }) => {
     // validation
     if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
     }
     const { address: senderAddress, p2pktr } = generateTaprootAddressFromPubKey(pubKey);
     const maxAmountInsSpend = inscriptionUTXO.value.minus(inscriptionInfo.offset).minus(1).minus(MinSats);
     const fee = new BigNumber(estimateTxFee(1, 2, feeRatePerByte));
     const totalAmountSpend = sendAmount.plus(fee);
     if (totalAmountSpend.gt(maxAmountInsSpend)) {
-        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE);
+        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE);
     }
     const newValueInscription = inscriptionUTXO.value.minus(totalAmountSpend);
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
@@ -4420,7 +4431,7 @@ const selectDummyUTXO = (utxos, inscriptions) => {
     if (smallestUTXO.value.lte(DummyUTXOValue)) {
         return smallestUTXO;
     }
-    throw new SDKError(ERROR_CODE.NOT_FOUND_DUMMY_UTXO);
+    throw new SDKError$1(ERROR_CODE$1.NOT_FOUND_DUMMY_UTXO);
 };
 const createDummyUTXOFromCardinal = (senderPrivateKey, utxos, inscriptions, feeRatePerByte) => {
     // create dummy UTXO from cardinal UTXOs
@@ -4535,7 +4546,7 @@ const prepareUTXOsToBuyMultiInscriptions = ({ privateKey, address, utxos, inscri
             const info = needPaymentUTXOs[i];
             const buyInfoIndex = info.buyInfoIndex;
             if (buyReqFullInfos[buyInfoIndex].paymentUTXO != null) {
-                throw new SDKError(ERROR_CODE.INVALID_CODE);
+                throw new SDKError$1(ERROR_CODE$1.INVALID_CODE);
             }
             const newUTXO = {
                 tx_hash: splitTxID,
@@ -4618,7 +4629,7 @@ const broadcastTx = async (txHex) => {
     const response = await blockstream.post("/tx", txHex);
     const { status, data } = response;
     if (status !== 200) {
-        throw new SDKError(ERROR_CODE.ERR_BROADCAST_TX, data);
+        throw new SDKError$1(ERROR_CODE$1.ERR_BROADCAST_TX, data);
     }
     return response.data;
 };
@@ -4643,7 +4654,7 @@ const createPSBTToSell = (params) => {
         hash: ordinalInput.tx_hash,
         index: ordinalInput.tx_output_n,
         witnessUtxo: { value: ordinalInput.value.toNumber(), script: p2pktr.output },
-        tapInternalKey: toXOnly(keyPair.publicKey),
+        tapInternalKey: toXOnly$1(keyPair.publicKey),
         sighashType: bitcoinjsLib.Transaction.SIGHASH_SINGLE | bitcoinjsLib.Transaction.SIGHASH_ANYONECANPAY,
     });
     if (dummyUTXO !== undefined && dummyUTXO !== null && dummyUTXO.value.gt(BNZero)) {
@@ -4665,7 +4676,7 @@ const createPSBTToSell = (params) => {
             hash: dummyUTXO.tx_hash,
             index: dummyUTXO.tx_output_n,
             witnessUtxo: { value: dummyUTXO.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly(keyPair.publicKey),
+            tapInternalKey: toXOnly$1(keyPair.publicKey),
             sighashType: bitcoinjsLib.Transaction.SIGHASH_SINGLE | bitcoinjsLib.Transaction.SIGHASH_ANYONECANPAY,
         });
         psbt.addOutput({
@@ -4684,7 +4695,7 @@ const createPSBTToSell = (params) => {
             isValid = false;
         }
         if (!isValid) {
-            throw new SDKError(ERROR_CODE.INVALID_SIG);
+            throw new SDKError$1(ERROR_CODE$1.INVALID_SIG);
         }
     }
     psbt.finalizeAllInputs();
@@ -4769,7 +4780,7 @@ const createPSBTToBuy = (params) => {
         hash: dummyUtxo.tx_hash,
         index: dummyUtxo.tx_output_n,
         witnessUtxo: { value: dummyUtxo.value.toNumber(), script: p2pktr.output },
-        tapInternalKey: toXOnly(keyPair.publicKey),
+        tapInternalKey: toXOnly$1(keyPair.publicKey),
     });
     // Add inscription output
     // the frist output coin has value equal to the sum of dummy value and value inscription
@@ -4779,7 +4790,7 @@ const createPSBTToBuy = (params) => {
         value: dummyUtxo.value.plus(valueInscription).toNumber(),
     });
     if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
     }
     for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
         // Add seller signed input
@@ -4798,7 +4809,7 @@ const createPSBTToBuy = (params) => {
             hash: utxo.tx_hash,
             index: utxo.tx_output_n,
             witnessUtxo: { value: utxo.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly(keyPair.publicKey),
+            tapInternalKey: toXOnly$1(keyPair.publicKey),
         });
         totalValue = totalValue.plus(utxo.value);
     }
@@ -4806,7 +4817,7 @@ const createPSBTToBuy = (params) => {
     if (fee.plus(price).gt(totalValue)) {
         fee = totalValue.minus(price); // maximum fee can paid
         if (fee.lt(BNZero)) {
-            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE);
+            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE);
         }
     }
     let changeValue = totalValue.minus(price).minus(fee);
@@ -4824,7 +4835,7 @@ const createPSBTToBuy = (params) => {
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -4895,7 +4906,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
         value: dummyUtxo.value.plus(valueInscription).toNumber(),
     });
     if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
     }
     for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
         // Add seller signed input
@@ -4922,7 +4933,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
     if (fee.plus(price).gt(totalValue)) {
         fee = totalValue.minus(price); // maximum fee can paid
         if (fee.lt(BNZero)) {
-            throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE);
+            throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_PAY_FEE);
         }
     }
     let changeValue = totalValue.minus(price).minus(fee);
@@ -4940,7 +4951,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -4978,7 +4989,7 @@ const createRawPSBTToBuy = ({ sellerSignedPsbt, internalPubKey, receiverInscript
 const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, feeUTXOs, fee, dummyUTXO, feeRatePerByte, }) => {
     // validation
     if (buyReqFullInfos.length === 0) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "buyReqFullInfos is empty");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "buyReqFullInfos is empty");
     }
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
     const indexInputNeedToSign = [];
@@ -4989,7 +5000,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
         hash: dummyUTXO.tx_hash,
         index: dummyUTXO.tx_output_n,
         witnessUtxo: { value: dummyUTXO.value.toNumber(), script: p2pktr.output },
-        tapInternalKey: toXOnly(keyPair.publicKey),
+        tapInternalKey: toXOnly$1(keyPair.publicKey),
     });
     indexInputNeedToSign.push(0);
     selectedUTXOs.push(dummyUTXO);
@@ -5006,7 +5017,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
         const sellerSignedPsbt = info.sellerSignedPsbt;
         const paymentUTXO = info.paymentUTXO;
         if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
         }
         for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
             // Add seller signed input
@@ -5024,7 +5035,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
             hash: paymentUTXO.tx_hash,
             index: paymentUTXO.tx_output_n,
             witnessUtxo: { value: paymentUTXO.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly(keyPair.publicKey),
+            tapInternalKey: toXOnly$1(keyPair.publicKey),
         });
         indexInputNeedToSign.push(psbt.txInputs.length - 1);
         selectedUTXOs.push(paymentUTXO);
@@ -5044,7 +5055,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
             hash: utxo.tx_hash,
             index: utxo.tx_output_n,
             witnessUtxo: { value: utxo.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly(keyPair.publicKey),
+            tapInternalKey: toXOnly$1(keyPair.publicKey),
         });
         indexInputNeedToSign.push(psbt.txInputs.length - 1);
         totalAmountFeeUTXOs = totalAmountFeeUTXOs.plus(utxo.value);
@@ -5069,7 +5080,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -5126,7 +5137,7 @@ const createPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, buyerPrivateKey, fe
 const createRawPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, internalPubKey, feeUTXOs, fee, dummyUTXO, feeRatePerByte, }) => {
     // validation
     if (buyReqFullInfos.length === 0) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "buyReqFullInfos is empty");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "buyReqFullInfos is empty");
     }
     const psbt = new bitcoinjsLib.Psbt({ network: exports.Network });
     const indexInputNeedToSign = [];
@@ -5154,7 +5165,7 @@ const createRawPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, internalPubKey, 
         const sellerSignedPsbt = info.sellerSignedPsbt;
         const paymentUTXO = info.paymentUTXO;
         if (sellerSignedPsbt.txInputs.length !== sellerSignedPsbt.txOutputs.length) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Length of inputs and outputs in seller psbt must not be different.");
         }
         for (let i = 0; i < sellerSignedPsbt.txInputs.length; i++) {
             // Add seller signed input
@@ -5217,7 +5228,7 @@ const createRawPSBTToBuyMultiInscriptions = ({ buyReqFullInfos, internalPubKey, 
         }
     }
     if (changeValue.lt(BNZero)) {
-        throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
+        throw new SDKError$1(ERROR_CODE$1.NOT_ENOUGH_BTC_TO_SEND);
     }
     // Change utxo
     if (changeValue.gt(BNZero)) {
@@ -5254,16 +5265,16 @@ const reqListForSaleInscription = async (params) => {
     let { amountPayToSeller, feePayToCreator, creatorAddress, } = params;
     // validation
     if (feePayToCreator.gt(BNZero) && creatorAddress === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Creator address must not be empty.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Creator address must not be empty.");
     }
     if (sellInscriptionID === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "SellInscriptionID must not be empty.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "SellInscriptionID must not be empty.");
     }
     if (receiverBTCAddress === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
     }
     if (amountPayToSeller.eq(BNZero)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
     }
     let needDummyUTXO = false;
     if (feePayToCreator.gt(BNZero)) {
@@ -5279,10 +5290,10 @@ const reqListForSaleInscription = async (params) => {
         }
     }
     if (amountPayToSeller.lt(MinSats)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
     }
     if (feePayToCreator.gt(BNZero) && feePayToCreator.lt(MinSats)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
     }
     // select inscription UTXO
     const { inscriptionUTXO, inscriptionInfo } = selectInscriptionUTXO(utxos, inscriptions, sellInscriptionID);
@@ -5354,16 +5365,16 @@ const reqListForSaleInscription = async (params) => {
 const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, sellInscriptionID, receiverBTCAddress, amountPayToSeller, feePayToCreator, creatorAddress, feeRatePerByte, walletType = WalletType.Xverse, cancelFn, }) => {
     // validation
     if (feePayToCreator.gt(BNZero) && creatorAddress === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Creator address must not be empty.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Creator address must not be empty.");
     }
     if (sellInscriptionID === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "SellInscriptionID must not be empty.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "SellInscriptionID must not be empty.");
     }
     if (receiverBTCAddress === "") {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "receiverBTCAddress must not be empty.");
     }
     if (amountPayToSeller.eq(BNZero)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must be greater than zero.");
     }
     let needDummyUTXO = false;
     if (feePayToCreator.gt(BNZero)) {
@@ -5379,10 +5390,10 @@ const reqListForSaleInscFromAnyWallet = async ({ pubKey, utxos, inscriptions, se
         }
     }
     if (amountPayToSeller.lt(MinSats)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "amountPayToSeller must not be less than " + fromSat(MinSats) + " BTC.");
     }
     if (feePayToCreator.gt(BNZero) && feePayToCreator.lt(MinSats)) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "feePayToCreator must not be less than " + fromSat(MinSats) + " BTC.");
     }
     const { address } = generateTaprootAddressFromPubKey(pubKey);
     // select inscription UTXO
@@ -5489,11 +5500,11 @@ const reqBuyInscription = async (params) => {
     const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
     }
     const valueInscription = sellerInputs[0].witnessUtxo?.value;
     if (valueInscription === undefined || valueInscription === 0) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
     }
     const newUTXOs = utxos;
     // select or create dummy UTXO
@@ -5559,11 +5570,11 @@ const reqBuyInscriptionFromAnyWallet = async ({ sellerSignedPsbtB64, pubKey, rec
     const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
     }
     const valueInscription = sellerInputs[0].witnessUtxo?.value;
     if (valueInscription === undefined || valueInscription === 0) {
-        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
     }
     const newUTXOs = utxos;
     let splitTxID = "";
@@ -5680,11 +5691,11 @@ const reqBuyMultiInscriptions = (params) => {
         const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
         const sellerInputs = sellerSignedPsbt.data.inputs;
         if (sellerInputs.length === 0) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
         }
         const valueInscription = sellerInputs[0].witnessUtxo?.value;
         if (valueInscription === undefined || valueInscription === 0) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
         }
         buyReqFullInfos.push({
             ...buyReqInfos[i],
@@ -5773,11 +5784,11 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         const sellerSignedPsbt = bitcoinjsLib.Psbt.fromBase64(sellerSignedPsbtB64, { network: exports.Network });
         const sellerInputs = sellerSignedPsbt.data.inputs;
         if (sellerInputs.length === 0) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid seller's PSBT.");
         }
         const valueInscription = sellerInputs[0].witnessUtxo?.value;
         if (valueInscription === undefined || valueInscription === 0) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "Invalid value inscription in seller's PSBT.");
         }
         buyReqFullInfos.push({
             ...buyReqInfos[i],
@@ -5809,7 +5820,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
         const info = needPaymentUTXOs[i];
         const buyInfoIndex = info.buyInfoIndex;
         if (buyReqFullInfos[buyInfoIndex].paymentUTXO != null) {
-            throw new SDKError(ERROR_CODE.INVALID_CODE);
+            throw new SDKError$1(ERROR_CODE$1.INVALID_CODE);
         }
         const newUTXO = {
             tx_hash: splitTxID,
@@ -5898,16 +5909,16 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
     };
 };
 
-function isPrivateKey(privateKey) {
+function isPrivateKey$1(privateKey) {
     let isValid = false;
     try {
         // init key pair from senderPrivateKey
-        const keyPair = ECPair.fromPrivateKey(privateKey);
+        const keyPair = ECPair$1.fromPrivateKey(privateKey);
         // Tweak the original keypair
-        const tweakedSigner = tweakSigner(keyPair, { network: exports.Network });
+        const tweakedSigner = tweakSigner$1(keyPair, { network: exports.Network });
         // Generate an address from the tweaked public key
         const p2pktr = bitcoinjsLib.payments.p2tr({
-            pubkey: toXOnly(tweakedSigner.publicKey),
+            pubkey: toXOnly$1(tweakedSigner.publicKey),
             network: exports.Network
         });
         const senderAddress = p2pktr.address ? p2pktr.address : "";
@@ -5918,10 +5929,10 @@ function isPrivateKey(privateKey) {
     }
     return isValid;
 }
-class Validator {
+class Validator$1 {
     constructor(label, value) {
         if (!label && typeof label !== "string") {
-            throw new SDKError(ERROR_CODE.INVALID_VALIDATOR_LABEL);
+            throw new SDKError$1(ERROR_CODE$1.INVALID_VALIDATOR_LABEL);
         }
         this.value = value;
         this.label = label;
@@ -5963,9 +5974,163 @@ class Validator {
         return this._onCondition(() => this.value instanceof Array, message);
     }
     privateKey(message = "Invalid private key") {
-        return this._onCondition(() => this.buffer() && isPrivateKey(this.value), message);
+        return this._onCondition(() => this.buffer() && isPrivateKey$1(this.value), message);
+    }
+    mnemonic(message = "Invalid mnemonic") {
+        return this._onCondition(() => ethers.utils.isValidMnemonic(this.value), message);
     }
 }
+
+const ERROR_CODE = {
+    INVALID_CODE: "0",
+    INVALID_PARAMS: "-1",
+    NOT_SUPPORT_SEND: "-2",
+    NOT_FOUND_INSCRIPTION: "-3",
+    NOT_ENOUGH_BTC_TO_SEND: "-4",
+    NOT_ENOUGH_BTC_TO_PAY_FEE: "-5",
+    ERR_BROADCAST_TX: "-6",
+    INVALID_SIG: "-7",
+    INVALID_VALIDATOR_LABEL: "-8",
+    NOT_FOUND_UTXO: "-9",
+    NOT_FOUND_DUMMY_UTXO: "-10",
+    WALLET_NOT_SUPPORT: "-11",
+    SIGN_XVERSE_ERROR: "-12",
+    CREATE_COMMIT_TX_ERR: "-13",
+    INVALID_TAPSCRIPT_ADDRESS: "-14",
+    INVALID_NETWORK_TYPE: "-15",
+    RPC_ERROR: "-16",
+    RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
+    RPC_SUBMIT_BTCTX_ERROR: "-18",
+    RPC_GET_TAPSCRIPT_INFO: "-19",
+    RESTORE_HD_WALLET: "-20",
+    DECRYPT: "-21"
+};
+const ERROR_MESSAGE = {
+    [ERROR_CODE.INVALID_CODE]: {
+        message: "Something went wrong.",
+        desc: "Something went wrong.",
+    },
+    [ERROR_CODE.INVALID_PARAMS]: {
+        message: "Invalid input params.",
+        desc: "Invalid input params.",
+    },
+    [ERROR_CODE.NOT_SUPPORT_SEND]: {
+        message: "This inscription is not supported to send.",
+        desc: "This inscription is not supported to send.",
+    },
+    [ERROR_CODE.NOT_FOUND_INSCRIPTION]: {
+        message: "Can not find inscription UTXO in your wallet.",
+        desc: "Can not find inscription UTXO in your wallet.",
+    },
+    [ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND]: {
+        message: "Your balance is insufficient. Please top up BTC to your wallet.",
+        desc: "Your balance is insufficient. Please top up BTC to your wallet.",
+    },
+    [ERROR_CODE.NOT_ENOUGH_BTC_TO_PAY_FEE]: {
+        message: "Your balance is insufficient. Please top up BTC to pay network fee.",
+        desc: "Your balance is insufficient. Please top up BTC to pay network fee.",
+    },
+    [ERROR_CODE.ERR_BROADCAST_TX]: {
+        message: "There was an issue when broadcasting the transaction to the BTC network.",
+        desc: "There was an issue when broadcasting the transaction to the BTC network.",
+    },
+    [ERROR_CODE.INVALID_SIG]: {
+        message: "Signature is invalid in the partially signed bitcoin transaction.",
+        desc: "Signature is invalid in the partially signed bitcoin transaction.",
+    },
+    [ERROR_CODE.INVALID_VALIDATOR_LABEL]: {
+        message: "Missing or invalid label.",
+        desc: "Missing or invalid label.",
+    },
+    [ERROR_CODE.NOT_FOUND_UTXO]: {
+        message: "Can not find UTXO with exact value.",
+        desc: "Can not find UTXO with exact value.",
+    },
+    [ERROR_CODE.NOT_FOUND_DUMMY_UTXO]: {
+        message: "Can not find dummy UTXO in your wallet.",
+        desc: "Can not find dummy UTXO in your wallet.",
+    },
+    [ERROR_CODE.SIGN_XVERSE_ERROR]: {
+        message: "Can not sign with Xverse.",
+        desc: "Can not sign with Xverse.",
+    },
+    [ERROR_CODE.WALLET_NOT_SUPPORT]: {
+        message: "Your wallet is not supported currently.",
+        desc: "Your wallet is not supported currently.",
+    },
+    [ERROR_CODE.CREATE_COMMIT_TX_ERR]: {
+        message: "Create commit tx error.",
+        desc: "Create commit tx error.",
+    },
+    [ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS]: {
+        message: "Can not generate valid tap script address to inscribe.",
+        desc: "Can not generate valid tap script address to inscribe.",
+    },
+    [ERROR_CODE.INVALID_NETWORK_TYPE]: {
+        message: "Invalid network type params.",
+        desc: "Invalid network type params.",
+    },
+    [ERROR_CODE.RPC_ERROR]: {
+        message: "Call RPC TC node error.",
+        desc: "Call RPC TC node error.",
+    },
+    [ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR]: {
+        message: "Call RPC get inscribeable info error.",
+        desc: "Call RPC get inscribeable info error.",
+    },
+    [ERROR_CODE.RPC_SUBMIT_BTCTX_ERROR]: {
+        message: "Call RPC submit btc tx error.",
+        desc: "Call RPC submit btc tx error.",
+    },
+    [ERROR_CODE.RESTORE_HD_WALLET]: {
+        message: "Restore hd wallet error.",
+        desc: "Restore hd wallet error.",
+    },
+    [ERROR_CODE.DECRYPT]: {
+        message: "Decrypt error.",
+        desc: "Decrypt error.",
+    },
+};
+class SDKError extends Error {
+    constructor(code, desc) {
+        super();
+        const _error = ERROR_MESSAGE[code];
+        this.message = `${_error.message} (${code})` || "";
+        this.code = code;
+        this.desc = desc || _error?.desc;
+    }
+    getMessage() {
+        return this.message;
+    }
+}
+
+const doubleHash$1 = (key) => {
+    const hash = CryptoJS__namespace.SHA256(key);
+    return CryptoJS__namespace.SHA256(hash).toString();
+};
+const encryptAES = (text, key) => {
+    const password = doubleHash$1(key);
+    return CryptoJS__namespace.AES.encrypt(text, password).toString();
+};
+const decryptAES$1 = (cipherText, key) => {
+    const password = doubleHash$1(key);
+    const decrypted = CryptoJS__namespace.AES.decrypt(cipherText, password);
+    if (decrypted) {
+        try {
+            const str = decrypted.toString(CryptoJS__namespace.enc.Utf8);
+            if (str.length > 0) {
+                return str;
+            }
+            else {
+                throw new SDKError(ERROR_CODE.DECRYPT);
+            }
+        }
+        catch (e) {
+            throw new SDKError(ERROR_CODE.DECRYPT);
+        }
+    }
+    throw new SDKError(ERROR_CODE.DECRYPT);
+};
 
 /**
  * Helper function that produces a serialized witness script
@@ -6085,7 +6250,7 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 */
 const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, }) => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
-    const internalPubKey = toXOnly(keyPair.publicKey);
+    const internalPubKey = toXOnly$1(keyPair.publicKey);
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         internalPubKey,
@@ -6100,7 +6265,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
     // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
     if (script_p2tr.address === undefined || script_p2tr.address === "") {
-        throw new SDKError(ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS, "");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
     }
     const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
         senderPrivateKey,
@@ -6273,7 +6438,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
     // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
     if (script_p2tr.address === undefined || script_p2tr.address === "") {
-        throw new SDKError(ERROR_CODE.INVALID_TAPSCRIPT_ADDRESS, "");
+        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
     }
     const { base64Psbt: commitPsbtB64, fee: commitTxFee, changeAmount, selectedUTXOs, indicesToSign } = createRawTxSendBTC({
         pubKey,
@@ -6314,7 +6479,7 @@ const createLockScript = async ({ internalPubKey, tcTxIDs, tcClient, }) => {
     // One path should allow spending using secret
     // The other path should pay to another pubkey
     // Make random key pair for hash_lock script
-    const hashLockKeyPair = ECPair.makeRandom({ network: exports.Network });
+    const hashLockKeyPair = ECPair$1.makeRandom({ network: exports.Network });
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
@@ -6462,12 +6627,12 @@ class TcClient {
             const { status, data } = response;
             console.log("data from response: ", data);
             if (status !== 200) {
-                throw new SDKError(ERROR_CODE.RPC_ERROR, data);
+                throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, data);
             }
             const dataResp = JSON.parse(data);
             console.log("Data resp: ", dataResp);
             if (dataResp.error || !dataResp.result) {
-                throw new SDKError(ERROR_CODE.RPC_ERROR, data.error);
+                throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, data.error);
             }
             return dataResp.result;
         };
@@ -6477,12 +6642,12 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getInscribableInfo");
             console.log("Resp getNonceInscribeable: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
             }
             const strs = resp.split(":");
             console.log("strs: ", strs);
             if (strs.length !== 2) {
-                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
             }
             const gasPrice = new BigNumber(strs[1]);
             let gasPriceRes;
@@ -6503,7 +6668,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_submitBitcoinTx");
             console.log("Resp eth_submitBitcoinTx: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
             }
             return {
                 btcTxID: resp,
@@ -6515,7 +6680,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getHashLockScript");
             console.log("Resp eth_getHashLockScript: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             return {
                 hashLockScriptHex: resp,
@@ -6527,7 +6692,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionByAddress");
             console.log("Resp eth_getUnInscribedTransactionByAddress: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             return {
                 unInscribedTxIDs: resp,
@@ -6538,7 +6703,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getUnInscribedTransactionDetailByAddress");
             console.log("Resp getUnInscribedTransactionDetailByAddress: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             const txDetails = [];
             console.log("resp: ", resp);
@@ -6568,7 +6733,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionByHash");
             console.log("Resp eth_getTransactionByHash: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             if (resp.blockHash) {
                 const receipt = await this.getTCTxReceipt(tcTxID);
@@ -6582,7 +6747,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionReceipt");
             console.log("Resp eth_getTransactionByHash: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             return resp;
         };
@@ -6592,7 +6757,7 @@ class TcClient {
             const resp = await this.callRequest(payload, MethodPost, "eth_getPendingInscribedUTXOByAddress");
             console.log("Resp eth_getPendingInscribedUTXOByAddress: ", resp);
             if (resp === "") {
-                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             const btcTx = [];
             for (const info of resp) {
@@ -6602,11 +6767,11 @@ class TcClient {
             return btcTx;
         };
         if (params.length === 0) {
-            throw new SDKError(ERROR_CODE.INVALID_PARAMS);
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS);
         }
         // check network type
         if (!SupportedTCNetworkType.includes(params[0])) {
-            throw new SDKError(ERROR_CODE.INVALID_NETWORK_TYPE);
+            throw new SDKError$1(ERROR_CODE$1.INVALID_NETWORK_TYPE);
         }
         this.network = params[0];
         if (params.length === 2) {
@@ -6647,14 +6812,16 @@ const URL = "https://trustlesswallet.io";
 const window = globalThis || global;
 const openWindow = ({ url = URL, search, target }) => {
     if (window) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        window?.open(`${url}/${search}`, target);
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window?.open(`${url}/${search}`, target);
+        }, 500);
     }
 };
 const signTransaction = (payload) => {
-    new Validator("Transaction hash", payload.hash).string().required();
-    new Validator("Method", payload.method).string().required();
+    new Validator$1("Transaction hash", payload.hash).string().required();
+    new Validator$1("Method", payload.method).string().required();
     const _target = payload.target || "_blank";
     if (window && URLSearchParams) {
         let search = `?function=${exports.RequestFunction.sign}&hash=${payload.hash}&method=${payload.method}&dappURL=${payload.dappURL}`;
@@ -6668,8 +6835,8 @@ const signTransaction = (payload) => {
     }
 };
 const actionRequest = async (payload) => {
-    new Validator("Missing method", payload.method).string().required();
-    new Validator("Missing redirect url", payload.redirectURL).string().required();
+    new Validator$1("Missing method", payload.method).string().required();
+    new Validator$1("Missing redirect url", payload.redirectURL).string().required();
     const _target = payload.target || "_parent";
     if (window && URLSearchParams) {
         const search = `?function=${exports.RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
@@ -6680,9 +6847,9 @@ const actionRequest = async (payload) => {
     }
 };
 const requestAccountResponse = async (payload) => {
-    new Validator("Missing redirect url", payload.redirectURL).string().required();
-    new Validator("Missing tc address", payload.tcAddress).string().required();
-    new Validator("Missing taproot address", payload.tpAddress).string().required();
+    new Validator$1("Missing redirect url", payload.redirectURL).string().required();
+    new Validator$1("Missing tc address", payload.tcAddress).string().required();
+    new Validator$1("Missing taproot address", payload.tpAddress).string().required();
     const _target = payload.target || "_parent";
     const redirectURL = payload.redirectURL;
     // const lastChar = redirectURL.substr(redirectURL.length - 1);
@@ -6700,23 +6867,426 @@ const requestAccountResponse = async (payload) => {
     }
 };
 
+var RequestFunction;
+(function (RequestFunction) {
+    RequestFunction["sign"] = "sign";
+    RequestFunction["request"] = "request";
+})(RequestFunction || (RequestFunction = {}));
+var RequestMethod;
+(function (RequestMethod) {
+    RequestMethod["account"] = "account";
+})(RequestMethod || (RequestMethod = {}));
+
+new BigNumber(0);
+
+// default is bitcoin mainnet
+let Network = bitcoinjsLib.networks.bitcoin;
+
+bitcoinjsLib.initEccLib(ecc__namespace);
+const ECPair = ecpair.ECPairFactory(ecc__namespace);
+BIP32Factory__default["default"](ecc__namespace);
+function toXOnly(pubkey) {
+    if (pubkey.length === 33) {
+        return pubkey.subarray(1, 33);
+    }
+    return pubkey;
+}
+function tweakSigner(signer, opts = {}) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    let privateKey = signer.privateKey;
+    if (!privateKey) {
+        throw new Error("Private key is required for tweaking signer!");
+    }
+    if (signer.publicKey[0] === 3) {
+        privateKey = ecc__namespace.privateNegate(privateKey);
+    }
+    const tweakedPrivateKey = ecc__namespace.privateAdd(privateKey, tapTweakHash(toXOnly(signer.publicKey), opts.tweakHash));
+    if (!tweakedPrivateKey) {
+        throw new Error("Invalid tweaked private key!");
+    }
+    return ECPair.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
+        network: opts.network,
+    });
+}
+function tapTweakHash(pubKey, h) {
+    return bitcoinjsLib.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]));
+}
+
+bitcoinjsLib.Transaction.SIGHASH_SINGLE | bitcoinjsLib.Transaction.SIGHASH_ANYONECANPAY;
+
+function isPrivateKey(privateKey) {
+    let isValid = false;
+    try {
+        // init key pair from senderPrivateKey
+        const keyPair = ECPair.fromPrivateKey(privateKey);
+        // Tweak the original keypair
+        const tweakedSigner = tweakSigner(keyPair, { network: Network });
+        // Generate an address from the tweaked public key
+        const p2pktr = bitcoinjsLib.payments.p2tr({
+            pubkey: toXOnly(tweakedSigner.publicKey),
+            network: Network
+        });
+        const senderAddress = p2pktr.address ? p2pktr.address : "";
+        isValid = senderAddress !== "";
+    }
+    catch (e) {
+        isValid = false;
+    }
+    return isValid;
+}
+class Validator {
+    constructor(label, value) {
+        if (!label && typeof label !== "string") {
+            throw new SDKError(ERROR_CODE.INVALID_VALIDATOR_LABEL);
+        }
+        this.value = value;
+        this.label = label;
+        this.isRequired = false;
+    }
+    _throwError(message) {
+        throw new Error(`Validating "${this.label}" failed: ${message}. Found ${this.value} (type of ${typeof this.value})`);
+    }
+    _isDefined() {
+        return this.value !== null && this.value !== undefined;
+    }
+    _onCondition(condition, message) {
+        if (((!this.isRequired && this._isDefined()) || this.isRequired) &&
+            !condition()) {
+            this._throwError(message);
+        }
+        return this;
+    }
+    required(message = "Required") {
+        this.isRequired = true;
+        return this._onCondition(() => this._isDefined(), message);
+    }
+    string(message = "Must be string") {
+        return this._onCondition(() => typeof this.value === "string", message);
+    }
+    buffer(message = "Must be buffer") {
+        return this._onCondition(() => Buffer.isBuffer(this.value), message);
+    }
+    function(message = "Must be a function") {
+        return this._onCondition(() => typeof this.value === "function", message);
+    }
+    boolean(message = "Must be boolean") {
+        return this._onCondition(() => typeof this.value === "boolean", message);
+    }
+    number(message = "Must be number") {
+        return this._onCondition(() => Number.isFinite(this.value), message);
+    }
+    array(message = "Must be array") {
+        return this._onCondition(() => this.value instanceof Array, message);
+    }
+    privateKey(message = "Invalid private key") {
+        return this._onCondition(() => this.buffer() && isPrivateKey(this.value), message);
+    }
+    mnemonic(message = "Invalid mnemonic") {
+        return this._onCondition(() => ethers.utils.isValidMnemonic(this.value), message);
+    }
+}
+
+const doubleHash = (key) => {
+    const hash = CryptoJS__namespace.SHA256(key);
+    return CryptoJS__namespace.SHA256(hash).toString();
+};
+const decryptAES = (cipherText, key) => {
+    const password = doubleHash(key);
+    const decrypted = CryptoJS__namespace.AES.decrypt(cipherText, password);
+    if (decrypted) {
+        try {
+            const str = decrypted.toString(CryptoJS__namespace.enc.Utf8);
+            if (str.length > 0) {
+                return str;
+            }
+            else {
+                throw new SDKError(ERROR_CODE.DECRYPT);
+            }
+        }
+        catch (e) {
+            throw new SDKError(ERROR_CODE.DECRYPT);
+        }
+    }
+    throw new SDKError(ERROR_CODE.DECRYPT);
+};
+
+var StorageKeys;
+(function (StorageKeys) {
+    StorageKeys["HDWallet"] = "hd-wallet-cipher";
+    StorageKeys["masterless"] = "masterless-cipher";
+})(StorageKeys || (StorageKeys = {}));
+
+class StorageService$1 {
+    constructor(namespace) {
+        this.namespace = namespace;
+        this.setMethod = undefined;
+        this.getMethod = undefined;
+        this.removeMethod = undefined;
+    }
+    implement({ setMethod, getMethod, removeMethod, namespace }) {
+        new Validator("setMethod", setMethod).required();
+        new Validator("getMethod", getMethod).required();
+        new Validator("removeMethod", removeMethod).required();
+        new Validator("namespace", namespace).string();
+        this.setMethod = setMethod;
+        this.getMethod = getMethod;
+        this.removeMethod = removeMethod;
+        this.namespace = namespace;
+    }
+    _getKey(key) {
+        return this.namespace ? `${this.namespace}-${key}` : key;
+    }
+    async set(key, data) {
+        if (!this.setMethod)
+            return;
+        new Validator("key", key).required().string();
+        const dataStr = typeof data === "string" ? data : JSON.stringify(data);
+        return await this.setMethod(this._getKey(key), dataStr);
+    }
+    async get(key) {
+        new Validator("key", key).required().string();
+        if (!this.getMethod)
+            return;
+        const dataStr = await this.getMethod(this._getKey(key));
+        return JSON.parse(dataStr);
+    }
+    async remove(key) {
+        new Validator("key", key).required().string();
+        if (!this.removeMethod)
+            return;
+        return await this.removeMethod(this._getKey(key));
+    }
+}
+const storage$1 = new StorageService$1();
+
+const validateHDWallet$1 = (wallet) => {
+    new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
+    new Validator("saveWallet-name", wallet?.name).string().required();
+    new Validator("saveWallet-derives", wallet?.derives).required();
+    if (wallet?.derives) {
+        for (const child of wallet.derives) {
+            new Validator("saveWallet-derive-name", child.name).required();
+            new Validator("saveWallet-derive-index", child.index).required();
+            new Validator("saveWallet-derive-privateKey", child.privateKey).required();
+            new Validator("saveWallet-derive-address", child.address).required();
+        }
+    }
+};
+const getStorageHDWallet$1 = async () => {
+    return await storage$1.get(StorageKeys.HDWallet);
+};
+const setStorageHDWallet$1 = async (wallet) => {
+    await storage$1.set(StorageKeys.HDWallet, wallet);
+};
+
+class HDWallet$1 {
+    constructor() {
+        this.set = (wallet) => {
+            validateHDWallet$1(wallet);
+            this.name = wallet.name;
+            this.mnemonic = wallet.mnemonic;
+            this.derives = wallet.derives;
+        };
+        this.saveWallet = async (wallet) => {
+            this.set(wallet);
+            await setStorageHDWallet$1(wallet);
+        };
+        this.name = undefined;
+        this.mnemonic = undefined;
+        this.derives = undefined;
+    }
+}
+HDWallet$1.restore = async (password) => {
+    new Validator("restore-password: ", password).string().required();
+    const cipherText = await getStorageHDWallet$1();
+    new Validator("restore-cipher: ", cipherText).string().required();
+    if (cipherText) {
+        try {
+            const rawText = decryptAES(cipherText, password);
+            const wallet = JSON.parse(rawText);
+            validateHDWallet$1(wallet);
+            return wallet;
+        }
+        catch (error) {
+            let message = "";
+            if (error instanceof Error) {
+                message = error.message;
+            }
+            throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
+        }
+    }
+    return undefined;
+};
+
+const derivationPath$1 = "m/44'/60'/0'/0";
+
+class HDWallet {
+    constructor() {
+        this.set = (wallet) => {
+            validateHDWallet$1(wallet);
+            this.name = wallet.name;
+            this.mnemonic = wallet.mnemonic;
+            this.derives = wallet.derives;
+        };
+        this.saveWallet = async (wallet) => {
+            this.set(wallet);
+            await setStorageHDWallet$1(wallet);
+        };
+        this.name = undefined;
+        this.mnemonic = undefined;
+        this.derives = undefined;
+    }
+}
+HDWallet.restore = async (password) => {
+    new Validator("restore-password: ", password).string().required();
+    const cipherText = await getStorageHDWallet$1();
+    new Validator("restore-cipher: ", cipherText).string().required();
+    if (cipherText) {
+        try {
+            const rawText = decryptAES(cipherText, password);
+            const wallet = JSON.parse(rawText);
+            validateHDWallet$1(wallet);
+            return wallet;
+        }
+        catch (error) {
+            let message = "";
+            if (error instanceof Error) {
+                message = error.message;
+            }
+            throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
+        }
+    }
+    return undefined;
+};
+
+class Masterless {
+    constructor() {
+        this.name = undefined;
+        this.privateKey = undefined;
+        this.address = undefined;
+    }
+}
+
+const derivationPath = "m/44'/60'/0'/0";
+
+const deriveHDNodeByIndex = (payload) => {
+    const hdNode = ethers.ethers.utils.HDNode
+        .fromMnemonic(payload.mnemonic)
+        .derivePath(derivationPath$1 + "/" + payload.index);
+    const privateKey = hdNode.privateKey;
+    const address = hdNode.address;
+    const accountName = payload.name || `Account ${payload.index + 1}`;
+    return {
+        name: accountName,
+        index: payload.index,
+        privateKey: privateKey,
+        address: address,
+    };
+};
+const randomMnemonic = () => {
+    const wallet = ethers.ethers.Wallet.createRandom();
+    const mnemonic = wallet.mnemonic.phrase;
+    new Validator("Generate mnemonic", mnemonic).mnemonic().required();
+    const deriveKey = deriveHDNodeByIndex({
+        mnemonic,
+        index: 0,
+        name: undefined
+    });
+    return {
+        name: "Anon",
+        mnemonic,
+        derives: [deriveKey]
+    };
+};
+const validateHDWallet = (wallet) => {
+    new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
+    new Validator("saveWallet-name", wallet?.name).string().required();
+    new Validator("saveWallet-derives", wallet?.derives).required();
+    if (wallet?.derives) {
+        for (const child of wallet.derives) {
+            new Validator("saveWallet-derive-name", child.name).required();
+            new Validator("saveWallet-derive-index", child.index).required();
+            new Validator("saveWallet-derive-privateKey", child.privateKey).required();
+            new Validator("saveWallet-derive-address", child.address).required();
+        }
+    }
+};
+const getStorageHDWallet = async () => {
+    return await storage$1.get(StorageKeys.HDWallet);
+};
+const setStorageHDWallet = async (wallet) => {
+    await storage$1.set(StorageKeys.HDWallet, wallet);
+};
+
+exports.StorageKeys = void 0;
+(function (StorageKeys) {
+    StorageKeys["HDWallet"] = "hd-wallet-cipher";
+    StorageKeys["masterless"] = "masterless-cipher";
+})(exports.StorageKeys || (exports.StorageKeys = {}));
+
+class StorageService {
+    constructor(namespace) {
+        this.namespace = namespace;
+        this.setMethod = undefined;
+        this.getMethod = undefined;
+        this.removeMethod = undefined;
+    }
+    implement({ setMethod, getMethod, removeMethod, namespace }) {
+        new Validator$1("setMethod", setMethod).required();
+        new Validator$1("getMethod", getMethod).required();
+        new Validator$1("removeMethod", removeMethod).required();
+        new Validator$1("namespace", namespace).string();
+        this.setMethod = setMethod;
+        this.getMethod = getMethod;
+        this.removeMethod = removeMethod;
+        this.namespace = namespace;
+    }
+    _getKey(key) {
+        return this.namespace ? `${this.namespace}-${key}` : key;
+    }
+    async set(key, data) {
+        if (!this.setMethod)
+            return;
+        new Validator$1("key", key).required().string();
+        const dataStr = typeof data === "string" ? data : JSON.stringify(data);
+        return await this.setMethod(this._getKey(key), dataStr);
+    }
+    async get(key) {
+        new Validator$1("key", key).required().string();
+        if (!this.getMethod)
+            return;
+        const dataStr = await this.getMethod(this._getKey(key));
+        return JSON.parse(dataStr);
+    }
+    async remove(key) {
+        new Validator$1("key", key).required().string();
+        if (!this.removeMethod)
+            return;
+        return await this.removeMethod(this._getKey(key));
+    }
+}
+const storage = new StorageService();
+
 exports.BNZero = BNZero;
 exports.BlockStreamURL = BlockStreamURL;
 exports.DummyUTXOValue = DummyUTXOValue;
-exports.ECPair = ECPair;
-exports.ERROR_CODE = ERROR_CODE;
-exports.ERROR_MESSAGE = ERROR_MESSAGE;
+exports.ECPair = ECPair$1;
+exports.ERROR_CODE = ERROR_CODE$1;
+exports.ERROR_MESSAGE = ERROR_MESSAGE$1;
+exports.HDWallet = HDWallet;
 exports.InputSize = InputSize;
 exports.Mainnet = Mainnet;
+exports.Masterless = Masterless;
 exports.MinSats = MinSats;
 exports.NetworkType = NetworkType;
 exports.OutputSize = OutputSize;
 exports.Regtest = Regtest;
-exports.SDKError = SDKError;
+exports.SDKError = SDKError$1;
 exports.TcClient = TcClient;
 exports.Testnet = Testnet;
 exports.URL = URL;
-exports.Validator = Validator;
+exports.Validator = Validator$1;
 exports.WalletType = WalletType;
 exports.actionRequest = actionRequest;
 exports.aggregateUTXOs = aggregateUTXOs;
@@ -6743,10 +7313,14 @@ exports.createTxFromAnyWallet = createTxFromAnyWallet;
 exports.createTxSendBTC = createTxSendBTC;
 exports.createTxSplitFundFromOrdinalUTXO = createTxSplitFundFromOrdinalUTXO;
 exports.createTxWithSpecificUTXOs = createTxWithSpecificUTXOs;
+exports.decryptAES = decryptAES$1;
 exports.decryptWallet = decryptWallet;
+exports.derivationPath = derivationPath;
 exports.deriveETHWallet = deriveETHWallet;
+exports.deriveHDNodeByIndex = deriveHDNodeByIndex;
 exports.derivePasswordWallet = derivePasswordWallet;
 exports.deriveSegwitWallet = deriveSegwitWallet;
+exports.encryptAES = encryptAES;
 exports.encryptWallet = encryptWallet;
 exports.estimateInscribeFee = estimateInscribeFee;
 exports.estimateNumInOutputs = estimateNumInOutputs;
@@ -6762,10 +7336,12 @@ exports.generateTaprootAddressFromPubKey = generateTaprootAddressFromPubKey;
 exports.generateTaprootKeyPair = generateTaprootKeyPair;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
+exports.getStorageHDWallet = getStorageHDWallet;
 exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;
 exports.prepareUTXOsToBuyMultiInscriptions = prepareUTXOsToBuyMultiInscriptions;
+exports.randomMnemonic = randomMnemonic;
 exports.reqBuyInscription = reqBuyInscription;
 exports.reqBuyInscriptionFromAnyWallet = reqBuyInscriptionFromAnyWallet;
 exports.reqBuyMultiInscriptions = reqBuyMultiInscriptions;
@@ -6779,13 +7355,16 @@ exports.selectTheSmallestUTXO = selectTheSmallestUTXO;
 exports.selectUTXOs = selectUTXOs;
 exports.selectUTXOsToCreateBuyTx = selectUTXOsToCreateBuyTx;
 exports.setBTCNetwork = setBTCNetwork;
+exports.setStorageHDWallet = setStorageHDWallet;
 exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
 exports.signPSBT2 = signPSBT2;
 exports.signTransaction = signTransaction;
 exports.splitBatchInscribeTx = splitBatchInscribeTx;
-exports.tapTweakHash = tapTweakHash;
+exports.storage = storage;
+exports.tapTweakHash = tapTweakHash$1;
 exports.toSat = toSat;
-exports.toXOnly = toXOnly;
-exports.tweakSigner = tweakSigner;
+exports.toXOnly = toXOnly$1;
+exports.tweakSigner = tweakSigner$1;
+exports.validateHDWallet = validateHDWallet;
 //# sourceMappingURL=index.js.map

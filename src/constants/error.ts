@@ -19,6 +19,8 @@ export const ERROR_CODE = {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
+    RESTORE_HD_WALLET: "-20",
+    DECRYPT: "-21"
 };
 
 export const ERROR_MESSAGE = {
@@ -97,6 +99,14 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.RPC_SUBMIT_BTCTX_ERROR]: {
         message: "Call RPC submit btc tx error.",
         desc: "Call RPC submit btc tx error.",
+    },
+    [ERROR_CODE.RESTORE_HD_WALLET]: {
+        message: "Restore hd wallet error.",
+        desc: "Restore hd wallet error.",
+    },
+    [ERROR_CODE.DECRYPT]: {
+        message: "Decrypt error.",
+        desc: "Decrypt error.",
     },
 };
 

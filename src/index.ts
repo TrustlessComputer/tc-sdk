@@ -4,3 +4,4 @@ export * from "./utils";
 
 export * from "./tc";
 export * from "./wallet";
+export * from "./storage";

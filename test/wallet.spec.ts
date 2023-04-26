@@ -11,7 +11,7 @@ import {
 
 describe("Import Wallet", async () => {
     signTransaction({
-        hash: "1213232", method: "lhkhfkdwkfdw", redirect: undefined
+        hash: "1213232", method: "lhkhfkdwkfdw", dappURL: "", isRedirect: false
     })
     // it("Import BTC private key - encrypt and decrypt wallet", async () => {
     //     // TODO: enter the private key

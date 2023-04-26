@@ -19,6 +19,8 @@ export declare const ERROR_CODE: {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: string;
     RPC_SUBMIT_BTCTX_ERROR: string;
     RPC_GET_TAPSCRIPT_INFO: string;
+    RESTORE_HD_WALLET: string;
+    DECRYPT: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {
