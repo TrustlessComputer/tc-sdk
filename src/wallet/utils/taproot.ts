@@ -4,7 +4,7 @@ import { initEccLib, payments } from "bitcoinjs-lib";
 import * as ecc from "@bitcoinerlab/secp256k1";
 import { BTCTaprootDerivationPath } from "@/wallet";
 import {convertPrivateKey, toXOnly} from "@/bitcoin";
-import {ERROR_CODE, SDKError} from "@/constants";
+import { ERROR_CODE, SDKError } from "@/constants";
 
 initEccLib(ecc);
 const bip32 = BIP32Factory(ecc);
@@ -23,12 +23,7 @@ const generateTaprootHDNodeFromMnemonic = async (mnemonic: string) => {
         throw new SDKError(ERROR_CODE.TAPROOT_FROM_MNEMONIC);
     }
     const privateKeyStr = convertPrivateKey(privateKeyBuffer);
-
-    return {
-        privateKey: privateKeyStr,
-        privateKeyBuffer: privateKeyBuffer,
-        address,
-    };
+    return privateKeyStr;
 };
 
 export {

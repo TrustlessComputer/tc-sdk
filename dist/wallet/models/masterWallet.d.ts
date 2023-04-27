@@ -8,7 +8,6 @@ declare class MasterWallet {
         hdWallet: import("../types/account").IHDWallet | undefined;
     }>;
     getHDWallet: () => HDWallet;
-    getBTCAddress: () => string | undefined;
     getBTCPrivateKey: () => string | undefined;
 }
 export { MasterWallet };

@@ -10,7 +10,6 @@ interface IHDWallet {
     nodes: Array<IDeriveKey>;
     deletedIndexs: Array<number>;
     btcPrivateKey: string;
-    btcAddress: string;
 }
 interface IMasterless {
     name: string | undefined;

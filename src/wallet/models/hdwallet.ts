@@ -12,7 +12,6 @@ class HDWallet {
     deletedIndexs: Array<number> | undefined;
 
     btcPrivateKey: string | undefined;
-    btcAddress: string | undefined;
 
     constructor() {
         this.name = undefined;
@@ -20,7 +19,6 @@ class HDWallet {
         this.nodes = undefined;
         this.deletedIndexs = undefined;
         this.btcPrivateKey = undefined;
-        this.btcAddress = undefined;
     }
 
     set = (wallet: IHDWallet) => {
@@ -31,7 +29,6 @@ class HDWallet {
         this.deletedIndexs = wallet.deletedIndexs;
 
         this.btcPrivateKey = wallet.btcPrivateKey;
-        this.btcAddress = wallet.btcAddress;
     };
 
     saveWallet = async (wallet: IHDWallet, password: string) => {

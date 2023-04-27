@@ -7152,7 +7152,6 @@ const validateHDWallet$1 = (wallet, methodName) => {
     new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
     new Validator(`${methodName}-` + "validate-name", wallet?.name).string().required();
     new Validator(`${methodName}-` + "validate-nodes", wallet?.nodes).required();
-    new Validator(`${methodName}-` + "validate-btcAddress", wallet?.btcAddress).required();
     new Validator(`${methodName}-` + "validate-btcPrivateKey", wallet?.btcPrivateKey).required();
     if (wallet?.nodes) {
         for (const node of wallet.nodes) {
@@ -7163,8 +7162,11 @@ const validateHDWallet$1 = (wallet, methodName) => {
         }
     }
 };
+const getStorageHDWalletCipherText$1 = () => {
+    return tcStorage.get(StorageKeys.HDWallet);
+};
 const getStorageHDWallet$1 = async (password) => {
-    const cipherText = await tcStorage.get(StorageKeys.HDWallet);
+    const cipherText = await getStorageHDWalletCipherText$1();
     if (!cipherText) {
         return undefined;
     }
@@ -7187,7 +7189,6 @@ class HDWallet$1 {
             this.nodes = wallet.nodes;
             this.deletedIndexs = wallet.deletedIndexs;
             this.btcPrivateKey = wallet.btcPrivateKey;
-            this.btcAddress = wallet.btcAddress;
         };
         this.saveWallet = async (wallet, password) => {
             this.set(wallet);
@@ -7250,7 +7251,6 @@ class HDWallet$1 {
         this.nodes = undefined;
         this.deletedIndexs = undefined;
         this.btcPrivateKey = undefined;
-        this.btcAddress = undefined;
     }
 }
 
@@ -7271,11 +7271,7 @@ const generateTaprootHDNodeFromMnemonic$1 = async (mnemonic) => {
         throw new SDKError(ERROR_CODE.TAPROOT_FROM_MNEMONIC);
     }
     const privateKeyStr = convertPrivateKey(privateKeyBuffer);
-    return {
-        privateKey: privateKeyStr,
-        privateKeyBuffer: privateKeyBuffer,
-        address,
-    };
+    return privateKeyStr;
 };
 
 class MasterWallet {
@@ -7302,9 +7298,6 @@ class MasterWallet {
             new Validator("Get HDWallet", this._hdWallet).required("Please restore wallet.");
             return this._hdWallet;
         };
-        this.getBTCAddress = () => {
-            return this._hdWallet?.btcAddress;
-        };
         this.getBTCPrivateKey = () => {
             return this._hdWallet?.btcPrivateKey;
         };
@@ -7322,7 +7315,6 @@ class HDWallet {
             this.nodes = wallet.nodes;
             this.deletedIndexs = wallet.deletedIndexs;
             this.btcPrivateKey = wallet.btcPrivateKey;
-            this.btcAddress = wallet.btcAddress;
         };
         this.saveWallet = async (wallet, password) => {
             this.set(wallet);
@@ -7385,7 +7377,6 @@ class HDWallet {
         this.nodes = undefined;
         this.deletedIndexs = undefined;
         this.btcPrivateKey = undefined;
-        this.btcAddress = undefined;
     }
 }
 
@@ -7418,7 +7409,7 @@ const randomMnemonic = async () => {
     const wallet = ethers.ethers.Wallet.createRandom();
     const mnemonic = wallet.mnemonic.phrase;
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
-    const { address: btcAddress, privateKey: btcPrivateKey } = await generateTaprootHDNodeFromMnemonic$1(mnemonic);
+    const btcPrivateKey = await generateTaprootHDNodeFromMnemonic$1(mnemonic);
     const childNode = deriveHDNodeByIndex({
         mnemonic,
         index: 0,
@@ -7428,7 +7419,6 @@ const randomMnemonic = async () => {
         name: "Anon",
         mnemonic,
         nodes: [childNode],
-        btcAddress,
         btcPrivateKey,
         deletedIndexs: []
     };
@@ -7437,7 +7427,6 @@ const validateHDWallet = (wallet, methodName) => {
     new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
     new Validator(`${methodName}-` + "validate-name", wallet?.name).string().required();
     new Validator(`${methodName}-` + "validate-nodes", wallet?.nodes).required();
-    new Validator(`${methodName}-` + "validate-btcAddress", wallet?.btcAddress).required();
     new Validator(`${methodName}-` + "validate-btcPrivateKey", wallet?.btcPrivateKey).required();
     if (wallet?.nodes) {
         for (const node of wallet.nodes) {
@@ -7448,8 +7437,11 @@ const validateHDWallet = (wallet, methodName) => {
         }
     }
 };
+const getStorageHDWalletCipherText = () => {
+    return tcStorage.get(StorageKeys.HDWallet);
+};
 const getStorageHDWallet = async (password) => {
-    const cipherText = await tcStorage.get(StorageKeys.HDWallet);
+    const cipherText = await getStorageHDWalletCipherText();
     if (!cipherText) {
         return undefined;
     }
@@ -7477,11 +7469,7 @@ const generateTaprootHDNodeFromMnemonic = async (mnemonic) => {
         throw new SDKError(ERROR_CODE.TAPROOT_FROM_MNEMONIC);
     }
     const privateKeyStr = convertPrivateKey(privateKeyBuffer);
-    return {
-        privateKey: privateKeyStr,
-        privateKeyBuffer: privateKeyBuffer,
-        address,
-    };
+    return privateKeyStr;
 };
 
 exports.BNZero = BNZero;
@@ -7557,6 +7545,7 @@ exports.generateTaprootKeyPair = generateTaprootKeyPair;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
 exports.getStorageHDWallet = getStorageHDWallet;
+exports.getStorageHDWalletCipherText = getStorageHDWalletCipherText;
 exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;

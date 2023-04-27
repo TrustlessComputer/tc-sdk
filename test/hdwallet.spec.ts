@@ -78,7 +78,6 @@ describe("Wallet", async () => {
             const hdWallet = masterWallet.getHDWallet();
             console.log('nodes: ', hdWallet.nodes)
             console.log('mnemonic: ', hdWallet.mnemonic)
-            console.log('bitcoin address: ', hdWallet.btcAddress)
             console.log('bitcoin deletedIndexs: ', hdWallet.deletedIndexs)
 
         } else {

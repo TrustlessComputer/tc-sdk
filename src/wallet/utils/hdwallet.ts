@@ -1,6 +1,6 @@
-import {ETHDerivationPath, generateTaprootHDNodeFromMnemonic, IDeriveKey, IDeriveReq, IHDWallet} from "@/wallet";
+import { ETHDerivationPath, generateTaprootHDNodeFromMnemonic, IDeriveKey, IDeriveReq, IHDWallet } from "@/wallet";
 import { ethers } from "ethers";
-import {decryptAES, encryptAES, Validator} from "@/utils";
+import { decryptAES, encryptAES, Validator } from "@/utils";
 import { StorageKeys } from "@/index";
 
 const deriveHDNodeByIndex = (payload: IDeriveReq): IDeriveKey => {
@@ -23,7 +23,7 @@ const randomMnemonic = async (): Promise<IHDWallet> => {
     const mnemonic = wallet.mnemonic.phrase;
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
 
-    const { address: btcAddress, privateKey: btcPrivateKey } = await generateTaprootHDNodeFromMnemonic(mnemonic);
+    const btcPrivateKey = await generateTaprootHDNodeFromMnemonic(mnemonic);
     const childNode = deriveHDNodeByIndex({
         mnemonic,
         index: 0,
@@ -33,7 +33,6 @@ const randomMnemonic = async (): Promise<IHDWallet> => {
         name: "Anon",
         mnemonic,
         nodes: [childNode],
-        btcAddress,
         btcPrivateKey,
         deletedIndexs: []
     };
@@ -43,7 +42,6 @@ const validateHDWallet = (wallet: IHDWallet | undefined, methodName: string) => 
     new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
     new Validator(`${methodName}-` + "validate-name", wallet?.name).string().required();
     new Validator(`${methodName}-` + "validate-nodes", wallet?.nodes).required();
-    new Validator(`${methodName}-` + "validate-btcAddress", wallet?.btcAddress).required();
     new Validator(`${methodName}-` + "validate-btcPrivateKey", wallet?.btcPrivateKey).required();
     if (wallet?.nodes) {
         for (const node of wallet.nodes) {
@@ -55,8 +53,12 @@ const validateHDWallet = (wallet: IHDWallet | undefined, methodName: string) => 
     }
 };
 
+const getStorageHDWalletCipherText =  () => {
+    return tcStorage.get(StorageKeys.HDWallet);
+};
+
 const getStorageHDWallet = async (password: string): Promise<IHDWallet | undefined> => {
-    const cipherText = await tcStorage.get(StorageKeys.HDWallet);
+    const cipherText = await getStorageHDWalletCipherText();
     if (!cipherText) {
         return undefined;
     }
@@ -77,6 +79,7 @@ export {
     randomMnemonic,
     deriveHDNodeByIndex,
 
+    getStorageHDWalletCipherText,
     getStorageHDWallet,
     setStorageHDWallet
 };

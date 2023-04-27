@@ -35,9 +35,6 @@ class MasterWallet {
         return this._hdWallet!;
     };
 
-    getBTCAddress = (): string | undefined => {
-        return this._hdWallet?.btcAddress;
-    };
     getBTCPrivateKey = (): string | undefined => {
         return this._hdWallet?.btcPrivateKey;
     };

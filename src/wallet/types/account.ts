@@ -12,7 +12,6 @@ interface IHDWallet {
     deletedIndexs: Array<number>;
 
     btcPrivateKey: string;
-    btcAddress: string;
 }
 
 interface IMasterless {

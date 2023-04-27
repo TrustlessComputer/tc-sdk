@@ -5,7 +5,6 @@ declare class HDWallet {
     nodes: Array<IDeriveKey> | undefined;
     deletedIndexs: Array<number> | undefined;
     btcPrivateKey: string | undefined;
-    btcAddress: string | undefined;
     constructor();
     set: (wallet: IHDWallet) => void;
     saveWallet: (wallet: IHDWallet, password: string) => Promise<void>;
