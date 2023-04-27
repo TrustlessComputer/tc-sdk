@@ -989,8 +989,9 @@ declare class StorageService {
 interface ISetupPayload {
     storage: StorageService$1;
     tcClient: TcClient$1;
+    netType: number;
 }
-declare const setupConfig: ({ storage, tcClient }: ISetupPayload) => void;
+declare const setupConfig: ({ storage, tcClient, netType }: ISetupPayload) => void;
 
 declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }: {
     internalPubKey: Buffer;

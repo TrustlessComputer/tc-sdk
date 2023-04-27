@@ -8,7 +8,6 @@ import { estimateTxFee, fromSat } from "./utils";
 import { filterAndSortCardinalUTXOs, findExactValueUTXO, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs } from "./selectcoin";
 
 import BigNumber from "bignumber.js";
-import { Network } from "./network";
 import { handleSignPsbtWithSpecificWallet } from "./xverse";
 
 /**
@@ -370,7 +369,7 @@ const createRawTx = ({
 
     const { address: senderAddress, p2pktr } = generateTaprootAddressFromPubKey(pubKey);
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     // add inputs
     for (const input of selectedUTXOs) {
         psbt.addInput({
@@ -538,7 +537,7 @@ const createTxSendBTC = (
     // init key pair and tweakedSigner from senderPrivateKey
     const { keyPair, senderAddress, tweakedSigner, p2pktr } = generateTaprootKeyPair(senderPrivateKey);
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     // add inputs
 
     for (const input of selectedUTXOs) {
@@ -632,7 +631,7 @@ const createRawTxSendBTC = (
     // init key pair and tweakedSigner from senderPrivateKey
     const { address: senderAddress, p2pktr } = generateTaprootAddressFromPubKey(pubKey);
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     // add inputs
 
     for (const input of selectedUTXOs) {
@@ -703,21 +702,21 @@ const createTxWithSpecificUTXOs = (
     const selectedUTXOs = utxos;
 
     // init key pair from senderPrivateKey
-    const keypair = ECPair.fromPrivateKey(senderPrivateKey, { network: Network });
+    const keypair = ECPair.fromPrivateKey(senderPrivateKey, { network: tcBTCNetwork });
     // Tweak the original keypair
-    const tweakedSigner = tweakSigner(keypair, { network: Network });
+    const tweakedSigner = tweakSigner(keypair, { network: tcBTCNetwork });
 
     // Generate an address from the tweaked public key
     const p2pktr = payments.p2tr({
         pubkey: toXOnly(tweakedSigner.publicKey),
-        network: Network,
+        network: tcBTCNetwork,
     });
     const senderAddress = p2pktr.address ? p2pktr.address : "";
     if (senderAddress === "") {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Can not get the sender address from the private key");
     }
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     // add inputs
 
     for (const input of selectedUTXOs) {
@@ -857,7 +856,7 @@ const createRawTxSplitFundFromOrdinalUTXO = ({
 
     const newValueInscription = inscriptionUTXO.value.minus(totalAmountSpend);
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     // add inputs
     psbt.addInput({
         hash: inscriptionUTXO.tx_hash,

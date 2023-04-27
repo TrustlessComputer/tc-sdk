@@ -56,7 +56,7 @@ const validateHDWallet = (wallet: IHDWallet | undefined, methodName: string) => 
 };
 
 const getStorageHDWallet = async (password: string): Promise<IHDWallet | undefined> => {
-    const cipherText = await storage.get(StorageKeys.HDWallet);
+    const cipherText = await tcStorage.get(StorageKeys.HDWallet);
     if (!cipherText) {
         return undefined;
     }
@@ -68,7 +68,7 @@ const getStorageHDWallet = async (password: string): Promise<IHDWallet | undefin
 
 const setStorageHDWallet = async (wallet: IHDWallet, password: string) => {
     const cipherText = encryptAES(JSON.stringify(wallet), password);
-    await storage.set(StorageKeys.HDWallet, cipherText);
+    await tcStorage.set(StorageKeys.HDWallet, cipherText);
 };
 
 export {

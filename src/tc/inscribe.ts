@@ -12,13 +12,12 @@ import {
     toSat,
 } from "..";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
-import { Psbt, address, payments, script } from "bitcoinjs-lib";
+import { Psbt, address, payments } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
 import { ERROR_CODE } from "../constants/error";
-import { Network } from "../bitcoin/network";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 
@@ -50,7 +49,7 @@ const createRawRevealTx = ({
         controlBlock: script_p2tr.witness![script_p2tr.witness!.length - 1],
     };
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     psbt.addInput({
         hash: commitTxID,
         index: 0,
@@ -99,7 +98,7 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
         controlBlock: script_p2tr.witness![script_p2tr.witness!.length - 1]
     };
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     psbt.addInput({
         hash: "00".repeat(32),
         index: 0,
@@ -145,7 +144,7 @@ function getCommitVirtualSize(p2pk_p2tr: any, keypair: any, script_addr: any, tw
         inputValue = inputValue.plus(utxos[i].value);
         useUTXO.push(utxos[i]);
     }
-    const p2pk_psbt = new Psbt({ network: Network });
+    const p2pk_psbt = new Psbt({ network: tcBTCNetwork });
     p2pk_psbt.addOutput({
         address: script_addr,
         value: inputValue.minus(1).toNumber(),
@@ -535,7 +534,7 @@ const createLockScript = async ({
     // The other path should pay to another pubkey
 
     // Make random key pair for hash_lock script
-    const hashLockKeyPair = ECPair.makeRandom({ network: Network });
+    const hashLockKeyPair = ECPair.makeRandom({ network: tcBTCNetwork });
 
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
@@ -551,7 +550,7 @@ const createLockScript = async ({
         internalPubkey: internalPubKey,
         scriptTree,
         redeem: hashLockRedeem,
-        network: Network
+        network: tcBTCNetwork
     });
 
     return {
@@ -632,7 +631,7 @@ const aggregateUTXOs = async ({
             const vout = tx.Vout[i];
 
             try {
-                const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+                const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), tcBTCNetwork);
                 if (receiverAddress === btcAddress) {
                     newUTXOs.push({
                         tx_hash: btcTxID,

@@ -10,6 +10,9 @@ import {
     getStorageHDWallet,
     setStorageHDWallet,
     validateHDWallet,
+    setupConfig,
+    Mainnet,
+    TcClient
 } from "../dist";
 
 describe("Wallet", async () => {
@@ -29,6 +32,13 @@ describe("Wallet", async () => {
             return localStorage.setItem(key, data);
         }
     });
+
+    const tcClient = new TcClient(Mainnet, 'https://tc-node.trustless.computer')
+    setupConfig({
+        storage,
+        tcClient: tcClient,
+        netType: 0
+    })
     // @ts-ignore
     globalThis.storage = storage;
 

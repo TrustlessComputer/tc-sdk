@@ -38,7 +38,6 @@ import {
 } from "./selectcoin";
 
 import BigNumber from "bignumber.js";
-import { Network } from "./network";
 import { handleSignPsbtWithSpecificWallet } from "./xverse";
 import { verifySchnorr } from "@bitcoinerlab/secp256k1";
 
@@ -64,7 +63,7 @@ const createPSBTToSell = (
         dummyUTXO: UTXO,
     },
 ): string => {
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     const { inscriptionUTXO: ordinalInput, amountPayToSeller, receiverBTCAddress, sellerPrivateKey, dummyUTXO, creatorAddress, feePayToCreator } = params;
 
     const { keyPair, tweakedSigner, p2pktr } = generateTaprootKeyPair(sellerPrivateKey);
@@ -149,7 +148,7 @@ const createRawPSBTToSell = (
         dummyUTXO: UTXO,
     },
 ): ICreateRawTxResp => {
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     const { inscriptionUTXO: ordinalInput, amountPayToSeller, receiverBTCAddress, internalPubKey, dummyUTXO, creatorAddress, feePayToCreator } = params;
 
     const { address, p2pktr } = generateTaprootAddressFromPubKey(internalPubKey);
@@ -229,7 +228,7 @@ const createPSBTToBuy = (
         feeRate: number,
     }
 ): ICreateTxResp => {
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     const {
         sellerSignedPsbt,
         buyerPrivateKey,
@@ -389,7 +388,7 @@ const createRawPSBTToBuy = ({
 }
 
 ): ICreateRawTxResp => {
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
 
     let totalValue = BNZero;
 
@@ -526,7 +525,7 @@ const createPSBTToBuyMultiInscriptions = (
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "buyReqFullInfos is empty");
     }
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     const indexInputNeedToSign: number[] = [];
     const selectedUTXOs: UTXO[] = [];
 
@@ -711,7 +710,7 @@ const createRawPSBTToBuyMultiInscriptions = (
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "buyReqFullInfos is empty");
     }
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     const indexInputNeedToSign: number[] = [];
     const selectedUTXOs: UTXO[] = [];
 
@@ -1177,7 +1176,7 @@ const reqBuyInscription = async (
         feeRatePerByte
     } = params;
     // decode seller's signed PSBT
-    const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: Network });
+    const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: tcBTCNetwork });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
@@ -1281,7 +1280,7 @@ const reqBuyInscriptionFromAnyWallet = async ({
 }): Promise<ICreateTxBuyResp> => {
 
     // decode seller's signed PSBT
-    const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: Network });
+    const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: tcBTCNetwork });
     const sellerInputs = sellerSignedPsbt.data.inputs;
     if (sellerInputs.length === 0) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
@@ -1437,7 +1436,7 @@ const reqBuyMultiInscriptions = (
 
     for (let i = 0; i < buyReqInfos.length; i++) {
         const sellerSignedPsbtB64 = buyReqInfos[i].sellerSignedPsbtB64;
-        const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: Network });
+        const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: tcBTCNetwork });
         const sellerInputs = sellerSignedPsbt.data.inputs;
         if (sellerInputs.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
@@ -1566,7 +1565,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({
 
     for (let i = 0; i < buyReqInfos.length; i++) {
         const sellerSignedPsbtB64 = buyReqInfos[i].sellerSignedPsbtB64;
-        const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: Network });
+        const sellerSignedPsbt = Psbt.fromBase64(sellerSignedPsbtB64, { network: tcBTCNetwork });
         const sellerInputs = sellerSignedPsbt.data.inputs;
         if (sellerInputs.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS, "Invalid seller's PSBT.");
