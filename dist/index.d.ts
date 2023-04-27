@@ -924,6 +924,7 @@ declare const ERROR_CODE: {
     RESTORE_HD_WALLET: string;
     DECRYPT: string;
     TAPROOT_FROM_MNEMONIC: string;
+    CANNOT_FIND_ACCOUNT: string;
 };
 declare const ERROR_MESSAGE: {
     [x: string]: {
@@ -1231,11 +1232,12 @@ interface IDeriveKey {
     address: string;
 }
 interface IHDWallet {
-    name: string | undefined;
-    mnemonic: string | undefined;
-    derives: Array<IDeriveKey> | undefined;
-    btcPrivateKey: string | undefined;
-    btcAddress: string | undefined;
+    name: string;
+    mnemonic: string;
+    nodes: Array<IDeriveKey>;
+    deletedIndexs: Array<number>;
+    btcPrivateKey: string;
+    btcAddress: string;
 }
 interface IMasterless {
     name: string | undefined;
@@ -1253,10 +1255,10 @@ declare class MasterWallet {
     private _masterless;
     constructor();
     private restoreHDWallet;
-    restore: (password: string) => Promise<{
+    load: (password: string) => Promise<{
         hdWallet: IHDWallet | undefined;
     }>;
-    getHDWallet: () => HDWallet$1 | undefined;
+    getHDWallet: () => HDWallet$1;
     getBTCAddress: () => string | undefined;
     getBTCPrivateKey: () => string | undefined;
 }
@@ -1264,13 +1266,22 @@ declare class MasterWallet {
 declare class HDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
-    derives: Array<IDeriveKey$1> | undefined;
+    nodes: Array<IDeriveKey$1> | undefined;
+    deletedIndexs: Array<number> | undefined;
     btcPrivateKey: string | undefined;
     btcAddress: string | undefined;
     constructor();
     set: (wallet: IHDWallet$1) => void;
     saveWallet: (wallet: IHDWallet$1, password: string) => Promise<void>;
-    static restore: (password: string) => Promise<IHDWallet$1 | undefined>;
+    createNewAccount: ({ password, name }: {
+        password: string;
+        name?: string | undefined;
+    }) => Promise<void>;
+    deletedAccount: ({ password, address }: {
+        password: string;
+        address: string;
+    }) => Promise<void>;
+    restore: (password: string) => Promise<IHDWallet$1 | undefined>;
 }
 
 declare class Masterless {
@@ -1285,7 +1296,7 @@ declare const BTCTaprootDerivationPath = "m/86'/0'/0'/0/0";
 
 declare const deriveHDNodeByIndex: (payload: IDeriveReq$1) => IDeriveKey$2;
 declare const randomMnemonic: () => Promise<IHDWallet$2>;
-declare const validateHDWallet: (wallet: IHDWallet$2 | undefined) => void;
+declare const validateHDWallet: (wallet: IHDWallet$2 | undefined, methodName: string) => void;
 declare const getStorageHDWallet: (password: string) => Promise<IHDWallet$2 | undefined>;
 declare const setStorageHDWallet: (wallet: IHDWallet$2, password: string) => Promise<void>;
 

@@ -11,24 +11,18 @@ class MasterWallet {
     }
 
     private restoreHDWallet = async (password: string) => {
-        const storedHDWallet = await HDWallet.restore(password);
-        if (storedHDWallet) {
-            const wallet = new HDWallet();
-            wallet.set({
-                name: storedHDWallet.name,
-
-                mnemonic: storedHDWallet.mnemonic,
-                derives: storedHDWallet.derives,
-
-                btcAddress: storedHDWallet.btcAddress,
-                btcPrivateKey: storedHDWallet.btcPrivateKey
+        const hdWalletIns = new HDWallet();
+        const wallet = await hdWalletIns.restore(password);
+        if (wallet) {
+            hdWalletIns.set({
+                ...wallet
             });
-            this._hdWallet = wallet;
+            this._hdWallet = hdWalletIns;
+            return wallet;
         }
-        return storedHDWallet;
     };
 
-    restore = async (password: string) => {
+    load = async (password: string) => {
         new Validator("password", password).string().required();
         const hdWallet = await this.restoreHDWallet(password);
         return {
@@ -36,10 +30,11 @@ class MasterWallet {
         };
     };
 
-    getHDWallet = () => {
+    getHDWallet = (): HDWallet => {
         new Validator("Get HDWallet", this._hdWallet).required("Please restore wallet.");
-        return this._hdWallet;
+        return this._hdWallet!;
     };
+
     getBTCAddress = (): string | undefined => {
         return this._hdWallet?.btcAddress;
     };

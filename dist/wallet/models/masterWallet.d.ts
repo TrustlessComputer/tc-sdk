@@ -4,10 +4,10 @@ declare class MasterWallet {
     private _masterless;
     constructor();
     private restoreHDWallet;
-    restore: (password: string) => Promise<{
+    load: (password: string) => Promise<{
         hdWallet: import("../types/account").IHDWallet | undefined;
     }>;
-    getHDWallet: () => HDWallet | undefined;
+    getHDWallet: () => HDWallet;
     getBTCAddress: () => string | undefined;
     getBTCPrivateKey: () => string | undefined;
 }

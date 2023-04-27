@@ -29,7 +29,8 @@ const config = [
             "sats-connect",
             "varuint-bitcoin",
             "underscore",
-            "bip39"
+            "bip39",
+            "lodash/maxBy"
         ],
         plugins: [
             typescript(),

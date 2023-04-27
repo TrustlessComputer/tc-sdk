@@ -2,12 +2,21 @@ import { IDeriveKey, IHDWallet } from "@/wallet/types";
 declare class HDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
-    derives: Array<IDeriveKey> | undefined;
+    nodes: Array<IDeriveKey> | undefined;
+    deletedIndexs: Array<number> | undefined;
     btcPrivateKey: string | undefined;
     btcAddress: string | undefined;
     constructor();
     set: (wallet: IHDWallet) => void;
     saveWallet: (wallet: IHDWallet, password: string) => Promise<void>;
-    static restore: (password: string) => Promise<IHDWallet | undefined>;
+    createNewAccount: ({ password, name }: {
+        password: string;
+        name?: string | undefined;
+    }) => Promise<void>;
+    deletedAccount: ({ password, address }: {
+        password: string;
+        address: string;
+    }) => Promise<void>;
+    restore: (password: string) => Promise<IHDWallet | undefined>;
 }
 export { HDWallet };

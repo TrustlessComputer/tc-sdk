@@ -6,12 +6,13 @@ interface IDeriveKey {
 }
 
 interface IHDWallet {
-    name: string | undefined;
-    mnemonic: string | undefined;
-    derives: Array<IDeriveKey> | undefined;
+    name: string ;
+    mnemonic: string;
+    nodes: Array<IDeriveKey>;
+    deletedIndexs: Array<number>;
 
-    btcPrivateKey: string | undefined;
-    btcAddress: string | undefined;
+    btcPrivateKey: string;
+    btcAddress: string;
 }
 
 interface IMasterless {

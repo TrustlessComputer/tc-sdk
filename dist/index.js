@@ -15,6 +15,7 @@ var wif = require('wif');
 var axios = require('axios');
 var satsConnect = require('sats-connect');
 var varuint = require('varuint-bitcoin');
+var maxBy = require('lodash/maxBy');
 var bip39 = require('bip39');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
@@ -44,6 +45,7 @@ var Web3__default = /*#__PURE__*/_interopDefaultLegacy(Web3);
 var wif__default = /*#__PURE__*/_interopDefaultLegacy(wif);
 var axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 var varuint__default = /*#__PURE__*/_interopDefaultLegacy(varuint);
+var maxBy__default = /*#__PURE__*/_interopDefaultLegacy(maxBy);
 var bip39__namespace = /*#__PURE__*/_interopNamespace(bip39);
 
 /*
@@ -2993,6 +2995,7 @@ const ERROR_CODE$1 = {
     RESTORE_HD_WALLET: "-20",
     DECRYPT: "-21",
     TAPROOT_FROM_MNEMONIC: "-22",
+    CANNOT_FIND_ACCOUNT: "-23",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -3082,6 +3085,10 @@ const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.TAPROOT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
         desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE$1.CANNOT_FIND_ACCOUNT]: {
+        message: "Can not find account.",
+        desc: "an not find account.",
     },
 };
 class SDKError$1 extends Error {
@@ -5951,6 +5958,7 @@ const ERROR_CODE = {
     RESTORE_HD_WALLET: "-20",
     DECRYPT: "-21",
     TAPROOT_FROM_MNEMONIC: "-22",
+    CANNOT_FIND_ACCOUNT: "-23",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -6040,6 +6048,10 @@ const ERROR_MESSAGE = {
     [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
         desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE.CANNOT_FIND_ACCOUNT]: {
+        message: "Can not find account.",
+        desc: "an not find account.",
     },
 };
 class SDKError extends Error {
@@ -7093,18 +7105,32 @@ const decryptAES = (cipherText, key) => {
     throw new SDKError(ERROR_CODE.DECRYPT);
 };
 
-const validateHDWallet$1 = (wallet) => {
-    new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
-    new Validator("saveWallet-name", wallet?.name).string().required();
-    new Validator("saveWallet-derives", wallet?.derives).required();
-    new Validator("saveWallet-btcAddress", wallet?.btcAddress).required();
-    new Validator("saveWallet-btcPrivateKey", wallet?.btcPrivateKey).required();
-    if (wallet?.derives) {
-        for (const child of wallet.derives) {
-            new Validator("saveWallet-derive-name", child.name).required();
-            new Validator("saveWallet-derive-index", child.index).required();
-            new Validator("saveWallet-derive-privateKey", child.privateKey).required();
-            new Validator("saveWallet-derive-address", child.address).required();
+const deriveHDNodeByIndex$1 = (payload) => {
+    const hdNode = ethers.ethers.utils.HDNode
+        .fromMnemonic(payload.mnemonic)
+        .derivePath(ETHDerivationPath$1 + "/" + payload.index);
+    const privateKey = hdNode.privateKey;
+    const address = hdNode.address;
+    const accountName = payload.name || `Account ${payload.index + 1}`;
+    return {
+        name: accountName,
+        index: payload.index,
+        privateKey: privateKey,
+        address: address,
+    };
+};
+const validateHDWallet$1 = (wallet, methodName) => {
+    new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
+    new Validator(`${methodName}-` + "validate-name", wallet?.name).string().required();
+    new Validator(`${methodName}-` + "validate-nodes", wallet?.nodes).required();
+    new Validator(`${methodName}-` + "validate-btcAddress", wallet?.btcAddress).required();
+    new Validator(`${methodName}-` + "validate-btcPrivateKey", wallet?.btcPrivateKey).required();
+    if (wallet?.nodes) {
+        for (const node of wallet.nodes) {
+            new Validator(`${methodName}-` + "validate-derive-name", node.name).required();
+            new Validator(`${methodName}-` + "validate-derive-index", node.index).required();
+            new Validator(`${methodName}-` + "validate-derive-privateKey", node.privateKey).required();
+            new Validator(`${methodName}-` + "validate-derive-address", node.address).required();
         }
     }
 };
@@ -7115,7 +7141,7 @@ const getStorageHDWallet$1 = async (password) => {
     }
     const rawText = decryptAES(cipherText, password);
     const wallet = JSON.parse(rawText);
-    validateHDWallet$1(wallet);
+    validateHDWallet$1(wallet, "getStorageHDWallet");
     return wallet;
 };
 const setStorageHDWallet$1 = async (wallet, password) => {
@@ -7126,10 +7152,11 @@ const setStorageHDWallet$1 = async (wallet, password) => {
 class HDWallet$1 {
     constructor() {
         this.set = (wallet) => {
-            validateHDWallet$1(wallet);
+            validateHDWallet$1(wallet, "hdset");
             this.name = wallet.name;
             this.mnemonic = wallet.mnemonic;
-            this.derives = wallet.derives;
+            this.nodes = wallet.nodes;
+            this.deletedIndexs = wallet.deletedIndexs;
             this.btcPrivateKey = wallet.btcPrivateKey;
             this.btcAddress = wallet.btcAddress;
         };
@@ -7137,25 +7164,66 @@ class HDWallet$1 {
             this.set(wallet);
             await setStorageHDWallet$1(wallet, password);
         };
+        this.createNewAccount = async ({ password, name }) => {
+            const wallet = await getStorageHDWallet$1(password);
+            validateHDWallet$1(wallet, "create-new-account");
+            if (!wallet)
+                return;
+            const { mnemonic, nodes, deletedIndexs } = wallet;
+            const latestNode = maxBy__default["default"](nodes, item => Number(item.index));
+            let newNodeIndex = (latestNode?.index || 0) + 1;
+            for (const deletedIndex of deletedIndexs) {
+                if (newNodeIndex <= deletedIndex) {
+                    newNodeIndex += 1;
+                }
+            }
+            const childNode = deriveHDNodeByIndex$1({
+                mnemonic,
+                index: newNodeIndex,
+                name
+            });
+            nodes.push(childNode);
+            await this.saveWallet(wallet, password);
+        };
+        this.deletedAccount = async ({ password, address }) => {
+            const wallet = await getStorageHDWallet$1(password);
+            validateHDWallet$1(wallet, "delete-account");
+            if (!wallet)
+                return;
+            const { nodes, deletedIndexs } = wallet;
+            const node = nodes.find(node => node.address.toLowerCase() === address.toLowerCase());
+            if (!node) {
+                throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
+            }
+            deletedIndexs.push(node.index);
+            const newNodes = nodes.filter(node => node.address.toLowerCase() !== address.toLowerCase());
+            await this.saveWallet({
+                ...wallet,
+                nodes: newNodes
+            }, password);
+        };
+        this.restore = async (password) => {
+            new Validator("restore-password: ", password).string().required();
+            try {
+                const wallet = await getStorageHDWallet$1(password);
+                return wallet;
+            }
+            catch (error) {
+                let message = "";
+                if (error instanceof Error) {
+                    message = error.message;
+                }
+                throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
+            }
+        };
         this.name = undefined;
         this.mnemonic = undefined;
-        this.derives = undefined;
+        this.nodes = undefined;
+        this.deletedIndexs = undefined;
+        this.btcPrivateKey = undefined;
+        this.btcAddress = undefined;
     }
 }
-HDWallet$1.restore = async (password) => {
-    new Validator("restore-password: ", password).string().required();
-    try {
-        const wallet = await getStorageHDWallet$1(password);
-        return wallet;
-    }
-    catch (error) {
-        let message = "";
-        if (error instanceof Error) {
-            message = error.message;
-        }
-        throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
-    }
-};
 
 const ETHDerivationPath$1 = "m/44'/60'/0'/0";
 const BTCTaprootDerivationPath$1 = "m/86'/0'/0'/0/0";
@@ -7184,21 +7252,17 @@ const generateTaprootHDNodeFromMnemonic$1 = async (mnemonic) => {
 class MasterWallet {
     constructor() {
         this.restoreHDWallet = async (password) => {
-            const storedHDWallet = await HDWallet$1.restore(password);
-            if (storedHDWallet) {
-                const wallet = new HDWallet$1();
-                wallet.set({
-                    name: storedHDWallet.name,
-                    mnemonic: storedHDWallet.mnemonic,
-                    derives: storedHDWallet.derives,
-                    btcAddress: storedHDWallet.btcAddress,
-                    btcPrivateKey: storedHDWallet.btcPrivateKey
+            const hdWalletIns = new HDWallet$1();
+            const wallet = await hdWalletIns.restore(password);
+            if (wallet) {
+                hdWalletIns.set({
+                    ...wallet
                 });
-                this._hdWallet = wallet;
+                this._hdWallet = hdWalletIns;
+                return wallet;
             }
-            return storedHDWallet;
         };
-        this.restore = async (password) => {
+        this.load = async (password) => {
             new Validator("password", password).string().required();
             const hdWallet = await this.restoreHDWallet(password);
             return {
@@ -7223,10 +7287,11 @@ class MasterWallet {
 class HDWallet {
     constructor() {
         this.set = (wallet) => {
-            validateHDWallet$1(wallet);
+            validateHDWallet$1(wallet, "hdset");
             this.name = wallet.name;
             this.mnemonic = wallet.mnemonic;
-            this.derives = wallet.derives;
+            this.nodes = wallet.nodes;
+            this.deletedIndexs = wallet.deletedIndexs;
             this.btcPrivateKey = wallet.btcPrivateKey;
             this.btcAddress = wallet.btcAddress;
         };
@@ -7234,25 +7299,66 @@ class HDWallet {
             this.set(wallet);
             await setStorageHDWallet$1(wallet, password);
         };
+        this.createNewAccount = async ({ password, name }) => {
+            const wallet = await getStorageHDWallet$1(password);
+            validateHDWallet$1(wallet, "create-new-account");
+            if (!wallet)
+                return;
+            const { mnemonic, nodes, deletedIndexs } = wallet;
+            const latestNode = maxBy__default["default"](nodes, item => Number(item.index));
+            let newNodeIndex = (latestNode?.index || 0) + 1;
+            for (const deletedIndex of deletedIndexs) {
+                if (newNodeIndex <= deletedIndex) {
+                    newNodeIndex += 1;
+                }
+            }
+            const childNode = deriveHDNodeByIndex$1({
+                mnemonic,
+                index: newNodeIndex,
+                name
+            });
+            nodes.push(childNode);
+            await this.saveWallet(wallet, password);
+        };
+        this.deletedAccount = async ({ password, address }) => {
+            const wallet = await getStorageHDWallet$1(password);
+            validateHDWallet$1(wallet, "delete-account");
+            if (!wallet)
+                return;
+            const { nodes, deletedIndexs } = wallet;
+            const node = nodes.find(node => node.address.toLowerCase() === address.toLowerCase());
+            if (!node) {
+                throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
+            }
+            deletedIndexs.push(node.index);
+            const newNodes = nodes.filter(node => node.address.toLowerCase() !== address.toLowerCase());
+            await this.saveWallet({
+                ...wallet,
+                nodes: newNodes
+            }, password);
+        };
+        this.restore = async (password) => {
+            new Validator("restore-password: ", password).string().required();
+            try {
+                const wallet = await getStorageHDWallet$1(password);
+                return wallet;
+            }
+            catch (error) {
+                let message = "";
+                if (error instanceof Error) {
+                    message = error.message;
+                }
+                throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
+            }
+        };
         this.name = undefined;
         this.mnemonic = undefined;
-        this.derives = undefined;
+        this.nodes = undefined;
+        this.deletedIndexs = undefined;
+        this.btcPrivateKey = undefined;
+        this.btcAddress = undefined;
     }
 }
-HDWallet.restore = async (password) => {
-    new Validator("restore-password: ", password).string().required();
-    try {
-        const wallet = await getStorageHDWallet$1(password);
-        return wallet;
-    }
-    catch (error) {
-        let message = "";
-        if (error instanceof Error) {
-            message = error.message;
-        }
-        throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
-    }
-};
 
 class Masterless {
     constructor() {
@@ -7284,7 +7390,7 @@ const randomMnemonic = async () => {
     const mnemonic = wallet.mnemonic.phrase;
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
     const { address: btcAddress, privateKey: btcPrivateKey } = await generateTaprootHDNodeFromMnemonic$1(mnemonic);
-    const deriveKey = deriveHDNodeByIndex({
+    const childNode = deriveHDNodeByIndex({
         mnemonic,
         index: 0,
         name: undefined
@@ -7292,23 +7398,24 @@ const randomMnemonic = async () => {
     return {
         name: "Anon",
         mnemonic,
-        derives: [deriveKey],
+        nodes: [childNode],
         btcAddress,
-        btcPrivateKey
+        btcPrivateKey,
+        deletedIndexs: []
     };
 };
-const validateHDWallet = (wallet) => {
-    new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
-    new Validator("saveWallet-name", wallet?.name).string().required();
-    new Validator("saveWallet-derives", wallet?.derives).required();
-    new Validator("saveWallet-btcAddress", wallet?.btcAddress).required();
-    new Validator("saveWallet-btcPrivateKey", wallet?.btcPrivateKey).required();
-    if (wallet?.derives) {
-        for (const child of wallet.derives) {
-            new Validator("saveWallet-derive-name", child.name).required();
-            new Validator("saveWallet-derive-index", child.index).required();
-            new Validator("saveWallet-derive-privateKey", child.privateKey).required();
-            new Validator("saveWallet-derive-address", child.address).required();
+const validateHDWallet = (wallet, methodName) => {
+    new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
+    new Validator(`${methodName}-` + "validate-name", wallet?.name).string().required();
+    new Validator(`${methodName}-` + "validate-nodes", wallet?.nodes).required();
+    new Validator(`${methodName}-` + "validate-btcAddress", wallet?.btcAddress).required();
+    new Validator(`${methodName}-` + "validate-btcPrivateKey", wallet?.btcPrivateKey).required();
+    if (wallet?.nodes) {
+        for (const node of wallet.nodes) {
+            new Validator(`${methodName}-` + "validate-derive-name", node.name).required();
+            new Validator(`${methodName}-` + "validate-derive-index", node.index).required();
+            new Validator(`${methodName}-` + "validate-derive-privateKey", node.privateKey).required();
+            new Validator(`${methodName}-` + "validate-derive-address", node.address).required();
         }
     }
 };
@@ -7319,7 +7426,7 @@ const getStorageHDWallet = async (password) => {
     }
     const rawText = decryptAES(cipherText, password);
     const wallet = JSON.parse(rawText);
-    validateHDWallet(wallet);
+    validateHDWallet(wallet, "getStorageHDWallet");
     return wallet;
 };
 const setStorageHDWallet = async (wallet, password) => {

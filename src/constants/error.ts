@@ -22,6 +22,7 @@ export const ERROR_CODE = {
     RESTORE_HD_WALLET: "-20",
     DECRYPT: "-21",
     TAPROOT_FROM_MNEMONIC: "-22",
+    CANNOT_FIND_ACCOUNT: "-23",
 };
 
 export const ERROR_MESSAGE = {
@@ -112,6 +113,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
         desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE.CANNOT_FIND_ACCOUNT]: {
+        message: "Can not find account.",
+        desc: "an not find account.",
     },
 };
 

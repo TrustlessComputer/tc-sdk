@@ -24,7 +24,7 @@ const randomMnemonic = async (): Promise<IHDWallet> => {
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
 
     const { address: btcAddress, privateKey: btcPrivateKey } = await generateTaprootHDNodeFromMnemonic(mnemonic);
-    const deriveKey = deriveHDNodeByIndex({
+    const childNode = deriveHDNodeByIndex({
         mnemonic,
         index: 0,
         name: undefined
@@ -32,24 +32,25 @@ const randomMnemonic = async (): Promise<IHDWallet> => {
     return {
         name: "Anon",
         mnemonic,
-        derives: [deriveKey],
+        nodes: [childNode],
         btcAddress,
-        btcPrivateKey
+        btcPrivateKey,
+        deletedIndexs: []
     };
 };
 
-const validateHDWallet = (wallet: IHDWallet | undefined) => {
-    new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
-    new Validator("saveWallet-name", wallet?.name).string().required();
-    new Validator("saveWallet-derives", wallet?.derives).required();
-    new Validator("saveWallet-btcAddress", wallet?.btcAddress).required();
-    new Validator("saveWallet-btcPrivateKey", wallet?.btcPrivateKey).required();
-    if (wallet?.derives) {
-        for (const child of wallet.derives) {
-            new Validator("saveWallet-derive-name", child.name).required();
-            new Validator("saveWallet-derive-index", child.index).required();
-            new Validator("saveWallet-derive-privateKey", child.privateKey).required();
-            new Validator("saveWallet-derive-address", child.address).required();
+const validateHDWallet = (wallet: IHDWallet | undefined, methodName: string) => {
+    new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
+    new Validator(`${methodName}-` + "validate-name", wallet?.name).string().required();
+    new Validator(`${methodName}-` + "validate-nodes", wallet?.nodes).required();
+    new Validator(`${methodName}-` + "validate-btcAddress", wallet?.btcAddress).required();
+    new Validator(`${methodName}-` + "validate-btcPrivateKey", wallet?.btcPrivateKey).required();
+    if (wallet?.nodes) {
+        for (const node of wallet.nodes) {
+            new Validator(`${methodName}-` + "validate-derive-name", node.name).required();
+            new Validator(`${methodName}-` + "validate-derive-index", node.index).required();
+            new Validator(`${methodName}-` + "validate-derive-privateKey", node.privateKey).required();
+            new Validator(`${methodName}-` + "validate-derive-address", node.address).required();
         }
     }
 };
@@ -61,7 +62,7 @@ const getStorageHDWallet = async (password: string): Promise<IHDWallet | undefin
     }
     const rawText = decryptAES(cipherText, password);
     const wallet: IHDWallet = JSON.parse(rawText);
-    validateHDWallet(wallet);
+    validateHDWallet(wallet, "getStorageHDWallet");
     return wallet;
 };
 
