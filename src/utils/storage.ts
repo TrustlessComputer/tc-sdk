@@ -40,14 +40,14 @@ class StorageService {
         if (!this.setMethod) return;
         new Validator("key", key).required().string();
 
-        const dataStr = typeof data === "string" ? data : JSON.stringify(data);
+        const dataStr = JSON.stringify(data);
         return await this.setMethod(this._getKey(key), dataStr);
     }
 
     async get(key: string) {
         new Validator("key", key).required().string();
         if (!this.getMethod) return;
-        const dataStr =  await this.getMethod(this._getKey(key));
+        const dataStr = await this.getMethod(this._getKey(key));
         return JSON.parse(dataStr);
     }
 
@@ -58,8 +58,6 @@ class StorageService {
     }
 }
 
-const storage = new StorageService();
-
 export {
-    storage
+    StorageService
 };

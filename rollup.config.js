@@ -1,5 +1,5 @@
-import dts from "rollup-plugin-dts";
 // rollup.config.js
+import dts from "rollup-plugin-dts";
 import { nodeResolve as resolve } from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 
@@ -28,9 +28,13 @@ const config = [
             "ethereumjs-wallet",
             "sats-connect",
             "varuint-bitcoin",
-            "underscore"
+            "underscore",
+            "bip39"
         ],
-        plugins: [resolve(), typescript()]
+        plugins: [
+            typescript(),
+            resolve(),
+        ]
     },
     {
         input: "build/compiled/index.d.ts",

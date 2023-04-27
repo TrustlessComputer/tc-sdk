@@ -1,7 +1,7 @@
 import { HDWallet, Masterless } from "@/wallet";
-import {Validator} from "@/utils";
+import { Validator } from "@/utils";
 
-class Wallet {
+class MasterWallet {
     private _hdWallet: HDWallet | undefined;
     private _masterless: Masterless[] | undefined; // TODO next step
 
@@ -16,8 +16,12 @@ class Wallet {
             const wallet = new HDWallet();
             wallet.set({
                 name: storedHDWallet.name,
+
                 mnemonic: storedHDWallet.mnemonic,
                 derives: storedHDWallet.derives,
+
+                btcAddress: storedHDWallet.btcAddress,
+                btcPrivateKey: storedHDWallet.btcPrivateKey
             });
             this._hdWallet = wallet;
         }
@@ -36,6 +40,14 @@ class Wallet {
         new Validator("Get HDWallet", this._hdWallet).required("Please restore wallet.");
         return this._hdWallet;
     };
+    getBTCAddress = (): string | undefined => {
+        return this._hdWallet?.btcAddress;
+    };
+    getBTCPrivateKey = (): string | undefined => {
+        return this._hdWallet?.btcPrivateKey;
+    };
 }
 
-export default Wallet;
+export {
+    MasterWallet
+};

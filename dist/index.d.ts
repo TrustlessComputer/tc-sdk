@@ -5,8 +5,11 @@ import * as ecpair from 'ecpair';
 import { ECPairAPI, ECPairInterface } from 'ecpair';
 import { ethers } from 'ethers';
 import { BIP32Interface } from 'bip32';
+import { TcClient as TcClient$1 } from '@/tc';
+import { StorageService as StorageService$1 } from '@/utils/storage';
 import { Tapleaf } from 'bitcoinjs-lib/src/types';
-import { IDeriveKey as IDeriveKey$1, IHDWallet as IHDWallet$1, IDeriveReq as IDeriveReq$1 } from '@/wallet';
+import { HDWallet as HDWallet$1, IDeriveReq as IDeriveReq$1, IDeriveKey as IDeriveKey$2, IHDWallet as IHDWallet$2 } from '@/wallet';
+import { IDeriveKey as IDeriveKey$1, IHDWallet as IHDWallet$1 } from '@/wallet/types';
 
 declare const BlockStreamURL = "https://blockstream.info/api";
 declare const MinSats = 1000;
@@ -920,6 +923,7 @@ declare const ERROR_CODE: {
     RPC_GET_TAPSCRIPT_INFO: string;
     RESTORE_HD_WALLET: string;
     DECRYPT: string;
+    TAPROOT_FROM_MNEMONIC: string;
 };
 declare const ERROR_MESSAGE: {
     [x: string]: {
@@ -933,6 +937,11 @@ declare class SDKError extends Error {
     desc: string;
     constructor(code: string, desc?: string);
     getMessage(): string;
+}
+
+declare enum StorageKeys {
+    HDWallet = "hd-wallet-cipher",
+    masterless = "masterless-cipher"
 }
 
 declare class Validator {
@@ -956,6 +965,31 @@ declare class Validator {
 
 declare const encryptAES: (text: string, key: string) => string;
 declare const decryptAES: (cipherText: string, key: string) => string;
+
+interface ImplementInterface {
+    namespace: string | undefined;
+    setMethod(key: string, data: string): Promise<any>;
+    getMethod(key: string): Promise<any>;
+    removeMethod(key: string): Promise<any>;
+}
+declare class StorageService {
+    namespace: string | undefined;
+    setMethod: ((key: string, data: string) => any) | undefined;
+    getMethod: ((key: string) => any) | undefined;
+    removeMethod: ((key: string) => any) | undefined;
+    constructor(namespace?: string);
+    implement({ setMethod, getMethod, removeMethod, namespace }: ImplementInterface): void;
+    _getKey(key: string): string;
+    set(key: string, data: any): Promise<any>;
+    get(key: string): Promise<any>;
+    remove(key: string): Promise<any>;
+}
+
+interface ISetupPayload {
+    storage: StorageService$1;
+    tcClient: TcClient$1;
+}
+declare const setupConfig: ({ storage, tcClient }: ISetupPayload) => void;
 
 declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }: {
     internalPubKey: Buffer;
@@ -1200,6 +1234,8 @@ interface IHDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
     derives: Array<IDeriveKey> | undefined;
+    btcPrivateKey: string | undefined;
+    btcAddress: string | undefined;
 }
 interface IMasterless {
     name: string | undefined;
@@ -1212,13 +1248,28 @@ interface IDeriveReq {
     name?: string;
 }
 
+declare class MasterWallet {
+    private _hdWallet;
+    private _masterless;
+    constructor();
+    private restoreHDWallet;
+    restore: (password: string) => Promise<{
+        hdWallet: IHDWallet | undefined;
+    }>;
+    getHDWallet: () => HDWallet$1 | undefined;
+    getBTCAddress: () => string | undefined;
+    getBTCPrivateKey: () => string | undefined;
+}
+
 declare class HDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
     derives: Array<IDeriveKey$1> | undefined;
+    btcPrivateKey: string | undefined;
+    btcAddress: string | undefined;
     constructor();
     set: (wallet: IHDWallet$1) => void;
-    saveWallet: (wallet: IHDWallet$1) => Promise<void>;
+    saveWallet: (wallet: IHDWallet$1, password: string) => Promise<void>;
     static restore: (password: string) => Promise<IHDWallet$1 | undefined>;
 }
 
@@ -1229,37 +1280,19 @@ declare class Masterless {
     constructor();
 }
 
-declare const derivationPath = "m/44'/60'/0'/0";
+declare const ETHDerivationPath = "m/44'/60'/0'/0";
+declare const BTCTaprootDerivationPath = "m/86'/0'/0'/0/0";
 
-declare const deriveHDNodeByIndex: (payload: IDeriveReq$1) => IDeriveKey$1;
-declare const randomMnemonic: () => IHDWallet$1;
-declare const validateHDWallet: (wallet: IHDWallet$1 | undefined) => void;
-declare const getStorageHDWallet: () => Promise<string | undefined>;
-declare const setStorageHDWallet: (wallet: IHDWallet$1) => Promise<void>;
+declare const deriveHDNodeByIndex: (payload: IDeriveReq$1) => IDeriveKey$2;
+declare const randomMnemonic: () => Promise<IHDWallet$2>;
+declare const validateHDWallet: (wallet: IHDWallet$2 | undefined) => void;
+declare const getStorageHDWallet: (password: string) => Promise<IHDWallet$2 | undefined>;
+declare const setStorageHDWallet: (wallet: IHDWallet$2, password: string) => Promise<void>;
 
-declare enum StorageKeys {
-    HDWallet = "hd-wallet-cipher",
-    masterless = "masterless-cipher"
-}
+declare const generateTaprootHDNodeFromMnemonic: (mnemonic: string) => Promise<{
+    privateKey: string;
+    privateKeyBuffer: Buffer;
+    address: string;
+}>;
 
-interface ImplementInterface {
-    namespace: string | undefined;
-    setMethod(key: string, data: string): Promise<any>;
-    getMethod(key: string): Promise<any>;
-    removeMethod(key: string): Promise<any>;
-}
-declare class StorageService {
-    namespace: string | undefined;
-    setMethod: ((key: string, data: string) => any) | undefined;
-    getMethod: ((key: string) => any) | undefined;
-    removeMethod: ((key: string) => any) | undefined;
-    constructor(namespace?: string);
-    implement({ setMethod, getMethod, removeMethod, namespace }: ImplementInterface): void;
-    _getKey(key: string): string;
-    set(key: string, data: any): Promise<any>;
-    get(key: string): Promise<any>;
-    remove(key: string): Promise<any>;
-}
-declare const storage: StorageService;
-
-export { BNZero, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, GetTxByHashResp, HDWallet, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, IDeriveKey, IDeriveReq, IHDWallet, IMasterless, ISignPSBTResp, InputSize, Inscription, Mainnet, Masterless, MinSats, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, StorageKeys, TCTxDetail, Target, TcClient, Testnet, URL, UTXO, Validator, Wallet, WalletType, actionRequest, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createDummyUTXOFromCardinal, createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createPSBTToBuy, createPSBTToSell, createRawPSBTToSell, createRawRevealTx, createRawTx, createRawTxDummyUTXOForSale, createRawTxDummyUTXOFromCardinal, createRawTxSendBTC, createRawTxSplitFundFromOrdinalUTXO, createRawTxToPrepareUTXOsToBuyMultiInscs, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSplitFundFromOrdinalUTXO, createTxWithSpecificUTXOs, decryptAES, decryptWallet, derivationPath, deriveETHWallet, deriveHDNodeByIndex, derivePasswordWallet, deriveSegwitWallet, encryptAES, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getBTCBalance, getBitcoinKeySignContent, getStorageHDWallet, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, prepareUTXOsToBuyMultiInscriptions, randomMnemonic, reqBuyInscription, reqBuyInscriptionFromAnyWallet, reqBuyMultiInscriptions, reqBuyMultiInscriptionsFromAnyWallet, reqListForSaleInscFromAnyWallet, reqListForSaleInscription, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, setStorageHDWallet, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, storage, tapTweakHash, toSat, toXOnly, tweakSigner, validateHDWallet };
+export { BNZero, BTCTaprootDerivationPath, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ETHDerivationPath, GetTxByHashResp, HDWallet, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, IDeriveKey, IDeriveReq, IHDWallet, IMasterless, ISignPSBTResp, InputSize, Inscription, Mainnet, MasterWallet, Masterless, MinSats, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, StorageKeys, StorageService, TCTxDetail, Target, TcClient, Testnet, URL, UTXO, Validator, Wallet, WalletType, actionRequest, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createDummyUTXOFromCardinal, createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createPSBTToBuy, createPSBTToSell, createRawPSBTToSell, createRawRevealTx, createRawTx, createRawTxDummyUTXOForSale, createRawTxDummyUTXOFromCardinal, createRawTxSendBTC, createRawTxSplitFundFromOrdinalUTXO, createRawTxToPrepareUTXOsToBuyMultiInscs, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSplitFundFromOrdinalUTXO, createTxWithSpecificUTXOs, decryptAES, decryptWallet, deriveETHWallet, deriveHDNodeByIndex, derivePasswordWallet, deriveSegwitWallet, encryptAES, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootHDNodeFromMnemonic, generateTaprootKeyPair, getBTCBalance, getBitcoinKeySignContent, getStorageHDWallet, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, prepareUTXOsToBuyMultiInscriptions, randomMnemonic, reqBuyInscription, reqBuyInscriptionFromAnyWallet, reqBuyMultiInscriptions, reqBuyMultiInscriptionsFromAnyWallet, reqListForSaleInscFromAnyWallet, reqListForSaleInscription, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, setStorageHDWallet, setupConfig, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner, validateHDWallet };

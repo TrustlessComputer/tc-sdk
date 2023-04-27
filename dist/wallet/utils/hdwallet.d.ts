@@ -1,7 +1,7 @@
 import { IDeriveKey, IDeriveReq, IHDWallet } from "@/wallet";
 declare const deriveHDNodeByIndex: (payload: IDeriveReq) => IDeriveKey;
-declare const randomMnemonic: () => IHDWallet;
+declare const randomMnemonic: () => Promise<IHDWallet>;
 declare const validateHDWallet: (wallet: IHDWallet | undefined) => void;
-declare const getStorageHDWallet: () => Promise<string | undefined>;
-declare const setStorageHDWallet: (wallet: IHDWallet) => Promise<void>;
+declare const getStorageHDWallet: (password: string) => Promise<IHDWallet | undefined>;
+declare const setStorageHDWallet: (wallet: IHDWallet, password: string) => Promise<void>;
 export { validateHDWallet, randomMnemonic, deriveHDNodeByIndex, getStorageHDWallet, setStorageHDWallet };

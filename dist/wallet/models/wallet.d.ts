@@ -1,5 +1,5 @@
 import { HDWallet } from "@/wallet";
-declare class Wallet {
+declare class MasterWallet {
     private _hdWallet;
     private _masterless;
     constructor();
@@ -8,5 +8,7 @@ declare class Wallet {
         hdWallet: import("../types/account").IHDWallet | undefined;
     }>;
     getHDWallet: () => HDWallet | undefined;
+    getBTCAddress: () => string | undefined;
+    getBTCPrivateKey: () => string | undefined;
 }
-export default Wallet;
+export { MasterWallet };

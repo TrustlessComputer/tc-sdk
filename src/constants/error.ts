@@ -20,7 +20,8 @@ export const ERROR_CODE = {
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
     RESTORE_HD_WALLET: "-20",
-    DECRYPT: "-21"
+    DECRYPT: "-21",
+    TAPROOT_FROM_MNEMONIC: "-22",
 };
 
 export const ERROR_MESSAGE = {
@@ -107,6 +108,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.DECRYPT]: {
         message: "Decrypt error.",
         desc: "Decrypt error.",
+    },
+    [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
     },
 };
 

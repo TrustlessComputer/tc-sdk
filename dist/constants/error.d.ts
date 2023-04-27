@@ -21,6 +21,7 @@ export declare const ERROR_CODE: {
     RPC_GET_TAPSCRIPT_INFO: string;
     RESTORE_HD_WALLET: string;
     DECRYPT: string;
+    TAPROOT_FROM_MNEMONIC: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

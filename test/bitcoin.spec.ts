@@ -8,7 +8,7 @@ import {
     createTx,
     createTxWithSpecificUTXOs,
     selectUTXOs,
-} from "../src/index";
+} from "../dist";
 
 import BigNumber from "bignumber.js";
 import { assert } from "chai";

@@ -15,6 +15,7 @@ var wif = require('wif');
 var axios = require('axios');
 var satsConnect = require('sats-connect');
 var varuint = require('varuint-bitcoin');
+var bip39 = require('bip39');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -43,6 +44,7 @@ var Web3__default = /*#__PURE__*/_interopDefaultLegacy(Web3);
 var wif__default = /*#__PURE__*/_interopDefaultLegacy(wif);
 var axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 var varuint__default = /*#__PURE__*/_interopDefaultLegacy(varuint);
+var bip39__namespace = /*#__PURE__*/_interopNamespace(bip39);
 
 /*
  *      bignumber.js v9.1.1
@@ -2989,7 +2991,8 @@ const ERROR_CODE$1 = {
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
     RESTORE_HD_WALLET: "-20",
-    DECRYPT: "-21"
+    DECRYPT: "-21",
+    TAPROOT_FROM_MNEMONIC: "-22",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -3075,6 +3078,10 @@ const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.DECRYPT]: {
         message: "Decrypt error.",
         desc: "Decrypt error.",
+    },
+    [ERROR_CODE$1.TAPROOT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
     },
 };
 class SDKError$1 extends Error {
@@ -3466,7 +3473,7 @@ const findExactValueUTXO = (cardinalUTXOs, value) => {
 
 bitcoinjsLib.initEccLib(ecc__namespace);
 const ECPair$1 = ecpair.ECPairFactory(ecc__namespace);
-const bip32 = BIP32Factory__default["default"](ecc__namespace);
+const bip32$2 = BIP32Factory__default["default"](ecc__namespace);
 const ETHWalletDefaultPath = "m/44'/60'/0'/0/0";
 const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
 /**
@@ -3474,7 +3481,7 @@ const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
 * @param bytes buffer private key
 * @returns the WIF private key string
 */
-const convertPrivateKey = (bytes) => {
+const convertPrivateKey$1 = (bytes) => {
     return wif__default["default"].encode(128, bytes, true);
 };
 /**
@@ -3592,7 +3599,7 @@ const importBTCPrivateKey = (wifPrivKey) => {
 */
 const deriveSegwitWallet = (privKeyTaproot) => {
     const seedSegwit = ethers.ethers.utils.arrayify(ethers.ethers.utils.keccak256(ethers.ethers.utils.arrayify(privKeyTaproot)));
-    const root = bip32.fromSeed(Buffer.from(seedSegwit), exports.Network);
+    const root = bip32$2.fromSeed(Buffer.from(seedSegwit), exports.Network);
     const { privateKey: segwitPrivKey, address: segwitAddress } = generateP2PKHKeyFromRoot(root);
     return {
         segwitPrivKeyBuffer: segwitPrivKey,
@@ -5909,77 +5916,16 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
     };
 };
 
-function isPrivateKey$1(privateKey) {
-    let isValid = false;
-    try {
-        // init key pair from senderPrivateKey
-        const keyPair = ECPair$1.fromPrivateKey(privateKey);
-        // Tweak the original keypair
-        const tweakedSigner = tweakSigner$1(keyPair, { network: exports.Network });
-        // Generate an address from the tweaked public key
-        const p2pktr = bitcoinjsLib.payments.p2tr({
-            pubkey: toXOnly$1(tweakedSigner.publicKey),
-            network: exports.Network
-        });
-        const senderAddress = p2pktr.address ? p2pktr.address : "";
-        isValid = senderAddress !== "";
-    }
-    catch (e) {
-        isValid = false;
-    }
-    return isValid;
-}
-class Validator$1 {
-    constructor(label, value) {
-        if (!label && typeof label !== "string") {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_VALIDATOR_LABEL);
-        }
-        this.value = value;
-        this.label = label;
-        this.isRequired = false;
-    }
-    _throwError(message) {
-        throw new Error(`Validating "${this.label}" failed: ${message}. Found ${this.value} (type of ${typeof this.value})`);
-    }
-    _isDefined() {
-        return this.value !== null && this.value !== undefined;
-    }
-    _onCondition(condition, message) {
-        if (((!this.isRequired && this._isDefined()) || this.isRequired) &&
-            !condition()) {
-            this._throwError(message);
-        }
-        return this;
-    }
-    required(message = "Required") {
-        this.isRequired = true;
-        return this._onCondition(() => this._isDefined(), message);
-    }
-    string(message = "Must be string") {
-        return this._onCondition(() => typeof this.value === "string", message);
-    }
-    buffer(message = "Must be buffer") {
-        return this._onCondition(() => Buffer.isBuffer(this.value), message);
-    }
-    function(message = "Must be a function") {
-        return this._onCondition(() => typeof this.value === "function", message);
-    }
-    boolean(message = "Must be boolean") {
-        return this._onCondition(() => typeof this.value === "boolean", message);
-    }
-    number(message = "Must be number") {
-        return this._onCondition(() => Number.isFinite(this.value), message);
-    }
-    array(message = "Must be array") {
-        return this._onCondition(() => this.value instanceof Array, message);
-    }
-    privateKey(message = "Invalid private key") {
-        return this._onCondition(() => this.buffer() && isPrivateKey$1(this.value), message);
-    }
-    mnemonic(message = "Invalid mnemonic") {
-        return this._onCondition(() => ethers.utils.isValidMnemonic(this.value), message);
-    }
-}
+exports.StorageKeys = void 0;
+(function (StorageKeys) {
+    StorageKeys["HDWallet"] = "hd-wallet-cipher";
+    StorageKeys["masterless"] = "masterless-cipher";
+})(exports.StorageKeys || (exports.StorageKeys = {}));
+
+new BigNumber(0);
+
+// default is bitcoin mainnet
+let Network = bitcoinjsLib.networks.bitcoin;
 
 const ERROR_CODE = {
     INVALID_CODE: "0",
@@ -6003,7 +5949,8 @@ const ERROR_CODE = {
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
     RESTORE_HD_WALLET: "-20",
-    DECRYPT: "-21"
+    DECRYPT: "-21",
+    TAPROOT_FROM_MNEMONIC: "-22",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -6090,6 +6037,10 @@ const ERROR_MESSAGE = {
         message: "Decrypt error.",
         desc: "Decrypt error.",
     },
+    [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
+    },
 };
 class SDKError extends Error {
     constructor(code, desc) {
@@ -6104,11 +6055,130 @@ class SDKError extends Error {
     }
 }
 
+bitcoinjsLib.initEccLib(ecc__namespace);
+const ECPair = ecpair.ECPairFactory(ecc__namespace);
+BIP32Factory__default["default"](ecc__namespace);
+/**
+* convertPrivateKey converts buffer private key to WIF private key string
+* @param bytes buffer private key
+* @returns the WIF private key string
+*/
+const convertPrivateKey = (bytes) => {
+    return wif__default["default"].encode(128, bytes, true);
+};
+function toXOnly(pubkey) {
+    if (pubkey.length === 33) {
+        return pubkey.subarray(1, 33);
+    }
+    return pubkey;
+}
+function tweakSigner(signer, opts = {}) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    let privateKey = signer.privateKey;
+    if (!privateKey) {
+        throw new Error("Private key is required for tweaking signer!");
+    }
+    if (signer.publicKey[0] === 3) {
+        privateKey = ecc__namespace.privateNegate(privateKey);
+    }
+    const tweakedPrivateKey = ecc__namespace.privateAdd(privateKey, tapTweakHash(toXOnly(signer.publicKey), opts.tweakHash));
+    if (!tweakedPrivateKey) {
+        throw new Error("Invalid tweaked private key!");
+    }
+    return ECPair.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
+        network: opts.network,
+    });
+}
+function tapTweakHash(pubKey, h) {
+    return bitcoinjsLib.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]));
+}
+
+bitcoinjsLib.Transaction.SIGHASH_SINGLE | bitcoinjsLib.Transaction.SIGHASH_ANYONECANPAY;
+
+var StorageKeys;
+(function (StorageKeys) {
+    StorageKeys["HDWallet"] = "hd-wallet-cipher";
+    StorageKeys["masterless"] = "masterless-cipher";
+})(StorageKeys || (StorageKeys = {}));
+
+function isPrivateKey$1(privateKey) {
+    let isValid = false;
+    try {
+        // init key pair from senderPrivateKey
+        const keyPair = ECPair.fromPrivateKey(privateKey);
+        // Tweak the original keypair
+        const tweakedSigner = tweakSigner(keyPair, { network: Network });
+        // Generate an address from the tweaked public key
+        const p2pktr = bitcoinjsLib.payments.p2tr({
+            pubkey: toXOnly(tweakedSigner.publicKey),
+            network: Network
+        });
+        const senderAddress = p2pktr.address ? p2pktr.address : "";
+        isValid = senderAddress !== "";
+    }
+    catch (e) {
+        isValid = false;
+    }
+    return isValid;
+}
+class Validator$1 {
+    constructor(label, value) {
+        if (!label && typeof label !== "string") {
+            throw new SDKError(ERROR_CODE.INVALID_VALIDATOR_LABEL);
+        }
+        this.value = value;
+        this.label = label;
+        this.isRequired = false;
+    }
+    _throwError(message) {
+        throw new Error(`Validating "${this.label}" failed: ${message}. Found ${this.value} (type of ${typeof this.value})`);
+    }
+    _isDefined() {
+        return this.value !== null && this.value !== undefined;
+    }
+    _onCondition(condition, message) {
+        if (((!this.isRequired && this._isDefined()) || this.isRequired) &&
+            !condition()) {
+            this._throwError(message);
+        }
+        return this;
+    }
+    required(message = "Required") {
+        this.isRequired = true;
+        return this._onCondition(() => this._isDefined(), message);
+    }
+    string(message = "Must be string") {
+        return this._onCondition(() => typeof this.value === "string", message);
+    }
+    buffer(message = "Must be buffer") {
+        return this._onCondition(() => Buffer.isBuffer(this.value), message);
+    }
+    function(message = "Must be a function") {
+        return this._onCondition(() => typeof this.value === "function", message);
+    }
+    boolean(message = "Must be boolean") {
+        return this._onCondition(() => typeof this.value === "boolean", message);
+    }
+    number(message = "Must be number") {
+        return this._onCondition(() => Number.isFinite(this.value), message);
+    }
+    array(message = "Must be array") {
+        return this._onCondition(() => this.value instanceof Array, message);
+    }
+    privateKey(message = "Invalid private key") {
+        return this._onCondition(() => this.buffer() && isPrivateKey$1(this.value), message);
+    }
+    mnemonic(message = "Invalid mnemonic") {
+        return this._onCondition(() => ethers.utils.isValidMnemonic(this.value), message);
+    }
+}
+
 const doubleHash$1 = (key) => {
     const hash = CryptoJS__namespace.SHA256(key);
     return CryptoJS__namespace.SHA256(hash).toString();
 };
-const encryptAES = (text, key) => {
+const encryptAES$1 = (text, key) => {
     const password = doubleHash$1(key);
     return CryptoJS__namespace.AES.encrypt(text, password).toString();
 };
@@ -6130,6 +6200,52 @@ const decryptAES$1 = (cipherText, key) => {
         }
     }
     throw new SDKError(ERROR_CODE.DECRYPT);
+};
+
+class StorageService {
+    constructor(namespace) {
+        this.namespace = namespace;
+        this.setMethod = undefined;
+        this.getMethod = undefined;
+        this.removeMethod = undefined;
+    }
+    implement({ setMethod, getMethod, removeMethod, namespace }) {
+        new Validator$1("setMethod", setMethod).required();
+        new Validator$1("getMethod", getMethod).required();
+        new Validator$1("removeMethod", removeMethod).required();
+        new Validator$1("namespace", namespace).string();
+        this.setMethod = setMethod;
+        this.getMethod = getMethod;
+        this.removeMethod = removeMethod;
+        this.namespace = namespace;
+    }
+    _getKey(key) {
+        return this.namespace ? `${this.namespace}-${key}` : key;
+    }
+    async set(key, data) {
+        if (!this.setMethod)
+            return;
+        new Validator$1("key", key).required().string();
+        const dataStr = JSON.stringify(data);
+        return await this.setMethod(this._getKey(key), dataStr);
+    }
+    async get(key) {
+        new Validator$1("key", key).required().string();
+        if (!this.getMethod)
+            return;
+        const dataStr = await this.getMethod(this._getKey(key));
+        return JSON.parse(dataStr);
+    }
+    async remove(key) {
+        new Validator$1("key", key).required().string();
+        if (!this.removeMethod)
+            return;
+        return await this.removeMethod(this._getKey(key));
+    }
+}
+
+const setupConfig = ({ storage, tcClient }) => {
+    // TODO
 };
 
 /**
@@ -6877,44 +6993,6 @@ var RequestMethod;
     RequestMethod["account"] = "account";
 })(RequestMethod || (RequestMethod = {}));
 
-new BigNumber(0);
-
-// default is bitcoin mainnet
-let Network = bitcoinjsLib.networks.bitcoin;
-
-bitcoinjsLib.initEccLib(ecc__namespace);
-const ECPair = ecpair.ECPairFactory(ecc__namespace);
-BIP32Factory__default["default"](ecc__namespace);
-function toXOnly(pubkey) {
-    if (pubkey.length === 33) {
-        return pubkey.subarray(1, 33);
-    }
-    return pubkey;
-}
-function tweakSigner(signer, opts = {}) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    let privateKey = signer.privateKey;
-    if (!privateKey) {
-        throw new Error("Private key is required for tweaking signer!");
-    }
-    if (signer.publicKey[0] === 3) {
-        privateKey = ecc__namespace.privateNegate(privateKey);
-    }
-    const tweakedPrivateKey = ecc__namespace.privateAdd(privateKey, tapTweakHash(toXOnly(signer.publicKey), opts.tweakHash));
-    if (!tweakedPrivateKey) {
-        throw new Error("Invalid tweaked private key!");
-    }
-    return ECPair.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
-        network: opts.network,
-    });
-}
-function tapTweakHash(pubKey, h) {
-    return bitcoinjsLib.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]));
-}
-
-bitcoinjsLib.Transaction.SIGHASH_SINGLE | bitcoinjsLib.Transaction.SIGHASH_ANYONECANPAY;
-
 function isPrivateKey(privateKey) {
     let isValid = false;
     try {
@@ -6991,6 +7069,10 @@ const doubleHash = (key) => {
     const hash = CryptoJS__namespace.SHA256(key);
     return CryptoJS__namespace.SHA256(hash).toString();
 };
+const encryptAES = (text, key) => {
+    const password = doubleHash(key);
+    return CryptoJS__namespace.AES.encrypt(text, password).toString();
+};
 const decryptAES = (cipherText, key) => {
     const password = doubleHash(key);
     const decrypted = CryptoJS__namespace.AES.decrypt(cipherText, password);
@@ -7011,59 +7093,12 @@ const decryptAES = (cipherText, key) => {
     throw new SDKError(ERROR_CODE.DECRYPT);
 };
 
-var StorageKeys;
-(function (StorageKeys) {
-    StorageKeys["HDWallet"] = "hd-wallet-cipher";
-    StorageKeys["masterless"] = "masterless-cipher";
-})(StorageKeys || (StorageKeys = {}));
-
-class StorageService$1 {
-    constructor(namespace) {
-        this.namespace = namespace;
-        this.setMethod = undefined;
-        this.getMethod = undefined;
-        this.removeMethod = undefined;
-    }
-    implement({ setMethod, getMethod, removeMethod, namespace }) {
-        new Validator("setMethod", setMethod).required();
-        new Validator("getMethod", getMethod).required();
-        new Validator("removeMethod", removeMethod).required();
-        new Validator("namespace", namespace).string();
-        this.setMethod = setMethod;
-        this.getMethod = getMethod;
-        this.removeMethod = removeMethod;
-        this.namespace = namespace;
-    }
-    _getKey(key) {
-        return this.namespace ? `${this.namespace}-${key}` : key;
-    }
-    async set(key, data) {
-        if (!this.setMethod)
-            return;
-        new Validator("key", key).required().string();
-        const dataStr = typeof data === "string" ? data : JSON.stringify(data);
-        return await this.setMethod(this._getKey(key), dataStr);
-    }
-    async get(key) {
-        new Validator("key", key).required().string();
-        if (!this.getMethod)
-            return;
-        const dataStr = await this.getMethod(this._getKey(key));
-        return JSON.parse(dataStr);
-    }
-    async remove(key) {
-        new Validator("key", key).required().string();
-        if (!this.removeMethod)
-            return;
-        return await this.removeMethod(this._getKey(key));
-    }
-}
-const storage$1 = new StorageService$1();
-
 const validateHDWallet$1 = (wallet) => {
     new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
     new Validator("saveWallet-name", wallet?.name).string().required();
     new Validator("saveWallet-derives", wallet?.derives).required();
+    new Validator("saveWallet-btcAddress", wallet?.btcAddress).required();
+    new Validator("saveWallet-btcPrivateKey", wallet?.btcPrivateKey).required();
     if (wallet?.derives) {
         for (const child of wallet.derives) {
             new Validator("saveWallet-derive-name", child.name).required();
@@ -7073,11 +7108,19 @@ const validateHDWallet$1 = (wallet) => {
         }
     }
 };
-const getStorageHDWallet$1 = async () => {
-    return await storage$1.get(StorageKeys.HDWallet);
+const getStorageHDWallet$1 = async (password) => {
+    const cipherText = await storage.get(StorageKeys.HDWallet);
+    if (!cipherText) {
+        return undefined;
+    }
+    const rawText = decryptAES(cipherText, password);
+    const wallet = JSON.parse(rawText);
+    validateHDWallet$1(wallet);
+    return wallet;
 };
-const setStorageHDWallet$1 = async (wallet) => {
-    await storage$1.set(StorageKeys.HDWallet, wallet);
+const setStorageHDWallet$1 = async (wallet, password) => {
+    const cipherText = encryptAES(JSON.stringify(wallet), password);
+    await storage.set(StorageKeys.HDWallet, cipherText);
 };
 
 class HDWallet$1 {
@@ -7087,10 +7130,12 @@ class HDWallet$1 {
             this.name = wallet.name;
             this.mnemonic = wallet.mnemonic;
             this.derives = wallet.derives;
+            this.btcPrivateKey = wallet.btcPrivateKey;
+            this.btcAddress = wallet.btcAddress;
         };
-        this.saveWallet = async (wallet) => {
+        this.saveWallet = async (wallet, password) => {
             this.set(wallet);
-            await setStorageHDWallet$1(wallet);
+            await setStorageHDWallet$1(wallet, password);
         };
         this.name = undefined;
         this.mnemonic = undefined;
@@ -7099,27 +7144,81 @@ class HDWallet$1 {
 }
 HDWallet$1.restore = async (password) => {
     new Validator("restore-password: ", password).string().required();
-    const cipherText = await getStorageHDWallet$1();
-    new Validator("restore-cipher: ", cipherText).string().required();
-    if (cipherText) {
-        try {
-            const rawText = decryptAES(cipherText, password);
-            const wallet = JSON.parse(rawText);
-            validateHDWallet$1(wallet);
-            return wallet;
-        }
-        catch (error) {
-            let message = "";
-            if (error instanceof Error) {
-                message = error.message;
-            }
-            throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
-        }
+    try {
+        const wallet = await getStorageHDWallet$1(password);
+        return wallet;
     }
-    return undefined;
+    catch (error) {
+        let message = "";
+        if (error instanceof Error) {
+            message = error.message;
+        }
+        throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
+    }
 };
 
-const derivationPath$1 = "m/44'/60'/0'/0";
+const ETHDerivationPath$1 = "m/44'/60'/0'/0";
+const BTCTaprootDerivationPath$1 = "m/86'/0'/0'/0/0";
+
+bitcoinjsLib.initEccLib(ecc__namespace);
+const bip32$1 = BIP32Factory__default["default"](ecc__namespace);
+const generateTaprootHDNodeFromMnemonic$1 = async (mnemonic) => {
+    const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
+    const rootKey = bip32$1.fromSeed(seed);
+    const childNode = rootKey.derivePath(BTCTaprootDerivationPath$1);
+    const { address } = bitcoinjsLib.payments.p2tr({
+        internalPubkey: toXOnly(childNode.publicKey),
+    });
+    const privateKeyBuffer = childNode.privateKey;
+    if (!privateKeyBuffer || !address) {
+        throw new SDKError(ERROR_CODE.TAPROOT_FROM_MNEMONIC);
+    }
+    const privateKeyStr = convertPrivateKey(privateKeyBuffer);
+    return {
+        privateKey: privateKeyStr,
+        privateKeyBuffer: privateKeyBuffer,
+        address,
+    };
+};
+
+class MasterWallet {
+    constructor() {
+        this.restoreHDWallet = async (password) => {
+            const storedHDWallet = await HDWallet$1.restore(password);
+            if (storedHDWallet) {
+                const wallet = new HDWallet$1();
+                wallet.set({
+                    name: storedHDWallet.name,
+                    mnemonic: storedHDWallet.mnemonic,
+                    derives: storedHDWallet.derives,
+                    btcAddress: storedHDWallet.btcAddress,
+                    btcPrivateKey: storedHDWallet.btcPrivateKey
+                });
+                this._hdWallet = wallet;
+            }
+            return storedHDWallet;
+        };
+        this.restore = async (password) => {
+            new Validator("password", password).string().required();
+            const hdWallet = await this.restoreHDWallet(password);
+            return {
+                hdWallet
+            };
+        };
+        this.getHDWallet = () => {
+            new Validator("Get HDWallet", this._hdWallet).required("Please restore wallet.");
+            return this._hdWallet;
+        };
+        this.getBTCAddress = () => {
+            return this._hdWallet?.btcAddress;
+        };
+        this.getBTCPrivateKey = () => {
+            return this._hdWallet?.btcPrivateKey;
+        };
+        this._hdWallet = undefined;
+        this._masterless = undefined;
+    }
+}
 
 class HDWallet {
     constructor() {
@@ -7128,10 +7227,12 @@ class HDWallet {
             this.name = wallet.name;
             this.mnemonic = wallet.mnemonic;
             this.derives = wallet.derives;
+            this.btcPrivateKey = wallet.btcPrivateKey;
+            this.btcAddress = wallet.btcAddress;
         };
-        this.saveWallet = async (wallet) => {
+        this.saveWallet = async (wallet, password) => {
             this.set(wallet);
-            await setStorageHDWallet$1(wallet);
+            await setStorageHDWallet$1(wallet, password);
         };
         this.name = undefined;
         this.mnemonic = undefined;
@@ -7140,24 +7241,17 @@ class HDWallet {
 }
 HDWallet.restore = async (password) => {
     new Validator("restore-password: ", password).string().required();
-    const cipherText = await getStorageHDWallet$1();
-    new Validator("restore-cipher: ", cipherText).string().required();
-    if (cipherText) {
-        try {
-            const rawText = decryptAES(cipherText, password);
-            const wallet = JSON.parse(rawText);
-            validateHDWallet$1(wallet);
-            return wallet;
-        }
-        catch (error) {
-            let message = "";
-            if (error instanceof Error) {
-                message = error.message;
-            }
-            throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
-        }
+    try {
+        const wallet = await getStorageHDWallet$1(password);
+        return wallet;
     }
-    return undefined;
+    catch (error) {
+        let message = "";
+        if (error instanceof Error) {
+            message = error.message;
+        }
+        throw new SDKError(ERROR_CODE.RESTORE_HD_WALLET, message);
+    }
 };
 
 class Masterless {
@@ -7168,12 +7262,13 @@ class Masterless {
     }
 }
 
-const derivationPath = "m/44'/60'/0'/0";
+const ETHDerivationPath = "m/44'/60'/0'/0";
+const BTCTaprootDerivationPath = "m/86'/0'/0'/0/0";
 
 const deriveHDNodeByIndex = (payload) => {
     const hdNode = ethers.ethers.utils.HDNode
         .fromMnemonic(payload.mnemonic)
-        .derivePath(derivationPath$1 + "/" + payload.index);
+        .derivePath(ETHDerivationPath$1 + "/" + payload.index);
     const privateKey = hdNode.privateKey;
     const address = hdNode.address;
     const accountName = payload.name || `Account ${payload.index + 1}`;
@@ -7184,10 +7279,11 @@ const deriveHDNodeByIndex = (payload) => {
         address: address,
     };
 };
-const randomMnemonic = () => {
+const randomMnemonic = async () => {
     const wallet = ethers.ethers.Wallet.createRandom();
     const mnemonic = wallet.mnemonic.phrase;
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
+    const { address: btcAddress, privateKey: btcPrivateKey } = await generateTaprootHDNodeFromMnemonic$1(mnemonic);
     const deriveKey = deriveHDNodeByIndex({
         mnemonic,
         index: 0,
@@ -7196,13 +7292,17 @@ const randomMnemonic = () => {
     return {
         name: "Anon",
         mnemonic,
-        derives: [deriveKey]
+        derives: [deriveKey],
+        btcAddress,
+        btcPrivateKey
     };
 };
 const validateHDWallet = (wallet) => {
     new Validator("saveWallet-mnemonic", wallet?.mnemonic).mnemonic().required();
     new Validator("saveWallet-name", wallet?.name).string().required();
     new Validator("saveWallet-derives", wallet?.derives).required();
+    new Validator("saveWallet-btcAddress", wallet?.btcAddress).required();
+    new Validator("saveWallet-btcPrivateKey", wallet?.btcPrivateKey).required();
     if (wallet?.derives) {
         for (const child of wallet.derives) {
             new Validator("saveWallet-derive-name", child.name).required();
@@ -7212,77 +7312,61 @@ const validateHDWallet = (wallet) => {
         }
     }
 };
-const getStorageHDWallet = async () => {
-    return await storage$1.get(StorageKeys.HDWallet);
+const getStorageHDWallet = async (password) => {
+    const cipherText = await storage.get(StorageKeys.HDWallet);
+    if (!cipherText) {
+        return undefined;
+    }
+    const rawText = decryptAES(cipherText, password);
+    const wallet = JSON.parse(rawText);
+    validateHDWallet(wallet);
+    return wallet;
 };
-const setStorageHDWallet = async (wallet) => {
-    await storage$1.set(StorageKeys.HDWallet, wallet);
+const setStorageHDWallet = async (wallet, password) => {
+    const cipherText = encryptAES(JSON.stringify(wallet), password);
+    await storage.set(StorageKeys.HDWallet, cipherText);
 };
 
-exports.StorageKeys = void 0;
-(function (StorageKeys) {
-    StorageKeys["HDWallet"] = "hd-wallet-cipher";
-    StorageKeys["masterless"] = "masterless-cipher";
-})(exports.StorageKeys || (exports.StorageKeys = {}));
-
-class StorageService {
-    constructor(namespace) {
-        this.namespace = namespace;
-        this.setMethod = undefined;
-        this.getMethod = undefined;
-        this.removeMethod = undefined;
+bitcoinjsLib.initEccLib(ecc__namespace);
+const bip32 = BIP32Factory__default["default"](ecc__namespace);
+const generateTaprootHDNodeFromMnemonic = async (mnemonic) => {
+    const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
+    const rootKey = bip32.fromSeed(seed);
+    const childNode = rootKey.derivePath(BTCTaprootDerivationPath$1);
+    const { address } = bitcoinjsLib.payments.p2tr({
+        internalPubkey: toXOnly(childNode.publicKey),
+    });
+    const privateKeyBuffer = childNode.privateKey;
+    if (!privateKeyBuffer || !address) {
+        throw new SDKError(ERROR_CODE.TAPROOT_FROM_MNEMONIC);
     }
-    implement({ setMethod, getMethod, removeMethod, namespace }) {
-        new Validator$1("setMethod", setMethod).required();
-        new Validator$1("getMethod", getMethod).required();
-        new Validator$1("removeMethod", removeMethod).required();
-        new Validator$1("namespace", namespace).string();
-        this.setMethod = setMethod;
-        this.getMethod = getMethod;
-        this.removeMethod = removeMethod;
-        this.namespace = namespace;
-    }
-    _getKey(key) {
-        return this.namespace ? `${this.namespace}-${key}` : key;
-    }
-    async set(key, data) {
-        if (!this.setMethod)
-            return;
-        new Validator$1("key", key).required().string();
-        const dataStr = typeof data === "string" ? data : JSON.stringify(data);
-        return await this.setMethod(this._getKey(key), dataStr);
-    }
-    async get(key) {
-        new Validator$1("key", key).required().string();
-        if (!this.getMethod)
-            return;
-        const dataStr = await this.getMethod(this._getKey(key));
-        return JSON.parse(dataStr);
-    }
-    async remove(key) {
-        new Validator$1("key", key).required().string();
-        if (!this.removeMethod)
-            return;
-        return await this.removeMethod(this._getKey(key));
-    }
-}
-const storage = new StorageService();
+    const privateKeyStr = convertPrivateKey(privateKeyBuffer);
+    return {
+        privateKey: privateKeyStr,
+        privateKeyBuffer: privateKeyBuffer,
+        address,
+    };
+};
 
 exports.BNZero = BNZero;
+exports.BTCTaprootDerivationPath = BTCTaprootDerivationPath;
 exports.BlockStreamURL = BlockStreamURL;
 exports.DummyUTXOValue = DummyUTXOValue;
 exports.ECPair = ECPair$1;
 exports.ERROR_CODE = ERROR_CODE$1;
 exports.ERROR_MESSAGE = ERROR_MESSAGE$1;
+exports.ETHDerivationPath = ETHDerivationPath;
 exports.HDWallet = HDWallet;
 exports.InputSize = InputSize;
 exports.Mainnet = Mainnet;
+exports.MasterWallet = MasterWallet;
 exports.Masterless = Masterless;
 exports.MinSats = MinSats;
 exports.NetworkType = NetworkType;
 exports.OutputSize = OutputSize;
 exports.Regtest = Regtest;
 exports.SDKError = SDKError$1;
+exports.StorageService = StorageService;
 exports.TcClient = TcClient;
 exports.Testnet = Testnet;
 exports.URL = URL;
@@ -7291,7 +7375,7 @@ exports.WalletType = WalletType;
 exports.actionRequest = actionRequest;
 exports.aggregateUTXOs = aggregateUTXOs;
 exports.broadcastTx = broadcastTx;
-exports.convertPrivateKey = convertPrivateKey;
+exports.convertPrivateKey = convertPrivateKey$1;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
 exports.createBatchInscribeTxs = createBatchInscribeTxs;
 exports.createDummyUTXOFromCardinal = createDummyUTXOFromCardinal;
@@ -7315,12 +7399,11 @@ exports.createTxSplitFundFromOrdinalUTXO = createTxSplitFundFromOrdinalUTXO;
 exports.createTxWithSpecificUTXOs = createTxWithSpecificUTXOs;
 exports.decryptAES = decryptAES$1;
 exports.decryptWallet = decryptWallet;
-exports.derivationPath = derivationPath;
 exports.deriveETHWallet = deriveETHWallet;
 exports.deriveHDNodeByIndex = deriveHDNodeByIndex;
 exports.derivePasswordWallet = derivePasswordWallet;
 exports.deriveSegwitWallet = deriveSegwitWallet;
-exports.encryptAES = encryptAES;
+exports.encryptAES = encryptAES$1;
 exports.encryptWallet = encryptWallet;
 exports.estimateInscribeFee = estimateInscribeFee;
 exports.estimateNumInOutputs = estimateNumInOutputs;
@@ -7333,6 +7416,7 @@ exports.generateP2PKHKeyFromRoot = generateP2PKHKeyFromRoot;
 exports.generateP2PKHKeyPair = generateP2PKHKeyPair;
 exports.generateTaprootAddress = generateTaprootAddress;
 exports.generateTaprootAddressFromPubKey = generateTaprootAddressFromPubKey;
+exports.generateTaprootHDNodeFromMnemonic = generateTaprootHDNodeFromMnemonic;
 exports.generateTaprootKeyPair = generateTaprootKeyPair;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
@@ -7356,12 +7440,12 @@ exports.selectUTXOs = selectUTXOs;
 exports.selectUTXOsToCreateBuyTx = selectUTXOsToCreateBuyTx;
 exports.setBTCNetwork = setBTCNetwork;
 exports.setStorageHDWallet = setStorageHDWallet;
+exports.setupConfig = setupConfig;
 exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
 exports.signPSBT2 = signPSBT2;
 exports.signTransaction = signTransaction;
 exports.splitBatchInscribeTx = splitBatchInscribeTx;
-exports.storage = storage;
 exports.tapTweakHash = tapTweakHash$1;
 exports.toSat = toSat;
 exports.toXOnly = toXOnly$1;

@@ -8,6 +8,8 @@ interface IHDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
     derives: Array<IDeriveKey> | undefined;
+    btcPrivateKey: string | undefined;
+    btcAddress: string | undefined;
 }
 interface IMasterless {
     name: string | undefined;

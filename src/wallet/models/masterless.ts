@@ -1,4 +1,3 @@
-
 class Masterless {
     name: string | undefined;
     privateKey: string | undefined;

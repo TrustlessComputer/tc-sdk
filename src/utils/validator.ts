@@ -1,8 +1,7 @@
-import { ECPair, Network, toXOnly, tweakSigner } from "../bitcoin";
-import SDKError, { ERROR_CODE } from "../constants/error";
-
 import { payments } from "bitcoinjs-lib";
 import { utils } from "ethers";
+import { ECPair, Network, toXOnly, tweakSigner } from "@/bitcoin";
+import { SDKError, ERROR_CODE } from "@/constants";
 
 function isPrivateKey(privateKey: Buffer) {
     let isValid = false;
