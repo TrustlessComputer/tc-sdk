@@ -9,11 +9,13 @@ interface CallWalletPayload {
     dappURL: string;
     isRedirect: boolean;
     target?: Target;
+    isMainnet: boolean;
 }
 declare enum RequestMethod {
     account = "account"
 }
 interface RequestPayload {
+    isMainnet: boolean;
     method: RequestMethod;
     redirectURL: string;
     target?: Target;

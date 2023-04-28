@@ -6642,14 +6642,17 @@ exports.RequestMethod = void 0;
     RequestMethod["account"] = "account";
 })(exports.RequestMethod || (exports.RequestMethod = {}));
 
-const URL = "https://trustlesswallet.io";
+const URL_MAINNET = "https://trustlesswallet.io";
+const URL_REGTEST = "https://dev.trustlesswallet.io";
 
 const window = globalThis || global;
-const openWindow = ({ url = URL, search, target }) => {
+const openWindow = ({ url = URL_MAINNET, search, target }) => {
     if (window) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        window?.open(`${url}/${search}`, target);
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window?.open(`${url}/${search}`, target);
+        }, 500);
     }
 };
 const signTransaction = (payload) => {
@@ -6662,6 +6665,7 @@ const signTransaction = (payload) => {
             search += `&isRedirect=${payload.isRedirect}`;
         }
         openWindow({
+            url: payload.isMainnet ? URL_MAINNET : URL_REGTEST,
             search,
             target: _target
         });
@@ -6674,6 +6678,7 @@ const actionRequest = async (payload) => {
     if (window && URLSearchParams) {
         const search = `?function=${exports.RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
         openWindow({
+            url: payload.isMainnet ? URL_MAINNET : URL_REGTEST,
             search,
             target: _target
         });
@@ -6715,7 +6720,8 @@ exports.Regtest = Regtest;
 exports.SDKError = SDKError;
 exports.TcClient = TcClient;
 exports.Testnet = Testnet;
-exports.URL = URL;
+exports.URL_MAINNET = URL_MAINNET;
+exports.URL_REGTEST = URL_REGTEST;
 exports.Validator = Validator;
 exports.WalletType = WalletType;
 exports.actionRequest = actionRequest;

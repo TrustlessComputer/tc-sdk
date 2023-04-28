@@ -11,6 +11,7 @@ interface CallWalletPayload {
     dappURL: string;
     isRedirect: boolean;
     target?: Target
+    isMainnet: boolean
 }
 
 enum RequestMethod {
@@ -18,6 +19,7 @@ enum RequestMethod {
 }
 
 interface RequestPayload {
+    isMainnet: boolean;
     method: RequestMethod;
     redirectURL: string;
     target?: Target
