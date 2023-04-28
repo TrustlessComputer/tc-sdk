@@ -8,8 +8,7 @@ import { BIP32Interface } from 'bip32';
 import { TcClient as TcClient$1 } from '@/tc';
 import { StorageService as StorageService$1 } from '@/utils/storage';
 import { Tapleaf } from 'bitcoinjs-lib/src/types';
-import { HDWallet as HDWallet$1, IDeriveReq as IDeriveReq$1, IDeriveKey as IDeriveKey$2, IHDWallet as IHDWallet$2 } from '@/wallet';
-import { IDeriveKey as IDeriveKey$1, IHDWallet as IHDWallet$1 } from '@/wallet/types';
+import { HDWallet as HDWallet$1, IDeriveReq as IDeriveReq$1, IDeriveKey as IDeriveKey$1, IHDWallet as IHDWallet$1 } from '@/wallet';
 
 declare const BlockStreamURL = "https://blockstream.info/api";
 declare const MinSats = 1000;
@@ -1265,12 +1264,12 @@ declare class MasterWallet {
 declare class HDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
-    nodes: Array<IDeriveKey$1> | undefined;
+    nodes: Array<IDeriveKey> | undefined;
     deletedIndexs: Array<number> | undefined;
     btcPrivateKey: string | undefined;
     constructor();
-    set: (wallet: IHDWallet$1) => void;
-    saveWallet: (wallet: IHDWallet$1, password: string) => Promise<void>;
+    set: (wallet: IHDWallet) => void;
+    saveWallet: (wallet: IHDWallet, password: string) => Promise<void>;
     createNewAccount: ({ password, name }: {
         password: string;
         name?: string | undefined;
@@ -1279,7 +1278,7 @@ declare class HDWallet {
         password: string;
         address: string;
     }) => Promise<void>;
-    restore: (password: string) => Promise<IHDWallet$1 | undefined>;
+    restore: (password: string) => Promise<IHDWallet | undefined>;
 }
 
 declare class Masterless {
@@ -1292,12 +1291,12 @@ declare class Masterless {
 declare const ETHDerivationPath = "m/44'/60'/0'/0";
 declare const BTCTaprootDerivationPath = "m/86'/0'/0'/0/0";
 
-declare const deriveHDNodeByIndex: (payload: IDeriveReq$1) => IDeriveKey$2;
-declare const randomMnemonic: () => Promise<IHDWallet$2>;
-declare const validateHDWallet: (wallet: IHDWallet$2 | undefined, methodName: string) => void;
+declare const deriveHDNodeByIndex: (payload: IDeriveReq$1) => IDeriveKey$1;
+declare const randomMnemonic: () => Promise<IHDWallet$1>;
+declare const validateHDWallet: (wallet: IHDWallet$1 | undefined, methodName: string) => void;
 declare const getStorageHDWalletCipherText: () => Promise<any>;
-declare const getStorageHDWallet: (password: string) => Promise<IHDWallet$2 | undefined>;
-declare const setStorageHDWallet: (wallet: IHDWallet$2, password: string) => Promise<void>;
+declare const getStorageHDWallet: (password: string) => Promise<IHDWallet$1 | undefined>;
+declare const setStorageHDWallet: (wallet: IHDWallet$1, password: string) => Promise<void>;
 
 declare const generateTaprootHDNodeFromMnemonic: (mnemonic: string) => Promise<string>;
 

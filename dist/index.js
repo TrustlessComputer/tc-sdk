@@ -6966,74 +6966,6 @@ exports.RequestMethod = void 0;
 
 const URL = "https://trustlesswallet.io";
 
-const window = globalThis || global;
-const openWindow = ({ url = URL, search, target }) => {
-    if (window) {
-        setTimeout(() => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            window?.open(`${url}/${search}`, target);
-        }, 500);
-    }
-};
-const signTransaction = (payload) => {
-    new Validator$1("Transaction hash", payload.hash).string().required();
-    new Validator$1("Method", payload.method).string().required();
-    const _target = payload.target || "_blank";
-    if (window && URLSearchParams) {
-        let search = `?function=${exports.RequestFunction.sign}&hash=${payload.hash}&method=${payload.method}&dappURL=${payload.dappURL}`;
-        if (payload.isRedirect) {
-            search += `&isRedirect=${payload.isRedirect}`;
-        }
-        openWindow({
-            search,
-            target: _target
-        });
-    }
-};
-const actionRequest = async (payload) => {
-    new Validator$1("Missing method", payload.method).string().required();
-    new Validator$1("Missing redirect url", payload.redirectURL).string().required();
-    const _target = payload.target || "_parent";
-    if (window && URLSearchParams) {
-        const search = `?function=${exports.RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
-        openWindow({
-            search,
-            target: _target
-        });
-    }
-};
-const requestAccountResponse = async (payload) => {
-    new Validator$1("Missing redirect url", payload.redirectURL).string().required();
-    new Validator$1("Missing tc address", payload.tcAddress).string().required();
-    new Validator$1("Missing taproot address", payload.tpAddress).string().required();
-    const _target = payload.target || "_parent";
-    const redirectURL = payload.redirectURL;
-    // const lastChar = redirectURL.substr(redirectURL.length - 1);
-    // const divide = "/";
-    // if (lastChar !== divide) {
-    //     redirectURL = redirectURL + divide;
-    // }
-    if (window && URLSearchParams) {
-        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}&target=${_target}`;
-        openWindow({
-            url: redirectURL,
-            search: search,
-            target: _target
-        });
-    }
-};
-
-var RequestFunction;
-(function (RequestFunction) {
-    RequestFunction["sign"] = "sign";
-    RequestFunction["request"] = "request";
-})(RequestFunction || (RequestFunction = {}));
-var RequestMethod;
-(function (RequestMethod) {
-    RequestMethod["account"] = "account";
-})(RequestMethod || (RequestMethod = {}));
-
 function isPrivateKey(privateKey) {
     let isValid = false;
     try {
@@ -7133,6 +7065,74 @@ const decryptAES = (cipherText, key) => {
     }
     throw new SDKError(ERROR_CODE.DECRYPT);
 };
+
+const window = globalThis || global;
+const openWindow = ({ url = URL, search, target }) => {
+    if (window) {
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window?.open(`${url}/${search}`, target);
+        }, 500);
+    }
+};
+const signTransaction = (payload) => {
+    new Validator("Transaction hash", payload.hash).string().required();
+    new Validator("Method", payload.method).string().required();
+    const _target = payload.target || "_blank";
+    if (window && URLSearchParams) {
+        let search = `?function=${exports.RequestFunction.sign}&hash=${payload.hash}&method=${payload.method}&dappURL=${payload.dappURL}`;
+        if (payload.isRedirect) {
+            search += `&isRedirect=${payload.isRedirect}`;
+        }
+        openWindow({
+            search,
+            target: _target
+        });
+    }
+};
+const actionRequest = async (payload) => {
+    new Validator("Missing method", payload.method).string().required();
+    new Validator("Missing redirect url", payload.redirectURL).string().required();
+    const _target = payload.target || "_parent";
+    if (window && URLSearchParams) {
+        const search = `?function=${exports.RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
+        openWindow({
+            search,
+            target: _target
+        });
+    }
+};
+const requestAccountResponse = async (payload) => {
+    new Validator("Missing redirect url", payload.redirectURL).string().required();
+    new Validator("Missing tc address", payload.tcAddress).string().required();
+    new Validator("Missing taproot address", payload.tpAddress).string().required();
+    const _target = payload.target || "_parent";
+    const redirectURL = payload.redirectURL;
+    // const lastChar = redirectURL.substr(redirectURL.length - 1);
+    // const divide = "/";
+    // if (lastChar !== divide) {
+    //     redirectURL = redirectURL + divide;
+    // }
+    if (window && URLSearchParams) {
+        const search = `?tcAddress=${payload.tcAddress}&tpAddress=${payload.tpAddress}&target=${_target}`;
+        openWindow({
+            url: redirectURL,
+            search: search,
+            target: _target
+        });
+    }
+};
+
+var RequestFunction;
+(function (RequestFunction) {
+    RequestFunction["sign"] = "sign";
+    RequestFunction["request"] = "request";
+})(RequestFunction || (RequestFunction = {}));
+var RequestMethod;
+(function (RequestMethod) {
+    RequestMethod["account"] = "account";
+})(RequestMethod || (RequestMethod = {}));
 
 const deriveHDNodeByIndex$1 = (payload) => {
     const hdNode = ethers.ethers.utils.HDNode

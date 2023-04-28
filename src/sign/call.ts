@@ -1,6 +1,6 @@
 import { CallWalletPayload, Target, RequestPayload, RequestFunction, RequestAccountResponse } from "./type";
-import Validator from "../../utils/validator";
 import { URL } from "./constant";
+import { Validator } from "@/utils";
 
 const window = globalThis || global;
 
