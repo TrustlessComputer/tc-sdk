@@ -2971,7 +2971,8 @@ const ERROR_CODE$1 = {
     RESTORE_HD_WALLET: "-20",
     DECRYPT: "-21",
     TAPROOT_FROM_MNEMONIC: "-22",
-    CANNOT_FIND_ACCOUNT: "-23",
+    MNEMONIC_GEN_TAPROOT: "-23",
+    CANNOT_FIND_ACCOUNT: "-24",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -5955,7 +5956,8 @@ const ERROR_CODE = {
     RESTORE_HD_WALLET: "-20",
     DECRYPT: "-21",
     TAPROOT_FROM_MNEMONIC: "-22",
-    CANNOT_FIND_ACCOUNT: "-23",
+    MNEMONIC_GEN_TAPROOT: "-23",
+    CANNOT_FIND_ACCOUNT: "-24",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -7259,7 +7261,14 @@ const BTCTaprootDerivationPath$1 = "m/86'/0'/0'/0/0";
 
 bitcoinjsLib.initEccLib(ecc__namespace);
 const bip32$1 = BIP32Factory__default["default"](ecc__namespace);
+const validateMnemonicBTC$1 = (mnemonic) => {
+    return bip39__namespace.validateMnemonic(mnemonic);
+};
 const generateTaprootHDNodeFromMnemonic$1 = async (mnemonic) => {
+    const isValid = validateMnemonicBTC$1(mnemonic);
+    if (!isValid) {
+        throw new SDKError(ERROR_CODE.MNEMONIC_GEN_TAPROOT);
+    }
     const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
     const rootKey = bip32$1.fromSeed(seed);
     const childNode = rootKey.derivePath(BTCTaprootDerivationPath$1);
@@ -7457,7 +7466,14 @@ const setStorageHDWallet = async (wallet, password) => {
 
 bitcoinjsLib.initEccLib(ecc__namespace);
 const bip32 = BIP32Factory__default["default"](ecc__namespace);
+const validateMnemonicBTC = (mnemonic) => {
+    return bip39__namespace.validateMnemonic(mnemonic);
+};
 const generateTaprootHDNodeFromMnemonic = async (mnemonic) => {
+    const isValid = validateMnemonicBTC(mnemonic);
+    if (!isValid) {
+        throw new SDKError(ERROR_CODE.MNEMONIC_GEN_TAPROOT);
+    }
     const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
     const rootKey = bip32.fromSeed(seed);
     const childNode = rootKey.derivePath(BTCTaprootDerivationPath$1);
@@ -7576,4 +7592,5 @@ exports.toSat = toSat;
 exports.toXOnly = toXOnly$1;
 exports.tweakSigner = tweakSigner$1;
 exports.validateHDWallet = validateHDWallet;
+exports.validateMnemonicBTC = validateMnemonicBTC;
 //# sourceMappingURL=index.js.map

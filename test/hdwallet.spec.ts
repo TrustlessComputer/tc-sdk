@@ -49,13 +49,13 @@ describe("Wallet", async () => {
         assert.equal(mnemonic, decrypted)
     });
 
-    // it('Random', async function () {
-    //     const hdWallet = await randomMnemonic();
-    //     await setStorageHDWallet(hdWallet, password);
-    //     const masterWallet = new MasterWallet();
-    //     await masterWallet.load(password);
-    //     assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
-    // });
+    it('Random', async function () {
+        const hdWallet = await randomMnemonic();
+        await setStorageHDWallet(hdWallet, password);
+        const masterWallet = new MasterWallet();
+        await masterWallet.load(password);
+        assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
+    });
 
     it('Create new node', async function () {
         const masterWallet = new MasterWallet();

@@ -22,7 +22,8 @@ export const ERROR_CODE = {
     RESTORE_HD_WALLET: "-20",
     DECRYPT: "-21",
     TAPROOT_FROM_MNEMONIC: "-22",
-    CANNOT_FIND_ACCOUNT: "-23",
+    MNEMONIC_GEN_TAPROOT: "-23",
+    CANNOT_FIND_ACCOUNT: "-24",
 };
 
 export const ERROR_MESSAGE = {

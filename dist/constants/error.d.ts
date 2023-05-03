@@ -22,6 +22,7 @@ export declare const ERROR_CODE: {
     RESTORE_HD_WALLET: string;
     DECRYPT: string;
     TAPROOT_FROM_MNEMONIC: string;
+    MNEMONIC_GEN_TAPROOT: string;
     CANNOT_FIND_ACCOUNT: string;
 };
 export declare const ERROR_MESSAGE: {

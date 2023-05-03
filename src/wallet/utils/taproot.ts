@@ -9,7 +9,18 @@ import { ERROR_CODE, SDKError } from "@/constants";
 initEccLib(ecc);
 const bip32 = BIP32Factory(ecc);
 
+
+const validateMnemonicBTC = (mnemonic: string) => {
+    return bip39.validateMnemonic(mnemonic);
+};
+
 const generateTaprootHDNodeFromMnemonic = async (mnemonic: string) => {
+    const isValid = validateMnemonicBTC(mnemonic);
+
+    if (!isValid) {
+        throw new SDKError(ERROR_CODE.MNEMONIC_GEN_TAPROOT);
+    }
+
     const seed = await bip39.mnemonicToSeed(mnemonic);
     const rootKey = bip32.fromSeed(seed);
     const childNode = rootKey.derivePath(BTCTaprootDerivationPath);
@@ -27,5 +38,6 @@ const generateTaprootHDNodeFromMnemonic = async (mnemonic: string) => {
 };
 
 export {
-    generateTaprootHDNodeFromMnemonic
+    generateTaprootHDNodeFromMnemonic,
+    validateMnemonicBTC
 };

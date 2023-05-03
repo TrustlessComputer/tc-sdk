@@ -1,4 +1,4 @@
-import { IDeriveKey, IHDWallet } from "../types";
+import { IDeriveKey, IHDWallet } from "@/wallet/types";
 declare class HDWallet {
     name: string | undefined;
     mnemonic: string | undefined;
