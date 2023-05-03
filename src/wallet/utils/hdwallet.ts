@@ -18,11 +18,8 @@ const deriveHDNodeByIndex = (payload: IDeriveReq): IDeriveKey => {
     };
 };
 
-const randomMnemonic = async (): Promise<IHDWallet> => {
-    const wallet = ethers.Wallet.createRandom();
-    const mnemonic = wallet.mnemonic.phrase;
+const generateHDWalletFromMnemonic = async (mnemonic: string): Promise<IHDWallet> => {
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
-
     const btcPrivateKey = await generateTaprootHDNodeFromMnemonic(mnemonic);
     const childNode = deriveHDNodeByIndex({
         mnemonic,
@@ -36,6 +33,14 @@ const randomMnemonic = async (): Promise<IHDWallet> => {
         btcPrivateKey,
         deletedIndexs: []
     };
+};
+
+const randomMnemonic = async (): Promise<IHDWallet> => {
+    const wallet = ethers.Wallet.createRandom();
+    const mnemonic = wallet.mnemonic.phrase;
+    new Validator("Generate mnemonic", mnemonic).mnemonic().required();
+    const hdWallet = await generateHDWalletFromMnemonic(mnemonic);
+    return hdWallet;
 };
 
 const validateHDWallet = (wallet: IHDWallet | undefined, methodName: string) => {
@@ -77,6 +82,7 @@ export {
     validateHDWallet,
 
     randomMnemonic,
+    generateHDWalletFromMnemonic,
     deriveHDNodeByIndex,
 
     getStorageHDWalletCipherText,

@@ -7414,9 +7414,7 @@ const deriveHDNodeByIndex = (payload) => {
         address: address,
     };
 };
-const randomMnemonic = async () => {
-    const wallet = ethers.ethers.Wallet.createRandom();
-    const mnemonic = wallet.mnemonic.phrase;
+const generateHDWalletFromMnemonic = async (mnemonic) => {
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
     const btcPrivateKey = await generateTaprootHDNodeFromMnemonic$1(mnemonic);
     const childNode = deriveHDNodeByIndex({
@@ -7431,6 +7429,13 @@ const randomMnemonic = async () => {
         btcPrivateKey,
         deletedIndexs: []
     };
+};
+const randomMnemonic = async () => {
+    const wallet = ethers.ethers.Wallet.createRandom();
+    const mnemonic = wallet.mnemonic.phrase;
+    new Validator("Generate mnemonic", mnemonic).mnemonic().required();
+    const hdWallet = await generateHDWalletFromMnemonic(mnemonic);
+    return hdWallet;
 };
 const validateHDWallet = (wallet, methodName) => {
     new Validator(`${methodName}-` + "validate-mnemonic", wallet?.mnemonic).mnemonic().required();
@@ -7552,6 +7557,7 @@ exports.estimateTxFee = estimateTxFee;
 exports.filterAndSortCardinalUTXOs = filterAndSortCardinalUTXOs;
 exports.findExactValueUTXO = findExactValueUTXO;
 exports.fromSat = fromSat;
+exports.generateHDWalletFromMnemonic = generateHDWalletFromMnemonic;
 exports.generateP2PKHKeyFromRoot = generateP2PKHKeyFromRoot;
 exports.generateP2PKHKeyPair = generateP2PKHKeyPair;
 exports.generateTaprootAddress = generateTaprootAddress;
