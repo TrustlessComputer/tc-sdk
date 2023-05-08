@@ -2938,6 +2938,7 @@ const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
 const DefaultSequence = 4294967295;
+const DefaultSequenceRBF = 4294967293;
 const WalletType = {
     Xverse: 1,
     Hiro: 2,
@@ -3196,106 +3197,86 @@ const toSat = (value) => {
 * @returns the value of inscription outputs, and the change amount (if any)
 * @returns the network fee
 */
-const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFee) => {
-    const resultUTXOs = [];
+const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFee, isSelectUTXOs) => {
+    let resultUTXOs = [];
     let normalUTXOs = [];
     let inscriptionUTXO = null;
     let inscriptionInfo = null;
     let valueOutInscription = BNZero;
     let changeAmount = BNZero;
     let maxAmountInsTransfer = BNZero;
+    let totalInputAmount = BNZero;
     // convert feeRate to interger
     feeRatePerByte = Math.round(feeRatePerByte);
-    // estimate fee
-    const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-    const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
-    // when BTC amount need to send is greater than 0, 
-    // we should use normal BTC to pay fee
-    if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
-        isUseInscriptionPayFee = false;
-    }
-    // filter normal UTXO and inscription UTXO to send
-    const { cardinalUTXOs, inscriptionUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
-    normalUTXOs = cardinalUTXOs;
+    // isSelectUTXOs is able is false only when sendInscriptionID is empty
     if (sendInscriptionID !== "") {
-        const res = selectInscriptionUTXO(inscriptionUTXOs, inscriptions, sendInscriptionID);
-        inscriptionUTXO = res.inscriptionUTXO;
-        inscriptionInfo = res.inscriptionInfo;
-        // maxAmountInsTransfer = (inscriptionUTXO.value - inscriptionInfo.offset - 1) - MinSats;
-        maxAmountInsTransfer = inscriptionUTXO.value.
-            minus(inscriptionInfo.offset).
-            minus(1).minus(MinSats);
-        console.log("maxAmountInsTransfer: ", maxAmountInsTransfer.toNumber());
+        isSelectUTXOs = true;
     }
-    if (sendInscriptionID !== "") {
-        if (inscriptionUTXO === null || inscriptionInfo == null) {
-            throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
+    if (!isSelectUTXOs) {
+        resultUTXOs = [...utxos];
+        for (const utxo of utxos) {
+            totalInputAmount = totalInputAmount.plus(utxo.value);
         }
-        // if value is not enough to pay fee, MUST use normal UTXOs to pay fee
-        if (isUseInscriptionPayFee && maxAmountInsTransfer.lt(estFee)) {
+    }
+    else {
+        // estimate fee
+        const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+        const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
+        // when BTC amount need to send is greater than 0, 
+        // we should use normal BTC to pay fee
+        if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
             isUseInscriptionPayFee = false;
         }
-        // push inscription UTXO to create tx
-        resultUTXOs.push(inscriptionUTXO);
-    }
-    // select normal UTXOs
-    let totalSendAmount = sendAmount;
-    if (!isUseInscriptionPayFee) {
-        totalSendAmount = totalSendAmount.plus(estFee);
-    }
-    let totalInputAmount = BNZero;
-    if (totalSendAmount.gt(BNZero)) {
-        const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalSendAmount);
-        resultUTXOs.push(...selectedUTXOs);
-        totalInputAmount = amt;
-        console.log("selectedUTXOs: ", selectedUTXOs);
-        console.log("isUseInscriptionPayFee: ", isUseInscriptionPayFee);
-        console.log("totalInputAmount: ", totalInputAmount.toNumber());
+        // filter normal UTXO and inscription UTXO to send
+        const { cardinalUTXOs, inscriptionUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
+        normalUTXOs = cardinalUTXOs;
+        if (sendInscriptionID !== "") {
+            const res = selectInscriptionUTXO(inscriptionUTXOs, inscriptions, sendInscriptionID);
+            inscriptionUTXO = res.inscriptionUTXO;
+            inscriptionInfo = res.inscriptionInfo;
+            // maxAmountInsTransfer = (inscriptionUTXO.value - inscriptionInfo.offset - 1) - MinSats;
+            maxAmountInsTransfer = inscriptionUTXO.value.
+                minus(inscriptionInfo.offset).
+                minus(1).minus(MinSats);
+            console.log("maxAmountInsTransfer: ", maxAmountInsTransfer.toNumber());
+        }
+        if (sendInscriptionID !== "") {
+            if (inscriptionUTXO === null || inscriptionInfo == null) {
+                throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
+            }
+            // if value is not enough to pay fee, MUST use normal UTXOs to pay fee
+            if (isUseInscriptionPayFee && maxAmountInsTransfer.lt(estFee)) {
+                isUseInscriptionPayFee = false;
+            }
+            // push inscription UTXO to create tx
+            resultUTXOs.push(inscriptionUTXO);
+        }
+        // select normal UTXOs
+        let totalSendAmount = sendAmount;
         if (!isUseInscriptionPayFee) {
-            // re-estimate fee with exact number of inputs and outputs
-            const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-            const feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, reNumOuts, feeRatePerByte));
-            console.log("feeRes: ", feeRes);
-            if (sendAmount.plus(feeRes).gt(totalInputAmount)) {
-                // need to select extra UTXOs
-                const { selectedUTXOs: extraUTXOs, totalInputAmount: extraAmt } = selectCardinalUTXOs(remainUTXOs, {}, sendAmount.plus(feeRes).minus(totalInputAmount));
-                resultUTXOs.push(...extraUTXOs);
-                console.log("extraUTXOs: ", extraUTXOs);
-                totalInputAmount = totalInputAmount.plus(extraAmt);
+            totalSendAmount = totalSendAmount.plus(estFee);
+        }
+        if (totalSendAmount.gt(BNZero)) {
+            const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalSendAmount);
+            resultUTXOs.push(...selectedUTXOs);
+            totalInputAmount = amt;
+            console.log("selectedUTXOs: ", selectedUTXOs);
+            console.log("isUseInscriptionPayFee: ", isUseInscriptionPayFee);
+            console.log("totalInputAmount: ", totalInputAmount.toNumber());
+            if (!isUseInscriptionPayFee) {
+                // re-estimate fee with exact number of inputs and outputs
+                const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+                const feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, reNumOuts, feeRatePerByte));
+                console.log("feeRes: ", feeRes);
+                if (sendAmount.plus(feeRes).gt(totalInputAmount)) {
+                    // need to select extra UTXOs
+                    const { selectedUTXOs: extraUTXOs, totalInputAmount: extraAmt } = selectCardinalUTXOs(remainUTXOs, {}, sendAmount.plus(feeRes).minus(totalInputAmount));
+                    resultUTXOs.push(...extraUTXOs);
+                    console.log("extraUTXOs: ", extraUTXOs);
+                    totalInputAmount = totalInputAmount.plus(extraAmt);
+                }
             }
         }
-        // if (normalUTXOs.length === 0) {
-        //     throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
-        // }
-        // if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
-        //     // select the smallest utxo
-        //     resultUTXOs.push(normalUTXOs[normalUTXOs.length - 1]);
-        //     totalInputAmount = normalUTXOs[normalUTXOs.length - 1].value;
-        // } else if (normalUTXOs[0].value.lt(totalSendAmount)) {
-        //     // select multiple UTXOs
-        //     for (let i = 0; i < normalUTXOs.length; i++) {
-        //         const utxo = normalUTXOs[i];
-        //         resultUTXOs.push(utxo);
-        //         totalInputAmount = totalInputAmount.plus(utxo.value);
-        //         if (totalInputAmount.gte(totalSendAmount)) {
-        //             break;
-        //         }
-        //     }
-        //     if (totalInputAmount.lt(totalSendAmount)) {
-        //         throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
-        //     }
-        // } else {
-        //     // select the nearest UTXO
-        //     let selectedUTXO = normalUTXOs[0];
-        //     for (let i = 1; i < normalUTXOs.length; i++) {
-        //         if (normalUTXOs[i].value.lt(totalSendAmount)) {
-        //             resultUTXOs.push(selectedUTXO);
-        //             totalInputAmount = selectedUTXO.value;
-        //             break;
-        //         }
-        //         selectedUTXO = normalUTXOs[i];
-        //     }
-        // }
     }
     // re-estimate fee with exact number of inputs and outputs
     const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
@@ -4074,7 +4055,7 @@ const createRawTx = ({ pubKey, utxos, inscriptions, sendInscriptionID = "", rece
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
     }
     // select UTXOs
-    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
     let feeRes = fee;
     // init key pair and tweakedSigner from senderPrivateKey
     // const { keyPair, senderAddress, tweakedSigner, p2pktr } = generateTaprootKeyPair(senderPrivateKey);
@@ -4183,7 +4164,8 @@ walletType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, cancelFn, }) => {
 * @returns the hex signed transaction
 * @returns the network fee
 */
-const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence = DefaultSequence, }) => {
+const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
     // validation
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
@@ -4193,7 +4175,7 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
     let feeRes = fee;
     // init key pair and tweakedSigner from senderPrivateKey
     const { keyPair, senderAddress, tweakedSigner, p2pktr } = generateTaprootKeyPair(senderPrivateKey);
@@ -4263,7 +4245,7 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, true);
     let feeRes = fee;
     let changeAmountRes = changeAmount;
     // init key pair and tweakedSigner from senderPrivateKey
@@ -6045,7 +6027,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = DefaultSequence, }) => {
+const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = DefaultSequenceRBF, }) => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
@@ -6135,7 +6117,7 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence = DefaultSequence, }) => {
+const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
@@ -6161,6 +6143,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
         sequence,
+        isSelectUTXOs
     });
     const newUTXOs = [];
     if (changeAmount.gt(BNZero)) {
@@ -6252,7 +6235,7 @@ const splitBatchInscribeTx = ({ tcTxDetails }) => {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence = DefaultSequence, }) => {
+const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence = DefaultSequenceRBF, }) => {
     const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
     const result = [];
     const newUTXOs = [...utxos];
@@ -6708,24 +6691,42 @@ class TcClient {
     }
 }
 
-const getUTXOsFromBlockStream = async (btcAddress) => {
-    if (!btcAddress)
-        return [];
-    try {
-        // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
-        const res = await axios__default["default"].get(`${exports.BlockStreamURL}/address/${btcAddress}/txs`);
-        console.log(res);
-        const utxos = [];
-        for (const item of res) {
-            // utxos.push({
-            //     tx_hash: item.
-            // })
-        }
-        return utxos;
+const getTxFromBlockStream = async (txID) => {
+    // if (!txID) return [];
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    console.log("URL: ", `${exports.BlockStreamURL}/tx/${txID}`);
+    const res = await axios__default["default"].get(`${exports.BlockStreamURL}/tx/${txID}`);
+    console.log(res);
+    // const utxos: UTXO[] = [];
+    // for (const item of res) {
+    //     utxos.push({
+    //         tx_hash: item.txid,
+    //         tx_output_n: item.vout,
+    //         value: new BigNumber(item.value)
+    //     });
+    // }
+    return res.data;
+};
+const getOutputCoinValue = async (txID, voutIndex) => {
+    // if (!txID) return [];
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    // console.log("URL: ", `${BlockStreamURL}/tx/${txID}`);
+    // const res: any = await axios.get(`${BlockStreamURL}/tx/${txID}`);
+    // console.log(res);
+    const tx = await getTxFromBlockStream(txID);
+    if (voutIndex >= tx.vout.length) {
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS);
     }
-    catch (err) {
-        return [];
-    }
+    // console.log("HHH: ", tx.vout[voutIndex]);
+    // const utxos: UTXO[] = [];
+    // for (const item of res) {
+    //     utxos.push({
+    //         tx_hash: item.txid,
+    //         tx_output_n: item.vout,
+    //         value: new BigNumber(item.value)
+    //     });
+    // }
+    return new BigNumber(tx.vout[voutIndex].value);
 };
 
 const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
@@ -6772,15 +6773,17 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
     // if pending > 0: latest
     // getPendingInscribeTxsDetail
     // else: block stream: latest
-    const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
+    console.log("oldCommitUTXOs: ", oldCommitUTXOs);
+    // const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
     for (let i = 0; i < oldCommitUTXOs.length; i++) {
-        const tmpUTXO = utxoFromBlockStream.find(utxo => {
-            return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
-        });
-        if (tmpUTXO === null || tmpUTXO === undefined) {
-            throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
-        }
-        oldCommitUTXOs[i].value = tmpUTXO?.value;
+        const utxoValue = await getOutputCoinValue(oldCommitUTXOs[i].tx_hash, oldCommitUTXOs[i].tx_output_n);
+        // const tmpUTXO = utxoFromBlockStream.find(utxo => {
+        //     return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
+        // });
+        // if (tmpUTXO === null || tmpUTXO === undefined) {
+        //     throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
+        // }
+        oldCommitUTXOs[i].value = utxoValue;
     }
     // get old fee rate, old fee of commit tx
     let totalCommitVin = BNZero;
@@ -6812,7 +6815,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
         isRBFable,
     };
 };
-const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence, }) => {
+const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
     const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx } = await extractOldTxInfo({
         revealTxID,
         tcClient,
@@ -6906,7 +6909,9 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
         extraUTXOs = selectedUTXOs;
     }
     const utxosForRBFTx = [...oldCommitUTXOs, ...extraUTXOs];
-    return createInscribeTx({
+    console.log("utxosForRBFTx: ", utxosForRBFTx);
+    console.log("createInscribeTx: ", createInscribeTx);
+    const resp = await createInscribeTx({
         senderPrivateKey,
         utxos: utxosForRBFTx,
         inscriptions,
@@ -6914,7 +6919,9 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
         feeRatePerByte,
         tcClient,
         sequence,
+        isSelectUTXOs: false,
     });
+    return resp;
 };
 const isRBFable = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
     const { isRBFable, oldCommitFeeRate } = await extractOldTxInfo({
@@ -7004,6 +7011,7 @@ const requestAccountResponse = async (payload) => {
 
 exports.BNZero = BNZero;
 exports.DefaultSequence = DefaultSequence;
+exports.DefaultSequenceRBF = DefaultSequenceRBF;
 exports.DummyUTXOValue = DummyUTXOValue;
 exports.ECPair = ECPair;
 exports.ERROR_CODE = ERROR_CODE;

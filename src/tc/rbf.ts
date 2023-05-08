@@ -1,4 +1,4 @@
-import { BNZero, DefaultSequence, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
+import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
     BTCVinVout,
     BatchInscribeTxResp,
@@ -10,7 +10,6 @@ import {
     UTXO,
     Vin,
     Vout,
-    createInscribeTx,
     createRawTxSendBTC,
     createTxSendBTC,
     estimateTxFee,
@@ -21,12 +20,15 @@ import {
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
 import { Psbt, address, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
+import { getOutputCoinValue, getUTXOsFromBlockStream } from "./blockstream";
 
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
 import { ERROR_CODE } from "../constants/error";
 import { Network } from "../bitcoin/network";
-import { getUTXOsFromBlockStream } from "./blockstream";
+import {
+    createInscribeTx
+} from "./inscribe";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 
@@ -113,20 +115,25 @@ const extractOldTxInfo = async (
     // else: block stream: latest
 
 
+    console.log(
+        "oldCommitUTXOs: ", oldCommitUTXOs
+    );
 
 
-
-
-    const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
+    // const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
     for (let i = 0; i < oldCommitUTXOs.length; i++) {
-        const tmpUTXO = utxoFromBlockStream.find(utxo => {
-            return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
-        });
-        if (tmpUTXO === null || tmpUTXO === undefined) {
-            throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
-        }
 
-        oldCommitUTXOs[i].value = tmpUTXO?.value;
+        const utxoValue = await getOutputCoinValue(oldCommitUTXOs[i].tx_hash, oldCommitUTXOs[i].tx_output_n);
+
+
+        // const tmpUTXO = utxoFromBlockStream.find(utxo => {
+        //     return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
+        // });
+        // if (tmpUTXO === null || tmpUTXO === undefined) {
+        //     throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
+        // }
+
+        oldCommitUTXOs[i].value = utxoValue;
     }
 
     // get old fee rate, old fee of commit tx
@@ -176,7 +183,7 @@ const replaceByFeeInscribeTx = async (
         tcClient,
         tcAddress,
         btcAddress,
-        sequence,
+        sequence = DefaultSequenceRBF,
 
     }: {
         senderPrivateKey: Buffer,
@@ -330,9 +337,11 @@ const replaceByFeeInscribeTx = async (
     }
 
     const utxosForRBFTx = [...oldCommitUTXOs, ...extraUTXOs];
+    console.log("utxosForRBFTx: ", utxosForRBFTx);
 
 
-    return createInscribeTx({
+    console.log("createInscribeTx: ", createInscribeTx);
+    const resp = await createInscribeTx({
         senderPrivateKey,
         utxos: utxosForRBFTx,
         inscriptions,
@@ -340,7 +349,12 @@ const replaceByFeeInscribeTx = async (
         feeRatePerByte,
         tcClient,
         sequence,
+        isSelectUTXOs: false,
     });
+
+
+
+    return resp;
 };
 
 

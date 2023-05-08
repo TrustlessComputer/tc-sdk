@@ -31,127 +31,106 @@ const selectUTXOs = (
     sendAmount: BigNumber,
     feeRatePerByte: number,
     isUseInscriptionPayFee: boolean,
+    isSelectUTXOs: boolean,
 ): { selectedUTXOs: UTXO[], isUseInscriptionPayFee: boolean, valueOutInscription: BigNumber, changeAmount: BigNumber, fee: BigNumber } => {
-    const resultUTXOs: UTXO[] = [];
+    let resultUTXOs: UTXO[] = [];
     let normalUTXOs: UTXO[] = [];
     let inscriptionUTXO: any = null;
     let inscriptionInfo: any = null;
     let valueOutInscription = BNZero;
     let changeAmount = BNZero;
     let maxAmountInsTransfer = BNZero;
+    let totalInputAmount = BNZero;
 
     // convert feeRate to interger
     feeRatePerByte = Math.round(feeRatePerByte);
 
-    // estimate fee
-    const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-    const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
-
-    // when BTC amount need to send is greater than 0, 
-    // we should use normal BTC to pay fee
-    if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
-        isUseInscriptionPayFee = false;
+    // isSelectUTXOs is able is false only when sendInscriptionID is empty
+    if (sendInscriptionID !== "") {
+        isSelectUTXOs = true;
     }
 
-    // filter normal UTXO and inscription UTXO to send
-    const { cardinalUTXOs, inscriptionUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
-    normalUTXOs = cardinalUTXOs;
-
-    if (sendInscriptionID !== "") {
-        const res = selectInscriptionUTXO(inscriptionUTXOs, inscriptions, sendInscriptionID);
-        inscriptionUTXO = res.inscriptionUTXO;
-        inscriptionInfo = res.inscriptionInfo;
-        // maxAmountInsTransfer = (inscriptionUTXO.value - inscriptionInfo.offset - 1) - MinSats;
-        maxAmountInsTransfer = inscriptionUTXO.value.
-            minus(inscriptionInfo.offset).
-            minus(1).minus(MinSats);
-
-        console.log("maxAmountInsTransfer: ", maxAmountInsTransfer.toNumber());
-    }
-
-    if (sendInscriptionID !== "") {
-        if (inscriptionUTXO === null || inscriptionInfo == null) {
-            throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
+    if (!isSelectUTXOs) {
+        resultUTXOs = [...utxos];
+        for (const utxo of utxos) {
+            totalInputAmount = totalInputAmount.plus(utxo.value);
         }
-        // if value is not enough to pay fee, MUST use normal UTXOs to pay fee
-        if (isUseInscriptionPayFee && maxAmountInsTransfer.lt(estFee)) {
+
+    } else {
+        // estimate fee
+        const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+        const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
+
+        // when BTC amount need to send is greater than 0, 
+        // we should use normal BTC to pay fee
+        if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
             isUseInscriptionPayFee = false;
         }
 
-        // push inscription UTXO to create tx
-        resultUTXOs.push(inscriptionUTXO);
-    }
+        // filter normal UTXO and inscription UTXO to send
+        const { cardinalUTXOs, inscriptionUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
+        normalUTXOs = cardinalUTXOs;
 
-    // select normal UTXOs
-    let totalSendAmount = sendAmount;
-    if (!isUseInscriptionPayFee) {
-        totalSendAmount = totalSendAmount.plus(estFee);
-    }
-    let totalInputAmount = BNZero;
+        if (sendInscriptionID !== "") {
+            const res = selectInscriptionUTXO(inscriptionUTXOs, inscriptions, sendInscriptionID);
+            inscriptionUTXO = res.inscriptionUTXO;
+            inscriptionInfo = res.inscriptionInfo;
+            // maxAmountInsTransfer = (inscriptionUTXO.value - inscriptionInfo.offset - 1) - MinSats;
+            maxAmountInsTransfer = inscriptionUTXO.value.
+                minus(inscriptionInfo.offset).
+                minus(1).minus(MinSats);
 
-    if (totalSendAmount.gt(BNZero)) {
-        const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalSendAmount);
-        resultUTXOs.push(...selectedUTXOs);
-        totalInputAmount = amt;
-        console.log("selectedUTXOs: ", selectedUTXOs);
-        console.log("isUseInscriptionPayFee: ", isUseInscriptionPayFee);
-        console.log("totalInputAmount: ", totalInputAmount.toNumber());
+            console.log("maxAmountInsTransfer: ", maxAmountInsTransfer.toNumber());
+        }
 
+        if (sendInscriptionID !== "") {
+            if (inscriptionUTXO === null || inscriptionInfo == null) {
+                throw new SDKError(ERROR_CODE.NOT_FOUND_INSCRIPTION);
+            }
+            // if value is not enough to pay fee, MUST use normal UTXOs to pay fee
+            if (isUseInscriptionPayFee && maxAmountInsTransfer.lt(estFee)) {
+                isUseInscriptionPayFee = false;
+            }
+
+            // push inscription UTXO to create tx
+            resultUTXOs.push(inscriptionUTXO);
+        }
+
+        // select normal UTXOs
+        let totalSendAmount = sendAmount;
         if (!isUseInscriptionPayFee) {
-            // re-estimate fee with exact number of inputs and outputs
-            const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-            const feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, reNumOuts, feeRatePerByte));
+            totalSendAmount = totalSendAmount.plus(estFee);
+        }
 
-            console.log("feeRes: ", feeRes);
 
-            if (sendAmount.plus(feeRes).gt(totalInputAmount)) {
-                // need to select extra UTXOs
-                const { selectedUTXOs: extraUTXOs, totalInputAmount: extraAmt } = selectCardinalUTXOs(remainUTXOs, {}, sendAmount.plus(feeRes).minus(totalInputAmount));
-                resultUTXOs.push(...extraUTXOs);
-                console.log("extraUTXOs: ", extraUTXOs);
+        if (totalSendAmount.gt(BNZero)) {
+            const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalSendAmount);
+            resultUTXOs.push(...selectedUTXOs);
+            totalInputAmount = amt;
+            console.log("selectedUTXOs: ", selectedUTXOs);
+            console.log("isUseInscriptionPayFee: ", isUseInscriptionPayFee);
+            console.log("totalInputAmount: ", totalInputAmount.toNumber());
 
-                totalInputAmount = totalInputAmount.plus(extraAmt);
+            if (!isUseInscriptionPayFee) {
+                // re-estimate fee with exact number of inputs and outputs
+                const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+                const feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, reNumOuts, feeRatePerByte));
+
+                console.log("feeRes: ", feeRes);
+
+                if (sendAmount.plus(feeRes).gt(totalInputAmount)) {
+                    // need to select extra UTXOs
+                    const { selectedUTXOs: extraUTXOs, totalInputAmount: extraAmt } = selectCardinalUTXOs(remainUTXOs, {}, sendAmount.plus(feeRes).minus(totalInputAmount));
+                    resultUTXOs.push(...extraUTXOs);
+                    console.log("extraUTXOs: ", extraUTXOs);
+
+                    totalInputAmount = totalInputAmount.plus(extraAmt);
+                }
             }
         }
 
 
-        // if (normalUTXOs.length === 0) {
-        //     throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
-        // }
-
-        // if (normalUTXOs[normalUTXOs.length - 1].value.gte(totalSendAmount)) {
-        //     // select the smallest utxo
-        //     resultUTXOs.push(normalUTXOs[normalUTXOs.length - 1]);
-        //     totalInputAmount = normalUTXOs[normalUTXOs.length - 1].value;
-        // } else if (normalUTXOs[0].value.lt(totalSendAmount)) {
-        //     // select multiple UTXOs
-        //     for (let i = 0; i < normalUTXOs.length; i++) {
-        //         const utxo = normalUTXOs[i];
-        //         resultUTXOs.push(utxo);
-        //         totalInputAmount = totalInputAmount.plus(utxo.value);
-        //         if (totalInputAmount.gte(totalSendAmount)) {
-        //             break;
-        //         }
-        //     }
-        //     if (totalInputAmount.lt(totalSendAmount)) {
-        //         throw new SDKError(ERROR_CODE.NOT_ENOUGH_BTC_TO_SEND);
-        //     }
-        // } else {
-        //     // select the nearest UTXO
-        //     let selectedUTXO = normalUTXOs[0];
-        //     for (let i = 1; i < normalUTXOs.length; i++) {
-        //         if (normalUTXOs[i].value.lt(totalSendAmount)) {
-        //             resultUTXOs.push(selectedUTXO);
-        //             totalInputAmount = selectedUTXO.value;
-        //             break;
-        //         }
-
-        //         selectedUTXO = normalUTXOs[i];
-        //     }
-        // }
     }
-
-
 
     // re-estimate fee with exact number of inputs and outputs
     const { numOuts: reNumOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);

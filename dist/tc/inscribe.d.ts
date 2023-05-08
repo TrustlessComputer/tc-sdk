@@ -29,7 +29,7 @@ declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair,
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence, }: {
+declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -39,6 +39,7 @@ declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID
     feeRatePerByte: number;
     tcClient: TcClient;
     sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;

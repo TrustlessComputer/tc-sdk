@@ -1,4 +1,4 @@
-import { BNZero, DefaultSequence, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
+import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
     BatchInscribeTxResp,
     Inscription,
@@ -36,7 +36,7 @@ const createRawRevealTx = ({
     hashLockRedeem,
     script_p2tr,
     revealTxFee,
-    sequence = DefaultSequence,
+    sequence = DefaultSequenceRBF,
 }: {
     internalPubKey: Buffer,
     commitTxID: string,
@@ -199,7 +199,8 @@ const createInscribeTx = async ({
     tcTxIDs,
     feeRatePerByte,
     tcClient,
-    sequence = DefaultSequence,
+    sequence = DefaultSequenceRBF,
+    isSelectUTXOs = true,
 }: {
     senderPrivateKey: Buffer,
     utxos: UTXO[],
@@ -208,6 +209,7 @@ const createInscribeTx = async ({
     feeRatePerByte: number,
     tcClient: TcClient,
     sequence?: number;
+    isSelectUTXOs?: boolean,
 }): Promise<{
     commitTxHex: string,
     commitTxID: string,
@@ -249,6 +251,7 @@ const createInscribeTx = async ({
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
         sequence,
+        isSelectUTXOs
     });
 
     const newUTXOs: UTXO[] = [];
@@ -365,7 +368,7 @@ const createBatchInscribeTxs = async ({
     tcTxDetails,
     feeRatePerByte,
     tcClient,
-    sequence = DefaultSequence,
+    sequence = DefaultSequenceRBF,
 }: {
     senderPrivateKey: Buffer,
     utxos: UTXO[],

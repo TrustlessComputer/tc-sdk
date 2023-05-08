@@ -186,33 +186,30 @@ describe("Sign msg Tx", async () => {
                 tx_output_n: 0,
                 value: new BigNumber(10000000)
             },
-            {
-                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-                tx_output_n: 1,
-                value: new BigNumber(50000)
-            },
-            {
-                tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
-                tx_output_n: 0,
-                value: new BigNumber(50000)
-            },
+            // tx sau
+            // {
+            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+            //     tx_output_n: 1,
+            //     value: new BigNumber(50000)
+            // },
+            // tx truoc
+            // {
+            //     tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
+            //     tx_output_n: 0,
+            //     value: new BigNumber(50000)
+            // },
             {
                 tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
                 tx_output_n: 3,
                 value: new BigNumber(77849369)
-            },
-            {
-                tx_hash: "0b2a5ed1105f2ef1ad1c74f3269354f53b6afb1f50dd2d9e4f7f0441c244631f",
-                tx_output_n: 0,
-                value: new BigNumber(50000)
             },
         ];
         setBTCNetwork(NetworkType.Regtest);
         const tcClient = new TcClient(Regtest);
 
         const tcTxDetails: any[] = [{
-            Nonce: 2,
-            Hash: "0x922aa37a9ee739b513c6291e53680c6f25acb74cf002a56134f302e64b405783",
+            Nonce: 3,
+            Hash: "0x0f0fe05e8da52b90fc1942f286c89fa7f5170ecf1b62266059899e8e5bbc1bfb",
         },
         ];
 
@@ -225,13 +222,14 @@ describe("Sign msg Tx", async () => {
         //     tcClient: tcClient,
         //     sequence: 3,
         // });
+        // console.log("resp: ", resp);
 
         const repsRBF = await replaceByFeeInscribeTx({
             senderPrivateKey: buyerPrivateKey,
             utxos: UTXOs,
             inscriptions: {},
-            revealTxID: "9d134dc404fa8e0d3e2ef0a6fe9e6acab8633024aebbc350526178e2447f22ab",
-            feeRatePerByte: 5,
+            revealTxID: "7737bed2cf9a7e88712527e7dc43bdae0d8e01742c99f73342f226eb7b875b98",
+            feeRatePerByte: 20,
             tcClient: tcClient,
             tcAddress: tcAddress,
             btcAddress: buyerAddress,
