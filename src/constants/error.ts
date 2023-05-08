@@ -25,6 +25,7 @@ export const ERROR_CODE = {
     OLD_VIN_EMPTY: "-33",
     INVALID_NEW_FEE_RBF: "-34",
     GET_UTXO_VALUE_ERR: "-35",
+    IS_NOT_RBFABLE: "-36",
 };
 
 export const ERROR_MESSAGE = {
@@ -127,6 +128,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.GET_UTXO_VALUE_ERR]: {
         message: "Get UTXO value from blockstream not found.",
         desc: "Get UTXO value from blockstream not found.",
+    },
+    [ERROR_CODE.IS_NOT_RBFABLE]: {
+        message: "This transaction doesn't support to speed up.",
+        desc: "This transaction doesn't support to speed up.",
     },
 
 

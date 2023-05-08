@@ -20,4 +20,13 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-export { replaceByFeeInscribeTx };
+declare const isRBFable: ({ revealTxID, tcClient, tcAddress, btcAddress, }: {
+    revealTxID: string;
+    tcClient: TcClient;
+    tcAddress: string;
+    btcAddress: string;
+}) => Promise<{
+    isRBFable: boolean;
+    oldFeeRate: number;
+}>;
+export { replaceByFeeInscribeTx, isRBFable, };

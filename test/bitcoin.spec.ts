@@ -676,7 +676,7 @@ describe("Create tx with multiple UTXOs Tests", () => {
     //   console.log(txID, txHex, feeRes);
     // });
 
-    it("send insciption offset != 0 : should use inscription to pay fee", () => {
+    it("send insciption offset != 0 : should use inscription to pay fee", async () => {
         let sendInscriptionID = "759227f04721a0f3d097826fa7b66a34228dd2ed61e89a77d51a50d3cd7ab6dci0"; // 1311874707106021
         let isUseInscriptionPayFeeParam = true;
         let sendAmount = 0;
@@ -709,9 +709,14 @@ describe("Create tx with multiple UTXOs Tests", () => {
                 value: new BigNumber(50000)
             },
             {
-                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-                tx_output_n: 2,
-                value: new BigNumber(80000)
+                tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
+                tx_output_n: 0,
+                value: new BigNumber(50000)
+            },
+            {
+                tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
+                tx_output_n: 1,
+                value: new BigNumber(29230)
             },
             {
                 tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
@@ -735,10 +740,10 @@ describe("Create tx with multiple UTXOs Tests", () => {
                 // { address: receiverAddress, amount: new BigNumber(80000) }
             ],
             feeRatePerByte: 5,
-            sequence: 4,
+            sequence: 5,
         });
 
-        const finalTXID = broadcastTx(txHex);
+        const finalTXID = await broadcastTx(txHex);
         console.log("finalTXID: ", finalTXID);
         console.log(txID, txHex, feeRes);
     });

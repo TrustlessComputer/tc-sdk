@@ -1,11 +1,15 @@
-import { BNZero, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
+import { BNZero, DefaultSequence, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
+    BTCVinVout,
     BatchInscribeTxResp,
+    GetPendingInscribeTxsResp,
     Inscription,
     SDKError,
     TCTxDetail,
     TcClient,
     UTXO,
+    Vin,
+    Vout,
     createInscribeTx,
     createRawTxSendBTC,
     createTxSendBTC,
@@ -25,6 +29,130 @@ import { Network } from "../bitcoin/network";
 import { getUTXOsFromBlockStream } from "./blockstream";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
+
+const extractOldTxInfo = async (
+    {
+        revealTxID,
+        tcClient,
+        tcAddress,
+        btcAddress,
+    }: {
+        revealTxID: string,
+        tcClient: TcClient,
+        tcAddress: string,
+        btcAddress: string,
+    }
+): Promise<{
+    oldCommitVouts: Vout[],
+    oldCommitVins: Vin[],
+    oldCommitUTXOs: UTXO[],
+    oldCommitFee: BigNumber,
+    oldCommitTxSize: number,
+    oldCommitFeeRate: number,
+    needToRBFTCTxIDs: string[],
+    needToRBFTxInfos: GetPendingInscribeTxsResp[],
+    totalCommitVin: BigNumber,
+    totalCommitVOut: BigNumber,
+    oldRevealTx: BTCVinVout,
+    isRBFable: boolean,
+}> => {
+
+    const txs = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+
+    const needToRBFTxInfos = txs.filter((tx) => {
+        return tx.Reveal.BTCHash === revealTxID;
+    });
+
+    if (needToRBFTxInfos.length == 0) {
+        throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
+    }
+
+    const needToRBFTCTxIDs = [];
+    for (const tx of needToRBFTxInfos) {
+        needToRBFTCTxIDs.push(tx.TCHash);
+    }
+    if (needToRBFTxInfos.length == 0) {
+        throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
+    }
+    // parse vin from old tx info
+    const oldCommitUTXOs: UTXO[] = [];
+    const oldCommitTx = needToRBFTxInfos[0].Commit;
+    const oldRevealTx = needToRBFTxInfos[0].Reveal;
+    if (oldCommitTx === null || oldCommitTx === undefined) {
+        throw new SDKError(ERROR_CODE.COMMIT_TX_EMPTY, revealTxID);
+    }
+    if (oldRevealTx === null || oldRevealTx === undefined) {
+        throw new SDKError(ERROR_CODE.REVEAL_TX_EMPTY, revealTxID);
+    }
+
+    const oldCommitVins = oldCommitTx.Vin;
+    const oldCommitVouts = oldCommitTx.Vout;
+    if (oldCommitVins.length === 0) {
+        throw new SDKError(ERROR_CODE.OLD_VIN_EMPTY, revealTxID);
+    }
+
+    let isRBFable = true;
+    for (const vin of oldCommitVins) {
+        oldCommitUTXOs.push({
+            tx_hash: vin.txid,
+            tx_output_n: vin.vout,
+            value: BNZero,   // TODO: 2525
+        });
+
+        if (vin.Sequence === DefaultSequence) {
+            isRBFable = false;
+        }
+    }
+
+
+    const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
+    for (let i = 0; i < oldCommitUTXOs.length; i++) {
+        const tmpUTXO = utxoFromBlockStream.find(utxo => {
+            return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
+        });
+        if (tmpUTXO === null || tmpUTXO === undefined) {
+            throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
+        }
+
+        oldCommitUTXOs[i].value = tmpUTXO?.value;
+    }
+
+    // get old fee rate, old fee of commit tx
+    let totalCommitVin = BNZero;
+    for (const vout of oldCommitUTXOs) {
+        totalCommitVin = totalCommitVin.plus(new BigNumber(vout.value));
+    }
+
+
+    let totalCommitVOut = BNZero;
+    for (const vout of oldCommitVouts) {
+        totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
+    }
+
+    const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
+    const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
+    const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
+
+    console.log("oldCommitFee: ", oldCommitFee);
+    console.log("oldCommitTxSize: ", oldCommitTxSize);
+    console.log("oldCommitFeeRate: ", oldCommitFeeRate);
+
+    return {
+        oldCommitUTXOs,
+        oldCommitVouts,
+        oldCommitVins,
+        oldCommitFee,
+        oldCommitTxSize,
+        oldCommitFeeRate,
+        needToRBFTCTxIDs,
+        needToRBFTxInfos,
+        totalCommitVin,
+        totalCommitVOut,
+        oldRevealTx,
+        isRBFable,
+
+    };
+};
 
 const replaceByFeeInscribeTx = async (
     {
@@ -56,79 +184,102 @@ const replaceByFeeInscribeTx = async (
     selectedUTXOs: UTXO[],
     newUTXOs: UTXO[],
 }> => {
-    const txs = await tcClient.getPendingInscribeTxsDetail(tcAddress);
 
-    const needToRBFTxInfos = txs.filter((tx) => {
-        return tx.Reveal.BTCHash === revealTxID;
-    });
-
-    if (needToRBFTxInfos.length == 0) {
-        throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
-    }
-
-    const needToRBFTCTxIDs = [];
-    for (const tx of needToRBFTxInfos) {
-        needToRBFTCTxIDs.push(tx.TCHash);
-    }
-    if (needToRBFTxInfos.length == 0) {
-        throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
-    }
-
-    // need to inscribe tx
-
-    // parse vin from old tx info
-    const oldCommitUTXOs: UTXO[] = [];
-    const oldCommitTx = needToRBFTxInfos[0].Commit;
-    const oldRevealTx = needToRBFTxInfos[0].Reveal;
-    if (oldCommitTx === null || oldCommitTx === undefined) {
-        throw new SDKError(ERROR_CODE.COMMIT_TX_EMPTY, revealTxID);
-    }
-    if (oldRevealTx === null || oldRevealTx === undefined) {
-        throw new SDKError(ERROR_CODE.REVEAL_TX_EMPTY, revealTxID);
-    }
-
-    const oldCommitVins = oldCommitTx.Vin;
-    const oldCommitVouts = oldCommitTx.Vout;
-    if (oldCommitVins.length === 0) {
-        throw new SDKError(ERROR_CODE.OLD_VIN_EMPTY, revealTxID);
-    }
-
-    for (const vin of oldCommitVins) {
-        oldCommitUTXOs.push({
-            tx_hash: vin.txid,
-            tx_output_n: vin.vout,
-            value: BNZero,   // TODO: 2525
+    const {
+        oldCommitVouts,
+        oldCommitUTXOs,
+        oldCommitVins,
+        oldCommitFee,
+        oldCommitTxSize,
+        oldCommitFeeRate,
+        needToRBFTCTxIDs,
+        needToRBFTxInfos,
+        totalCommitVin,
+        totalCommitVOut,
+        isRBFable,
+        oldRevealTx } = await extractOldTxInfo({
+            revealTxID,
+            tcClient,
+            tcAddress,
+            btcAddress,
         });
+
+    if (!isRBFable) {
+        throw new SDKError(ERROR_CODE.IS_NOT_RBFABLE, revealTxID);
     }
+    // const txs = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+
+    // const needToRBFTxInfos = txs.filter((tx) => {
+    //     return tx.Reveal.BTCHash === revealTxID;
+    // });
+
+    // if (needToRBFTxInfos.length == 0) {
+    //     throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
+    // }
+
+    // const needToRBFTCTxIDs = [];
+    // for (const tx of needToRBFTxInfos) {
+    //     needToRBFTCTxIDs.push(tx.TCHash);
+    // }
+    // if (needToRBFTxInfos.length == 0) {
+    //     throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
+    // }
+
+    // // need to inscribe tx
+
+    // // parse vin from old tx info
+    // const oldCommitUTXOs: UTXO[] = [];
+    // const oldCommitTx = needToRBFTxInfos[0].Commit;
+    // const oldRevealTx = needToRBFTxInfos[0].Reveal;
+    // if (oldCommitTx === null || oldCommitTx === undefined) {
+    //     throw new SDKError(ERROR_CODE.COMMIT_TX_EMPTY, revealTxID);
+    // }
+    // if (oldRevealTx === null || oldRevealTx === undefined) {
+    //     throw new SDKError(ERROR_CODE.REVEAL_TX_EMPTY, revealTxID);
+    // }
+
+    // const oldCommitVins = oldCommitTx.Vin;
+    // const oldCommitVouts = oldCommitTx.Vout;
+    // if (oldCommitVins.length === 0) {
+    //     throw new SDKError(ERROR_CODE.OLD_VIN_EMPTY, revealTxID);
+    // }
+
+    // for (const vin of oldCommitVins) {
+    //     oldCommitUTXOs.push({
+    //         tx_hash: vin.txid,
+    //         tx_output_n: vin.vout,
+    //         value: BNZero,   // TODO: 2525
+    //     });
+    // }
 
 
-    const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
-    for (let i = 0; i < oldCommitUTXOs.length; i++) {
-        const tmpUTXO = utxoFromBlockStream.find(utxo => {
-            return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
-        });
-        if (tmpUTXO === null || tmpUTXO === undefined) {
-            throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
-        }
+    // const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
+    // for (let i = 0; i < oldCommitUTXOs.length; i++) {
+    //     const tmpUTXO = utxoFromBlockStream.find(utxo => {
+    //         return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
+    //     });
+    //     if (tmpUTXO === null || tmpUTXO === undefined) {
+    //         throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
+    //     }
 
-        oldCommitUTXOs[i].value = tmpUTXO?.value;
-    }
+    //     oldCommitUTXOs[i].value = tmpUTXO?.value;
+    // }
 
-    // get old fee rate, old fee of commit tx
-    let totalCommitVin = BNZero;
-    for (const vout of oldCommitUTXOs) {
-        totalCommitVin = totalCommitVin.plus(new BigNumber(vout.value));
-    }
+    // // get old fee rate, old fee of commit tx
+    // let totalCommitVin = BNZero;
+    // for (const vout of oldCommitUTXOs) {
+    //     totalCommitVin = totalCommitVin.plus(new BigNumber(vout.value));
+    // }
 
 
-    let totalCommitVOut = BNZero;
-    for (const vout of oldCommitVouts) {
-        totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
-    }
+    // let totalCommitVOut = BNZero;
+    // for (const vout of oldCommitVouts) {
+    //     totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
+    // }
 
-    const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
-    const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
-    const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
+    // const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
+    // const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
+    // const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
 
     console.log("oldCommitFee: ", oldCommitFee);
     console.log("oldCommitTxSize: ", oldCommitTxSize);
@@ -178,7 +329,37 @@ const replaceByFeeInscribeTx = async (
 };
 
 
+const isRBFable = async ({
+    revealTxID,
+    tcClient,
+    tcAddress,
+    btcAddress,
+}: {
+    revealTxID: string,
+    tcClient: TcClient,
+    tcAddress: string,
+    btcAddress: string,
+}): Promise<{
+    isRBFable: boolean,
+    oldFeeRate: number,
+}> => {
+
+    const { isRBFable, oldCommitFeeRate } = await extractOldTxInfo({
+        revealTxID,
+        tcClient,
+        tcAddress,
+        btcAddress
+    });
+
+    return {
+        isRBFable,
+        oldFeeRate: oldCommitFeeRate,
+    };
+};
+
+
 
 export {
-    replaceByFeeInscribeTx
+    replaceByFeeInscribeTx,
+    isRBFable,
 };

@@ -25,6 +25,7 @@ export declare const ERROR_CODE: {
     OLD_VIN_EMPTY: string;
     INVALID_NEW_FEE_RBF: string;
     GET_UTXO_VALUE_ERR: string;
+    IS_NOT_RBFABLE: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {
