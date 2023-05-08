@@ -146,8 +146,8 @@ const extractOldTxInfo = async (
     console.log("HHH oldCommitFeeRate: ", oldCommitFeeRate);
 
     // get old fee rate, old fee of reveal tx 
-    const totalRevealVin = oldCommitVouts[0].value;
-    const totalRevealVout = oldRevealTx.Vout[0].value;
+    const totalRevealVin = toSat(oldCommitVouts[0].value);
+    const totalRevealVout = toSat(oldRevealTx.Vout[0].value);
 
     const oldRevealFee = totalRevealVin - totalRevealVout;
     const revealTxSize = oldRevealFee / oldCommitFeeRate;
@@ -156,7 +156,8 @@ const extractOldTxInfo = async (
 
     const totalOldFee = oldCommitFee.plus(new BigNumber(oldRevealFee));
     const newCommitFee = totalOldFee.plus(new BigNumber(1000)); // extra
-    const minSat = newCommitFee.toNumber() / oldCommitTxSize;
+    const minSat = Math.round(newCommitFee.toNumber() / oldCommitTxSize) + 1;
+
 
     return {
         oldCommitUTXOs,
@@ -236,6 +237,8 @@ const replaceByFeeInscribeTx = async (
         throw new SDKError(ERROR_CODE.IS_NOT_RBFABLE, revealTxID);
     }
 
+    console.log("HHH min sat: ", minSat);
+
     // estimate new fee with new fee rate
     if (feeRatePerByte < minSat) {
         throw new SDKError(ERROR_CODE.INVALID_NEW_FEE_RBF, "Require new fee: " + minSat + " New fee: " + feeRatePerByte);
@@ -270,9 +273,6 @@ const replaceByFeeInscribeTx = async (
         sequence,
         isSelectUTXOs: false,
     });
-
-
-
     return resp;
 };
 

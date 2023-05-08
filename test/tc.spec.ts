@@ -1,5 +1,5 @@
+import { DefaultSequenceRBF, Network, NetworkType, UTXO, convertPrivateKeyFromStr, setBTCNetwork, } from "../src/bitcoin";
 import { Mainnet, TcClient, Testnet, aggregateUTXOs, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, replaceByFeeInscribeTx, splitBatchInscribeTx } from "../src/tc";
-import { Network, NetworkType, UTXO, convertPrivateKeyFromStr, setBTCNetwork, } from "../src/bitcoin";
 
 import BigNumber from 'bignumber.js';
 import { Regtest } from "../dist";
@@ -173,11 +173,6 @@ describe("Sign msg Tx", async () => {
         let UTXOs: UTXO[] = [
             {
                 tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
-                tx_output_n: 0,
-                value: new BigNumber(10000000)
-            },
-            {
-                tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
                 tx_output_n: 1,
                 value: new BigNumber(50000)
             },
@@ -186,18 +181,26 @@ describe("Sign msg Tx", async () => {
                 tx_output_n: 0,
                 value: new BigNumber(10000000)
             },
-            // tx sau
+            {
+                tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
+                tx_output_n: 0,
+                value: new BigNumber(10000)
+            },
+            {
+                tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
+                tx_output_n: 1,
+                value: new BigNumber(10000)
+            },
             // {
-            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-            //     tx_output_n: 1,
-            //     value: new BigNumber(50000)
+            //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
+            //     tx_output_n: 2,
+            //     value: new BigNumber(5000)
             // },
-            // tx truoc
-            // {
-            //     tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
-            //     tx_output_n: 0,
-            //     value: new BigNumber(50000)
-            // },
+            {
+                tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
+                tx_output_n: 3,
+                value: new BigNumber(9974230)
+            },
             {
                 tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
                 tx_output_n: 3,
@@ -209,7 +212,7 @@ describe("Sign msg Tx", async () => {
 
         const tcTxDetails: any[] = [{
             Nonce: 3,
-            Hash: "0x0f0fe05e8da52b90fc1942f286c89fa7f5170ecf1b62266059899e8e5bbc1bfb",
+            Hash: "0x4ec50104c681506b6f6367aa53c820800c15e15aa7dcd71da50c831851290e73",
         },
         ];
 
@@ -220,20 +223,21 @@ describe("Sign msg Tx", async () => {
         //     inscriptions: {},
         //     feeRatePerByte: 5,
         //     tcClient: tcClient,
-        //     sequence: 3,
+        //     sequence: DefaultSequenceRBF,
         // });
         // console.log("resp: ", resp);
+
 
         const repsRBF = await replaceByFeeInscribeTx({
             senderPrivateKey: buyerPrivateKey,
             utxos: UTXOs,
             inscriptions: {},
-            revealTxID: "7737bed2cf9a7e88712527e7dc43bdae0d8e01742c99f73342f226eb7b875b98",
-            feeRatePerByte: 20,
+            revealTxID: "660c0fa49cdb8fe178a2b16c38ad5ff828040657776b5257b47517643ccd71d3",
+            feeRatePerByte: 18,
             tcClient: tcClient,
             tcAddress: tcAddress,
             btcAddress: buyerAddress,
-            sequence: 4,
+            sequence: DefaultSequenceRBF,
         })
 
         console.log("repsRBF: ", repsRBF);

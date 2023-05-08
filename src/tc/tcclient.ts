@@ -94,6 +94,7 @@ class TcClient {
         const dataResp = JSON.parse(data);
         console.log("Data resp: ", dataResp);
 
+
         if (dataResp.error || !dataResp.result) {
             throw new SDKError(ERROR_CODE.RPC_ERROR, data.error);
         }

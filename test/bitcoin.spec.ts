@@ -1,5 +1,6 @@
 import {
     BNZero,
+    DefaultSequenceRBF,
     Inscription,
     MinSats,
     NetworkType,
@@ -688,41 +689,41 @@ describe("Create tx with multiple UTXOs Tests", () => {
                 tx_output_n: 0,
                 value: new BigNumber(10000000)
             },
-            {
-                tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
-                tx_output_n: 1,
-                value: new BigNumber(50000)
-            },
-            {
-                tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
-                tx_output_n: 2,
-                value: new BigNumber(80000)
-            },
-            {
-                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-                tx_output_n: 0,
-                value: new BigNumber(10000000)
-            },
-            {
-                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-                tx_output_n: 1,
-                value: new BigNumber(50000)
-            },
-            {
-                tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
-                tx_output_n: 0,
-                value: new BigNumber(50000)
-            },
-            {
-                tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
-                tx_output_n: 1,
-                value: new BigNumber(29230)
-            },
-            {
-                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-                tx_output_n: 3,
-                value: new BigNumber(77849369)
-            },
+            // {
+            //     tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
+            //     tx_output_n: 1,
+            //     value: new BigNumber(50000)
+            // },
+            // {
+            //     tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
+            //     tx_output_n: 2,
+            //     value: new BigNumber(80000)
+            // },
+            // {
+            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+            //     tx_output_n: 0,
+            //     value: new BigNumber(10000000)
+            // },
+            // {
+            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+            //     tx_output_n: 1,
+            //     value: new BigNumber(50000)
+            // },
+            // {
+            //     tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
+            //     tx_output_n: 0,
+            //     value: new BigNumber(50000)
+            // },
+            // {
+            //     tx_hash: "91f136ed61203cf84ba23d99eaab68ba4e06d346ead4ee7d0d91037326797f2f",
+            //     tx_output_n: 1,
+            //     value: new BigNumber(29230)
+            // },
+            // {
+            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+            //     tx_output_n: 3,
+            //     value: new BigNumber(77849369)
+            // },
         ];
         setBTCNetwork(NetworkType.Regtest);
 
@@ -736,11 +737,13 @@ describe("Create tx with multiple UTXOs Tests", () => {
             inscriptions,
             paymentInfos: [
                 // { address: receiverAddress, amount: new BigNumber(10000000) },
-                { address: receiverAddress, amount: new BigNumber(50000) },
+                { address: receiverAddress, amount: new BigNumber(10000) },
+                { address: receiverAddress, amount: new BigNumber(10000) },
+                { address: receiverAddress, amount: new BigNumber(5000) },
                 // { address: receiverAddress, amount: new BigNumber(80000) }
             ],
             feeRatePerByte: 5,
-            sequence: 5,
+            sequence: DefaultSequenceRBF,
         });
 
         const finalTXID = await broadcastTx(txHex);
