@@ -22,6 +22,7 @@ import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
 import { ERROR_CODE } from "../constants/error";
 import { Network } from "../bitcoin/network";
+import { getUTXOsFromBlockStream } from "./blockstream";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 
@@ -34,6 +35,7 @@ const replaceByFeeInscribeTx = async (
         feeRatePerByte,
         tcClient,
         tcAddress,
+        btcAddress,
 
     }: {
         senderPrivateKey: Buffer,
@@ -43,6 +45,7 @@ const replaceByFeeInscribeTx = async (
         feeRatePerByte: number,
         tcClient: TcClient,
         tcAddress: string,
+        btcAddress: string,
     }
 ): Promise<{
     commitTxHex: string,
@@ -99,6 +102,18 @@ const replaceByFeeInscribeTx = async (
     }
 
 
+    const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
+    for (let i = 0; i < oldCommitUTXOs.length; i++) {
+        const tmpUTXO = utxoFromBlockStream.find(utxo => {
+            return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
+        });
+        if (tmpUTXO === null || tmpUTXO === undefined) {
+            throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
+        }
+
+        oldCommitUTXOs[i].value = tmpUTXO?.value;
+    }
+
     // get old fee rate, old fee of commit tx
     let totalCommitVin = BNZero;
     for (const vout of oldCommitUTXOs) {
@@ -118,7 +133,6 @@ const replaceByFeeInscribeTx = async (
     console.log("oldCommitFee: ", oldCommitFee);
     console.log("oldCommitTxSize: ", oldCommitTxSize);
     console.log("oldCommitFeeRate: ", oldCommitFeeRate);
-
 
 
     // get old fee rate, old fee of reveal tx 
@@ -179,4 +193,10 @@ const replaceByFeeInscribeTx = async (
     // return null
 
 
+};
+
+
+
+export {
+    replaceByFeeInscribeTx
 };

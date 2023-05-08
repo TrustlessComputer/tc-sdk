@@ -24,6 +24,7 @@ export const ERROR_CODE = {
     REVEAL_TX_EMPTY: "-32",
     OLD_VIN_EMPTY: "-33",
     INVALID_NEW_FEE_RBF: "-34",
+    GET_UTXO_VALUE_ERR: "-35",
 };
 
 export const ERROR_MESSAGE = {
@@ -122,6 +123,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_NEW_FEE_RBF]: {
         message: "New fee for RBF tx must be greater than the old one.",
         desc: "New fee for RBF tx must be greater than the old one.",
+    },
+    [ERROR_CODE.GET_UTXO_VALUE_ERR]: {
+        message: "Get UTXO value from blockstream not found.",
+        desc: "Get UTXO value from blockstream not found.",
     },
 
 
