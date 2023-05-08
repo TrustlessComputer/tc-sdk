@@ -1,6 +1,6 @@
 import { Inscription, TcClient, UTXO } from "..";
 import BigNumber from "bignumber.js";
-declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, }: {
+declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -11,6 +11,7 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     tcClient: TcClient;
     tcAddress: string;
     btcAddress: string;
+    sequence?: number | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;

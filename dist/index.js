@@ -6135,7 +6135,7 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, }) => {
+const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence = DefaultSequence, }) => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
@@ -6160,7 +6160,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
-        sequence: feeRatePerByte,
+        sequence,
     });
     const newUTXOs = [];
     if (changeAmount.gt(BNZero)) {
@@ -6172,6 +6172,9 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
     }
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+    // if (sequence < DefaultSequence) {
+    //     sequence++;
+    // }
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
         internalPubKey,
@@ -6180,7 +6183,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
-        sequence: feeRatePerByte,
+        sequence: 0,
     });
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
@@ -6249,7 +6252,7 @@ const splitBatchInscribeTx = ({ tcTxDetails }) => {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, }) => {
+const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence = DefaultSequence, }) => {
     const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
     const result = [];
     const newUTXOs = [...utxos];
@@ -6263,7 +6266,11 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
                 tcTxIDs: batch,
                 feeRatePerByte,
                 tcClient,
+                sequence,
             });
+            if (sequence < DefaultSequence) {
+                sequence += 1;
+            }
             result.push({
                 tcTxIDs: batch,
                 commitTxHex,
@@ -6354,6 +6361,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
+        sequence: 0,
     });
     return {
         commitTxHex,
@@ -6761,6 +6769,9 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
             isRBFable = false;
         }
     }
+    // if pending > 0: latest
+    // getPendingInscribeTxsDetail
+    // else: block stream: latest
     const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
     for (let i = 0; i < oldCommitUTXOs.length; i++) {
         const tmpUTXO = utxoFromBlockStream.find(utxo => {
@@ -6801,7 +6812,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
         isRBFable,
     };
 };
-const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, }) => {
+const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence, }) => {
     const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx } = await extractOldTxInfo({
         revealTxID,
         tcClient,
@@ -6902,6 +6913,7 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
         tcTxIDs: needToRBFTCTxIDs,
         feeRatePerByte,
         tcClient,
+        sequence,
     });
 };
 const isRBFable = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {

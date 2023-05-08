@@ -992,7 +992,7 @@ declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair,
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, }: {
+declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -1001,6 +1001,7 @@ declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID
     tcTxIDs: string[];
     feeRatePerByte: number;
     tcClient: TcClient;
+    sequence?: number | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;
@@ -1027,7 +1028,7 @@ declare const splitBatchInscribeTx: ({ tcTxDetails }: {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, }: {
+declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -1036,6 +1037,7 @@ declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, 
     tcTxDetails: TCTxDetail[];
     feeRatePerByte: number;
     tcClient: TcClient;
+    sequence?: number | undefined;
 }) => Promise<BatchInscribeTxResp[]>;
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
@@ -1197,7 +1199,7 @@ declare class TcClient {
 
 declare const increaseGasPrice: (wei: BigNumber) => BigNumber;
 
-declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, }: {
+declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -1208,6 +1210,7 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     tcClient: TcClient;
     tcAddress: string;
     btcAddress: string;
+    sequence?: number | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;
