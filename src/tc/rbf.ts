@@ -105,6 +105,18 @@ const extractOldTxInfo = async (
     }
 
 
+    // if pending > 0: latest
+
+    // getPendingInscribeTxsDetail
+
+
+    // else: block stream: latest
+
+
+
+
+
+
     const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
     for (let i = 0; i < oldCommitUTXOs.length; i++) {
         const tmpUTXO = utxoFromBlockStream.find(utxo => {
@@ -164,6 +176,7 @@ const replaceByFeeInscribeTx = async (
         tcClient,
         tcAddress,
         btcAddress,
+        sequence,
 
     }: {
         senderPrivateKey: Buffer,
@@ -174,6 +187,7 @@ const replaceByFeeInscribeTx = async (
         tcClient: TcClient,
         tcAddress: string,
         btcAddress: string,
+        sequence?: number,
     }
 ): Promise<{
     commitTxHex: string,
@@ -325,6 +339,7 @@ const replaceByFeeInscribeTx = async (
         tcTxIDs: needToRBFTCTxIDs,
         feeRatePerByte,
         tcClient,
+        sequence,
     });
 };
 

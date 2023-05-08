@@ -199,6 +199,7 @@ const createInscribeTx = async ({
     tcTxIDs,
     feeRatePerByte,
     tcClient,
+    sequence = DefaultSequence,
 }: {
     senderPrivateKey: Buffer,
     utxos: UTXO[],
@@ -206,6 +207,7 @@ const createInscribeTx = async ({
     tcTxIDs: string[],
     feeRatePerByte: number,
     tcClient: TcClient,
+    sequence?: number;
 }): Promise<{
     commitTxHex: string,
     commitTxID: string,
@@ -246,7 +248,7 @@ const createInscribeTx = async ({
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
-        sequence: feeRatePerByte,
+        sequence,
     });
 
     const newUTXOs: UTXO[] = [];
@@ -261,6 +263,10 @@ const createInscribeTx = async ({
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
 
+    // if (sequence < DefaultSequence) {
+    //     sequence++;
+    // }
+
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
         internalPubKey,
@@ -269,7 +275,7 @@ const createInscribeTx = async ({
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
-        sequence: feeRatePerByte,
+        sequence: 0,
     });
 
     console.log("commitTxHex: ", commitTxHex);
@@ -359,6 +365,7 @@ const createBatchInscribeTxs = async ({
     tcTxDetails,
     feeRatePerByte,
     tcClient,
+    sequence = DefaultSequence,
 }: {
     senderPrivateKey: Buffer,
     utxos: UTXO[],
@@ -366,6 +373,7 @@ const createBatchInscribeTxs = async ({
     tcTxDetails: TCTxDetail[],
     feeRatePerByte: number,
     tcClient: TcClient,
+    sequence?: number,
 }): Promise<BatchInscribeTxResp[]> => {
 
     const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
@@ -384,7 +392,13 @@ const createBatchInscribeTxs = async ({
                 tcTxIDs: batch,
                 feeRatePerByte,
                 tcClient,
+                sequence,
             });
+
+            if (sequence < DefaultSequence) {
+                sequence += 1;
+            }
+
             result.push({
                 tcTxIDs: batch,
                 commitTxHex,
@@ -511,6 +525,7 @@ const createInscribeTxFromAnyWallet = async ({
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
+        sequence: 0,
     });
 
     return {

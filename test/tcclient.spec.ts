@@ -96,7 +96,6 @@ describe("TC client", async () => {
         console.log("tcClient.url ", tcClient.url);
         const tcAddress = "0xF91cEe2DE943733e338891Ef602c962eF4D7Eb81";
 
-
         const resp = await tcClient.getPendingInscribeTxsDetail(tcAddress);
         // console.log("HHH Length: ", resp.unInscribedTxDetails.length);
 
