@@ -6792,7 +6792,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
     }
     let totalCommitVOut = BNZero;
     for (const vout of oldCommitVouts) {
-        totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
+        totalCommitVOut = totalCommitVOut.plus(new BigNumber(toSat(vout.value)));
     }
     console.log("HHH oldCommitUTXOs: ", oldCommitUTXOs);
     console.log("HHH oldCommitVouts: ", oldCommitVouts);
