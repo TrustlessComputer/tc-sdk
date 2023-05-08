@@ -148,7 +148,7 @@ const extractOldTxInfo = async (
         totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
     }
 
-    const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
+    const oldCommitFee = totalCommitVin.minus(totalCommitVOut);
     const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
     const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
 

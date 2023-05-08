@@ -6794,7 +6794,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
     for (const vout of oldCommitVouts) {
         totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
     }
-    const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
+    const oldCommitFee = totalCommitVin.minus(totalCommitVOut);
     const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
     const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
     console.log("oldCommitFee: ", oldCommitFee);
