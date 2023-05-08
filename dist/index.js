@@ -6695,6 +6695,121 @@ class TcClient {
     }
 }
 
+const getUTXOsFromBlockStream = async (btcAddress) => {
+    if (!btcAddress)
+        return [];
+    try {
+        // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+        const res = await axios__default["default"].get(`${exports.BlockStreamURL}/address/${btcAddress}/txs`);
+        console.log(res);
+        const utxos = [];
+        for (const item of res) {
+            // utxos.push({
+            //     tx_hash: item.
+            // })
+        }
+        return utxos;
+    }
+    catch (err) {
+        return [];
+    }
+};
+
+const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, }) => {
+    const txs = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+    const needToRBFTxInfos = txs.filter((tx) => {
+        return tx.Reveal.BTCHash === revealTxID;
+    });
+    if (needToRBFTxInfos.length == 0) {
+        throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
+    }
+    const needToRBFTCTxIDs = [];
+    for (const tx of needToRBFTxInfos) {
+        needToRBFTCTxIDs.push(tx.TCHash);
+    }
+    if (needToRBFTxInfos.length == 0) {
+        throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
+    }
+    // need to inscribe tx
+    // parse vin from old tx info
+    const oldCommitUTXOs = [];
+    const oldCommitTx = needToRBFTxInfos[0].Commit;
+    const oldRevealTx = needToRBFTxInfos[0].Reveal;
+    if (oldCommitTx === null || oldCommitTx === undefined) {
+        throw new SDKError(ERROR_CODE.COMMIT_TX_EMPTY, revealTxID);
+    }
+    if (oldRevealTx === null || oldRevealTx === undefined) {
+        throw new SDKError(ERROR_CODE.REVEAL_TX_EMPTY, revealTxID);
+    }
+    const oldCommitVins = oldCommitTx.Vin;
+    const oldCommitVouts = oldCommitTx.Vout;
+    if (oldCommitVins.length === 0) {
+        throw new SDKError(ERROR_CODE.OLD_VIN_EMPTY, revealTxID);
+    }
+    for (const vin of oldCommitVins) {
+        oldCommitUTXOs.push({
+            tx_hash: vin.txid,
+            tx_output_n: vin.vout,
+            value: BNZero, // TODO: 2525
+        });
+    }
+    const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
+    for (let i = 0; i < oldCommitUTXOs.length; i++) {
+        const tmpUTXO = utxoFromBlockStream.find(utxo => {
+            return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
+        });
+        if (tmpUTXO === null || tmpUTXO === undefined) {
+            throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
+        }
+        oldCommitUTXOs[i].value = tmpUTXO?.value;
+    }
+    // get old fee rate, old fee of commit tx
+    let totalCommitVin = BNZero;
+    for (const vout of oldCommitUTXOs) {
+        totalCommitVin = totalCommitVin.plus(new BigNumber(vout.value));
+    }
+    let totalCommitVOut = BNZero;
+    for (const vout of oldCommitVouts) {
+        totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
+    }
+    const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
+    const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
+    const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
+    console.log("oldCommitFee: ", oldCommitFee);
+    console.log("oldCommitTxSize: ", oldCommitTxSize);
+    console.log("oldCommitFeeRate: ", oldCommitFeeRate);
+    // get old fee rate, old fee of reveal tx 
+    const totalRevealVin = oldCommitVouts[0].value;
+    const totalRevealVout = oldRevealTx.Vout[0].value;
+    const oldRevealFee = totalRevealVin - totalRevealVout;
+    const revealTxSize = oldRevealFee / oldCommitFeeRate;
+    console.log("oldRevealFee: ", oldRevealFee);
+    console.log("revealTxSize: ", revealTxSize);
+    // estimate new fee with new fee rate
+    if (feeRatePerByte < oldCommitFeeRate) {
+        throw new SDKError(ERROR_CODE.INVALID_NEW_FEE_RBF, "Old fee: " + oldCommitFeeRate + " New fee: " + feeRatePerByte);
+    }
+    const estCommitTxFee = estimateTxFee(oldCommitVins.length, oldCommitVouts.length, feeRatePerByte);
+    const estRevealTxFee = revealTxSize * feeRatePerByte;
+    const totalAmtNeedToInscribe = estCommitTxFee + estRevealTxFee;
+    // select extra UTXO if needed
+    let extraUTXOs = [];
+    if (new BigNumber(totalAmtNeedToInscribe).gt(totalCommitVin)) {
+        const extraAmt = new BigNumber(totalAmtNeedToInscribe).minus(totalCommitVin);
+        const { selectedUTXOs } = selectCardinalUTXOs(utxos, inscriptions, extraAmt);
+        extraUTXOs = selectedUTXOs;
+    }
+    const utxosForRBFTx = [...oldCommitUTXOs, ...extraUTXOs];
+    return createInscribeTx({
+        senderPrivateKey,
+        utxos: utxosForRBFTx,
+        inscriptions,
+        tcTxIDs: needToRBFTCTxIDs,
+        feeRatePerByte,
+        tcClient,
+    });
+};
+
 exports.RequestFunction = void 0;
 (function (RequestFunction) {
     RequestFunction["sign"] = "sign";
@@ -6836,6 +6951,7 @@ exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;
 exports.prepareUTXOsToBuyMultiInscriptions = prepareUTXOsToBuyMultiInscriptions;
+exports.replaceByFeeInscribeTx = replaceByFeeInscribeTx;
 exports.reqBuyInscription = reqBuyInscription;
 exports.reqBuyInscriptionFromAnyWallet = reqBuyInscriptionFromAnyWallet;
 exports.reqBuyMultiInscriptions = reqBuyMultiInscriptions;
