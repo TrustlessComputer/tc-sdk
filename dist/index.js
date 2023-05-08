@@ -6516,6 +6516,7 @@ class TcClient {
             const dataResp = JSON.parse(data);
             console.log("Data resp: ", dataResp);
             if (dataResp.error || !dataResp.result) {
+                console.log("Data resp error: ", typeof dataResp.error, dataResp.error, dataResp.error?.message);
                 throw new SDKError(ERROR_CODE.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
             }
             return dataResp.result;
