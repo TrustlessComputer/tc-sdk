@@ -19,6 +19,11 @@ export const ERROR_CODE = {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
+    NOT_FOUND_TX_TO_RBF: "-30",
+    COMMIT_TX_EMPTY: "-31",
+    REVEAL_TX_EMPTY: "-32",
+    OLD_VIN_EMPTY: "-33",
+    INVALID_NEW_FEE_RBF: "-34",
 };
 
 export const ERROR_MESSAGE = {
@@ -98,6 +103,30 @@ export const ERROR_MESSAGE = {
         message: "Call RPC submit btc tx error.",
         desc: "Call RPC submit btc tx error.",
     },
+    [ERROR_CODE.NOT_FOUND_TX_TO_RBF]: {
+        message: "BTC transaction was not found from TC node.",
+        desc: "BTC transaction was not found from TC node.",
+    },
+    [ERROR_CODE.COMMIT_TX_EMPTY]: {
+        message: "Commit tx need to RBF is empty.",
+        desc: "Commit tx need to RBF is empty.",
+    },
+    [ERROR_CODE.REVEAL_TX_EMPTY]: {
+        message: "Reveal tx need to RBF is empty.",
+        desc: "Reveal tx need to RBF is empty.",
+    },
+    [ERROR_CODE.OLD_VIN_EMPTY]: {
+        message: "Can not get vin from inscribe tx to RBF.",
+        desc: "Can not get vin from inscribe tx to RBF.",
+    },
+    [ERROR_CODE.INVALID_NEW_FEE_RBF]: {
+        message: "New fee for RBF tx must be greater than the old one.",
+        desc: "New fee for RBF tx must be greater than the old one.",
+    },
+
+
+
+
 };
 
 class SDKError extends Error {

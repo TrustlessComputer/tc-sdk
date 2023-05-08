@@ -25,7 +25,7 @@ console.log("buyerPrivateKeyWIF ", buyerPrivateKeyWIF);
 console.log("buyerAddress ", buyerAddress);
 
 
-const tcClient = new TcClient(Mainnet);
+const tcClient = new TcClient(Regtest);
 
 let sellerUTXOs = [
     // inscription UTXOs
@@ -94,13 +94,11 @@ describe("TC client", async () => {
     it("get uninscribed txs", async () => {
         console.log("tcClient.network ", tcClient.network);
         console.log("tcClient.url ", tcClient.url);
-        const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+        const tcAddress = "0xF91cEe2DE943733e338891Ef602c962eF4D7Eb81";
 
-        for (let i = 0; i < 100; i++) {
-            const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
-            console.log("HHH Length: ", resp.unInscribedTxDetails.length);
-            sleep(1000);
-        }
+
+        const resp = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+        // console.log("HHH Length: ", resp.unInscribedTxDetails.length);
 
     });
 

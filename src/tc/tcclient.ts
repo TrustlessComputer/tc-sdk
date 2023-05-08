@@ -1,6 +1,6 @@
 import { BNZero, UTXO } from "../bitcoin";
 import { ERROR_CODE, ERROR_MESSAGE } from "../constants/error";
-import { GetTxByHashResp, TCTxDetail } from "./types";
+import { GetPendingInscribeTxsResp, GetTxByHashResp, TCTxDetail } from "./types";
 import axios, { AxiosResponse } from "axios";
 
 import BigNumber from "bignumber.js";
@@ -15,7 +15,7 @@ const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
 const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
-const DefaultEndpointTCNodeRegtest = "";
+const DefaultEndpointTCNodeRegtest = "https://tc-node-manual.regtest.trustless.computer";
 
 const MethodGet = "GET";
 const MethodPost = "POST";
@@ -265,6 +265,20 @@ class TcClient {
         }
 
         return btcTx;
+    };
+
+    // getPendingInscribeTxs returns pending BTC inscribe txs in TC node (both broadcasted and holding)
+    getPendingInscribeTxsDetail = async (tcAddress: string): Promise<GetPendingInscribeTxsResp[]> => {
+        const payload = [tcAddress];
+
+        const resp = await this.callRequest(payload, MethodPost, "eth_getPendingInscribedUTXOByAddress");
+        console.log("Resp eth_getPendingInscribedUTXOByAddress detail: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+
+        return resp;
     };
 }
 

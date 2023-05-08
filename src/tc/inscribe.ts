@@ -18,8 +18,10 @@ import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
 import { ERROR_CODE } from "../constants/error";
+import { Hash } from "crypto";
 import { Network } from "../bitcoin/network";
 import { handleSignPsbtWithSpecificWallet } from "../bitcoin/xverse";
+import { hash256 } from "bitcoinjs-lib/src/crypto";
 import { witnessStackToScriptWitness } from "./witness_stack_to_script_witness";
 
 const remove0x = (data: string): string => {
@@ -517,10 +519,12 @@ const createInscribeTxFromAnyWallet = async ({
 };
 
 const createLockScript = async ({
+    // privateKey,
     internalPubKey,
     tcTxIDs,
     tcClient,
 }: {
+    // privateKey: Buffer,
     internalPubKey: Buffer,
     tcTxIDs: string[],
     tcClient: TcClient,
@@ -536,6 +540,11 @@ const createLockScript = async ({
 
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair.makeRandom({ network: Network });
+
+    // TODO:
+    // const hashLockPrivateKey = hash256(privateKey);
+    // const hashLockKeyPair = ECPair.fromPrivateKey(hashLockPrivateKey, { network: Network });
+    // console.log("REMOVE hashLockPrivateKey: ", hashLockPrivateKey);
 
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
@@ -598,7 +607,7 @@ const estimateInscribeFee = ({
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
-const aggregateUTXOs = async ({
+const aggregateUTXOsV0 = async ({
     tcAddress,
     btcAddress,
     utxos,
@@ -668,6 +677,97 @@ const aggregateUTXOs = async ({
 
     const result: UTXO[] = [];
     for (const utxo of tmpUniqUTXOs) {
+        const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
+            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
+        });
+        if (foundIndex === -1) {
+            result.push(utxo);
+        }
+    }
+
+    console.log("result: ", result);
+
+    return result;
+};
+
+
+/**
+* estimateInscribeFee estimate BTC amount need to inscribe for creating project. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param tcTxSizeByte size of tc tx (in byte)
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the total BTC fee
+*/
+const aggregateUTXOs = async ({
+    tcAddress,
+    btcAddress,
+    utxos,
+    tcClient,
+}: {
+    tcAddress: string,
+    btcAddress: string,
+    utxos: UTXO[],
+    tcClient: TcClient,
+}): Promise<UTXO[]> => {
+
+    const txs = await tcClient.getPendingInscribeTxs(tcAddress);
+
+    const pendingUTXOs: UTXO[] = [];
+    for (const tx of txs) {
+        for (const vin of tx.Vin) {
+            pendingUTXOs.push({
+                tx_hash: vin.txid,
+                tx_output_n: vin.vout,
+                value: BNZero
+            });
+        }
+    }
+
+    console.log("pendingUTXOs: ", pendingUTXOs);
+
+    // const newUTXOs: UTXO[] = [];
+    // for (const tx of txs) {
+    //     const btcTxID = tx.BTCHash;
+    //     for (let i = 0; i < tx.Vout.length; i++) {
+    //         const vout = tx.Vout[i];
+
+    //         try {
+    //             const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+    //             if (receiverAddress === btcAddress) {
+    //                 newUTXOs.push({
+    //                     tx_hash: btcTxID,
+    //                     tx_output_n: i,
+    //                     value: new BigNumber(toSat(vout.value))
+    //                 });
+    //             }
+    //         } catch (e) {
+    //             continue;
+    //         }
+    //     }
+    // }
+    // console.log("newUTXOs: ", newUTXOs);
+
+    const tmpUTXOs = [...utxos];
+
+    // console.log("tmpUTXOs: ", tmpUTXOs);
+    // const ids: string[] = [];
+    // const tmpUniqUTXOs: UTXO[] = [];
+
+    // for (const utxo of tmpUTXOs) {
+    //     const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+    //     console.log("id: ", id);
+    //     if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
+    //         continue;
+    //     } else {
+    //         tmpUniqUTXOs.push(utxo);
+    //         ids.push(id);
+    //     }
+    // }
+
+    // console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
+
+    const result: UTXO[] = [];
+    for (const utxo of tmpUTXOs) {
         const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
             return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
         });
