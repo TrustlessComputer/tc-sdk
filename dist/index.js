@@ -6773,7 +6773,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
     // if pending > 0: latest
     // getPendingInscribeTxsDetail
     // else: block stream: latest
-    console.log("oldCommitUTXOs: ", oldCommitUTXOs);
+    console.log("HHH  oldCommitUTXOs: ", oldCommitUTXOs);
     // const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
     for (let i = 0; i < oldCommitUTXOs.length; i++) {
         const utxoValue = await getOutputCoinValue(oldCommitUTXOs[i].tx_hash, oldCommitUTXOs[i].tx_output_n);
@@ -6794,12 +6794,16 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
     for (const vout of oldCommitVouts) {
         totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
     }
+    console.log("HHH oldCommitUTXOs: ", oldCommitUTXOs);
+    console.log("HHH oldCommitVouts: ", oldCommitVouts);
+    console.log("HHH totalCommitVin: ", totalCommitVin.toNumber());
+    console.log("HHH totalCommitVOut: ", totalCommitVOut.toNumber());
     const oldCommitFee = totalCommitVin.minus(totalCommitVOut);
     const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
     const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
-    console.log("oldCommitFee: ", oldCommitFee);
-    console.log("oldCommitTxSize: ", oldCommitTxSize);
-    console.log("oldCommitFeeRate: ", oldCommitFeeRate);
+    console.log("HHH oldCommitFee: ", oldCommitFee);
+    console.log("HHH oldCommitTxSize: ", oldCommitTxSize);
+    console.log("HHH oldCommitFeeRate: ", oldCommitFeeRate);
     return {
         oldCommitUTXOs,
         oldCommitVouts,

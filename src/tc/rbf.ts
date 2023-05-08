@@ -116,7 +116,7 @@ const extractOldTxInfo = async (
 
 
     console.log(
-        "oldCommitUTXOs: ", oldCommitUTXOs
+        "HHH  oldCommitUTXOs: ", oldCommitUTXOs
     );
 
 
@@ -148,13 +148,19 @@ const extractOldTxInfo = async (
         totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
     }
 
+    console.log("HHH oldCommitUTXOs: ", oldCommitUTXOs);
+    console.log("HHH oldCommitVouts: ", oldCommitVouts);
+
+    console.log("HHH totalCommitVin: ", totalCommitVin.toNumber());
+    console.log("HHH totalCommitVOut: ", totalCommitVOut.toNumber());
+
     const oldCommitFee = totalCommitVin.minus(totalCommitVOut);
     const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
     const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
 
-    console.log("oldCommitFee: ", oldCommitFee);
-    console.log("oldCommitTxSize: ", oldCommitTxSize);
-    console.log("oldCommitFeeRate: ", oldCommitFeeRate);
+    console.log("HHH oldCommitFee: ", oldCommitFee);
+    console.log("HHH oldCommitTxSize: ", oldCommitTxSize);
+    console.log("HHH oldCommitFeeRate: ", oldCommitFeeRate);
 
     return {
         oldCommitUTXOs,
