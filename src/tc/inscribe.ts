@@ -1,4 +1,4 @@
-import { BNZero, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
+import { BNZero, DefaultSequence, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
     BatchInscribeTxResp,
     Inscription,
@@ -35,7 +35,8 @@ const createRawRevealTx = ({
     hashLockKeyPair,
     hashLockRedeem,
     script_p2tr,
-    revealTxFee
+    revealTxFee,
+    sequence = DefaultSequence,
 }: {
     internalPubKey: Buffer,
     commitTxID: string,
@@ -43,6 +44,7 @@ const createRawRevealTx = ({
     hashLockRedeem: any,
     script_p2tr: payments.Payment,
     revealTxFee: number,
+    sequence?: number,
 }): { revealTxHex: string, revealTxID: string } => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
 
@@ -59,7 +61,8 @@ const createRawRevealTx = ({
         witnessUtxo: { value: revealTxFee + MinSats, script: script_p2tr.output! },
         tapLeafScript: [
             tapLeafScript
-        ]
+        ],
+        sequence,
     });
 
     psbt.addOutput({
@@ -243,8 +246,8 @@ const createInscribeTx = async ({
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
+        sequence: feeRatePerByte,
     });
-
 
     const newUTXOs: UTXO[] = [];
     if (changeAmount.gt(BNZero)) {
@@ -266,6 +269,7 @@ const createInscribeTx = async ({
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
+        sequence: feeRatePerByte,
     });
 
     console.log("commitTxHex: ", commitTxHex);

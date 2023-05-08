@@ -27,4 +27,33 @@ interface GetTxByHashResp {
     transactionIndex: string;
     hash: string;
 }
-export { TCTxDetail, BatchInscribeTxResp, GetTxByHashResp };
+interface GetPendingInscribeTxsResp {
+    TCHash: string;
+    OnHold: boolean;
+    Commit: BTCVinVout;
+    Reveal: BTCVinVout;
+}
+interface Vin {
+    coinbase: string;
+    txid: string;
+    vout: number;
+    Sequence: number;
+    Witness: string[];
+}
+interface Vout {
+    value: number;
+    n: number;
+    scriptPubKey: ScriptPubKeyResult;
+}
+interface ScriptPubKeyResult {
+    asm: string;
+    hex: string;
+    type: string;
+    addresses: string[];
+}
+interface BTCVinVout {
+    BTCHash: string;
+    Vin: Vin[];
+    Vout: Vout[];
+}
+export { TCTxDetail, BatchInscribeTxResp, GetTxByHashResp, GetPendingInscribeTxsResp, Vin, Vout, ScriptPubKeyResult, BTCVinVout, };

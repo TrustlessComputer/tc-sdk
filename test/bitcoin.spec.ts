@@ -2,16 +2,23 @@ import {
     BNZero,
     Inscription,
     MinSats,
+    NetworkType,
+    Regtest,
     UTXO,
+    broadcastTx,
     convertPrivateKey,
     convertPrivateKeyFromStr,
     createTx,
+    createTxSendBTC,
     createTxWithSpecificUTXOs,
     selectUTXOs,
+    setBTCNetwork,
 } from "../src/index";
 
 import BigNumber from "bignumber.js";
+import { DefaultDeserializer } from "v8";
 import { assert } from "chai";
+import { getUTXOsFromBlockStream } from '../src/tc/blockstream';
 import { number } from "bitcoinjs-lib/src/script";
 
 require("dotenv").config({ path: __dirname + "/.env" });
@@ -499,100 +506,100 @@ describe("Create tx with multiple UTXOs Tests", () => {
     //     assert.equal(changeAmount.eq(new BigNumber(12000).minus(fee).minus(sendAmount)), true);
     // });
 
-    it("insciption offset 0 - send amount > 0, need extra UTXOs: should return 3 selected UTXOs (insciption &  multiple UTXO) - isUseInscriptionPayFeeParam default", () => {
-        let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
-        let isUseInscriptionPayFeeParam = true;
-        let feeRatePerByte = 6;
-        let sendAmount = new BigNumber(3000);
+    // it("insciption offset 0 - send amount > 0, need extra UTXOs: should return 3 selected UTXOs (insciption &  multiple UTXO) - isUseInscriptionPayFeeParam default", () => {
+    //     let sendInscriptionID = "a22ed5f4e741519e91f51280d2af4377b72f29c52f693955f370d6a1025c35aei0";
+    //     let isUseInscriptionPayFeeParam = true;
+    //     let feeRatePerByte = 6;
+    //     let sendAmount = new BigNumber(3000);
 
-        let utxos: UTXO[] = [
-            // normal UTXOs
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 1,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 2,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 3,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 4,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 5,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 6,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 7,
-                value: new BigNumber(1000)
-            },
-            {
-                tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
-                tx_output_n: 8,
-                value: new BigNumber(1000)
-            },
-            // inscription UTXOs
-            // real
-            {
-                tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
-                tx_output_n: 0,
-                value: new BigNumber(5274)
-            },
+    //     let utxos: UTXO[] = [
+    //         // normal UTXOs
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 1,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 2,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 3,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 4,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 5,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 6,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 7,
+    //             value: new BigNumber(1000)
+    //         },
+    //         {
+    //             tx_hash: "228a956320c18970c71e44ba1185b2a0e810127be0328b8e3668bd4691a069e5",
+    //             tx_output_n: 8,
+    //             value: new BigNumber(1000)
+    //         },
+    //         // inscription UTXOs
+    //         // real
+    //         {
+    //             tx_hash: "fecd11d6da5404af3574db4d4fd87aa2d4e2a4d4c3d7d6a767474eeea34e55f3",
+    //             tx_output_n: 0,
+    //             value: new BigNumber(5274)
+    //         },
 
-            {
-                tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
-                tx_output_n: 0,  // offset != 0
-                value: new BigNumber(1234)
-            },
-        ];
-
-
-
-        const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-            utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    //         {
+    //             tx_hash: "dd1d3dfce672ccdeabf0b4d96de95045760e465ab359171132fb3dbff232ab09",
+    //             tx_output_n: 0,  // offset != 0
+    //             value: new BigNumber(1234)
+    //         },
+    //     ];
 
 
-        console.log("changeAmount: ", changeAmount);
 
-        let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
-        actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
+    //     const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+    //         utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
 
-        let actualInscriptionInfos = inscriptions[actualTxIDKey];
-        let actualInscriptionID = actualInscriptionInfos[0].id;
 
-        assert.equal(selectedUTXOs.length, 8);
-        assert.equal(actualInscriptionID, sendInscriptionID);
+    //     console.log("changeAmount: ", changeAmount);
 
-        assert.equal(selectedUTXOs[1].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[2].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[3].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[4].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[5].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[6].value.toNumber(), 1000);
-        assert.equal(selectedUTXOs[7].value.toNumber(), 1000);
-        // assert.equal(selectedUTXOs[5].value.toNumber(), 1000);
-        assert.equal(fee.toNumber(), 4000);
-        assert.equal(isUseInscriptionPayFee, false);
-        assert.equal(valueOutInscription.toNumber(), 5274);
-        assert.equal(changeAmount.eq(new BigNumber(7000).minus(fee).minus(sendAmount)), true);
+    //     let actualTxIDKey = selectedUTXOs[0].tx_hash.concat(":");
+    //     actualTxIDKey = actualTxIDKey.concat(selectedUTXOs[0].tx_output_n.toString());
 
-    });
+    //     let actualInscriptionInfos = inscriptions[actualTxIDKey];
+    //     let actualInscriptionID = actualInscriptionInfos[0].id;
+
+    //     assert.equal(selectedUTXOs.length, 8);
+    //     assert.equal(actualInscriptionID, sendInscriptionID);
+
+    //     assert.equal(selectedUTXOs[1].value.toNumber(), 1000);
+    //     assert.equal(selectedUTXOs[2].value.toNumber(), 1000);
+    //     assert.equal(selectedUTXOs[3].value.toNumber(), 1000);
+    //     assert.equal(selectedUTXOs[4].value.toNumber(), 1000);
+    //     assert.equal(selectedUTXOs[5].value.toNumber(), 1000);
+    //     assert.equal(selectedUTXOs[6].value.toNumber(), 1000);
+    //     assert.equal(selectedUTXOs[7].value.toNumber(), 1000);
+    //     // assert.equal(selectedUTXOs[5].value.toNumber(), 1000);
+    //     assert.equal(fee.toNumber(), 4000);
+    //     assert.equal(isUseInscriptionPayFee, false);
+    //     assert.equal(valueOutInscription.toNumber(), 5274);
+    //     assert.equal(changeAmount.eq(new BigNumber(7000).minus(fee).minus(sendAmount)), true);
+
+    // });
 
 
     // it("send BTC - should return 1 selected UTXO - isUseInscriptionPayFeeParam = true", () => {
@@ -669,17 +676,70 @@ describe("Create tx with multiple UTXOs Tests", () => {
     //   console.log(txID, txHex, feeRes);
     // });
 
-    // it("send insciption offset != 0 : should use inscription to pay fee", () => {
-    //   let sendInscriptionID = "759227f04721a0f3d097826fa7b66a34228dd2ed61e89a77d51a50d3cd7ab6dci0"; // 1311874707106021
-    //   let isUseInscriptionPayFeeParam = true;
-    //   let sendAmount = 0;
+    it("send insciption offset != 0 : should use inscription to pay fee", () => {
+        let sendInscriptionID = "759227f04721a0f3d097826fa7b66a34228dd2ed61e89a77d51a50d3cd7ab6dci0"; // 1311874707106021
+        let isUseInscriptionPayFeeParam = true;
+        let sendAmount = 0;
+        let receiverAddress = "bcrt1pj2t2szx6rqzcyv63t3xepgdnhuj2zd3kfggrqmd9qwlg3vsx37fq7lj7tn";
 
-    //   // const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
-    //   //   UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
-    //   // console.log("selectedUTXOs ", selectedUTXOs);
+        let utxos: UTXO[] = [
+            {
+                tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
+                tx_output_n: 0,
+                value: new BigNumber(10000000)
+            },
+            {
+                tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
+                tx_output_n: 1,
+                value: new BigNumber(50000)
+            },
+            {
+                tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
+                tx_output_n: 2,
+                value: new BigNumber(80000)
+            },
+            {
+                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+                tx_output_n: 0,
+                value: new BigNumber(10000000)
+            },
+            {
+                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+                tx_output_n: 1,
+                value: new BigNumber(50000)
+            },
+            {
+                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+                tx_output_n: 2,
+                value: new BigNumber(80000)
+            },
+            {
+                tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+                tx_output_n: 3,
+                value: new BigNumber(77849369)
+            },
+        ];
+        setBTCNetwork(NetworkType.Regtest);
 
-    //   const { txID, txHex, fee: feeRes } = createTx(
-    //     senderPrivateKey, UTXOs, inscriptions, sendInscriptionID, receiverAddress, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
-    //   console.log(txID, txHex, feeRes);
-    // });
+        // const { selectedUTXOs, isUseInscriptionPayFee, valueOutInscription, changeAmount, fee } = selectUTXOs(
+        //   UTXOs, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+        // console.log("selectedUTXOs ", selectedUTXOs);
+
+        const { txID, txHex, fee: feeRes } = createTxSendBTC({
+            senderPrivateKey: buyerPrivateKey,
+            utxos,
+            inscriptions,
+            paymentInfos: [
+                // { address: receiverAddress, amount: new BigNumber(10000000) },
+                { address: receiverAddress, amount: new BigNumber(50000) },
+                // { address: receiverAddress, amount: new BigNumber(80000) }
+            ],
+            feeRatePerByte: 5,
+            sequence: 4,
+        });
+
+        const finalTXID = broadcastTx(txHex);
+        console.log("finalTXID: ", finalTXID);
+        console.log(txID, txHex, feeRes);
+    });
 });

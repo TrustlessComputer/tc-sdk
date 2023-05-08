@@ -3,13 +3,14 @@ import { payments } from "bitcoinjs-lib";
 import { Tapleaf } from "bitcoinjs-lib/src/types";
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
-declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }: {
+declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence, }: {
     internalPubKey: Buffer;
     commitTxID: string;
     hashLockKeyPair: ECPairInterface;
     hashLockRedeem: any;
     script_p2tr: payments.Payment;
     revealTxFee: number;
+    sequence?: number | undefined;
 }) => {
     revealTxHex: string;
     revealTxID: string;

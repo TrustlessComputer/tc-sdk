@@ -1,11 +1,13 @@
 import BigNumber from "bignumber.js";
 
-const BlockStreamURL = "https://blockstream.info/api";
+// const BlockStreamURL = "https://blockstream.info/api";
 const MinSats = 1000;
 const DummyUTXOValue = 1000;
 const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
+
+const DefaultSequence = 4294967295;
 
 
 const WalletType = {
@@ -14,11 +16,12 @@ const WalletType = {
 };
 
 export {
-    BlockStreamURL,
+    // BlockStreamURL,
     MinSats,
     DummyUTXOValue,
     InputSize,
     OutputSize,
     BNZero,
     WalletType,
+    DefaultSequence,
 };

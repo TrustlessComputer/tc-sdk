@@ -175,24 +175,6 @@ const replaceByFeeInscribeTx = async (
         feeRatePerByte,
         tcClient,
     });
-
-
-
-    // return {
-    //     commitTxHex,
-    //     commitTxID,
-    //     revealTxHex,
-    //     revealTxID,
-    //     totalFee: new BigNumber(totalFee),
-    //     selectedUTXOs: selectedUTXOs,
-    //     newUTXOs: newUTXOs,
-    // };
-
-
-
-    // return null
-
-
 };
 
 

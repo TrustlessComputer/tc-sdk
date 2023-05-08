@@ -7,12 +7,12 @@ import { ethers } from 'ethers';
 import { BIP32Interface } from 'bip32';
 import { Tapleaf } from 'bitcoinjs-lib/src/types';
 
-declare const BlockStreamURL = "https://blockstream.info/api";
 declare const MinSats = 1000;
 declare const DummyUTXOValue = 1000;
 declare const InputSize = 68;
 declare const OutputSize = 43;
 declare const BNZero: BigNumber;
+declare const DefaultSequence = 4294967295;
 declare const WalletType: {
     Xverse: number;
     Hiro: number;
@@ -362,7 +362,7 @@ declare const createTxFromAnyWallet: ({ pubKey, utxos, inscriptions, sendInscrip
 * @returns the hex signed transaction
 * @returns the network fee
 */
-declare const createTxSendBTC: ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, }: {
+declare const createTxSendBTC: ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -370,6 +370,7 @@ declare const createTxSendBTC: ({ senderPrivateKey, utxos, inscriptions, payment
     };
     paymentInfos: PaymentInfo[];
     feeRatePerByte: number;
+    sequence?: number | undefined;
 }) => ICreateTxResp;
 /**
 * createTx creates the Bitcoin transaction (including sending inscriptions).
@@ -525,6 +526,13 @@ declare const broadcastTx: (txHex: string) => Promise<string>;
 * @returns returns the estimated transaction fee in satoshi
 */
 declare const estimateTxFee: (numIns: number, numOuts: number, feeRatePerByte: number) => number;
+/**
+* estimateTxSize estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction
+* @returns returns the estimated transaction size in byte
+*/
+declare const estimateTxSize: (numIns: number, numOuts: number) => number;
 /**
 * estimateNumInOutputs estimates number of inputs and outputs by parameters:
 * @param inscriptionID id of inscription to send (if any)
@@ -863,6 +871,7 @@ declare const reqBuyMultiInscriptionsFromAnyWallet: ({ buyReqInfos, pubKey, utxo
 }) => Promise<ICreateTxBuyResp>;
 
 declare let Network: networks.Network;
+declare let BlockStreamURL: string;
 declare const NetworkType: {
     Mainnet: number;
     Testnet: number;
@@ -917,6 +926,12 @@ declare const ERROR_CODE: {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: string;
     RPC_SUBMIT_BTCTX_ERROR: string;
     RPC_GET_TAPSCRIPT_INFO: string;
+    NOT_FOUND_TX_TO_RBF: string;
+    COMMIT_TX_EMPTY: string;
+    REVEAL_TX_EMPTY: string;
+    OLD_VIN_EMPTY: string;
+    INVALID_NEW_FEE_RBF: string;
+    GET_UTXO_VALUE_ERR: string;
 };
 declare const ERROR_MESSAGE: {
     [x: string]: {
@@ -950,13 +965,14 @@ declare class Validator {
     privateKey(message?: string): this;
 }
 
-declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }: {
+declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence, }: {
     internalPubKey: Buffer;
     commitTxID: string;
     hashLockKeyPair: ECPairInterface;
     hashLockRedeem: any;
     script_p2tr: payments.Payment;
     revealTxFee: number;
+    sequence?: number | undefined;
 }) => {
     revealTxHex: string;
     revealTxID: string;
@@ -1117,6 +1133,35 @@ interface GetTxByHashResp {
     transactionIndex: string;
     hash: string;
 }
+interface GetPendingInscribeTxsResp {
+    TCHash: string;
+    OnHold: boolean;
+    Commit: BTCVinVout;
+    Reveal: BTCVinVout;
+}
+interface Vin {
+    coinbase: string;
+    txid: string;
+    vout: number;
+    Sequence: number;
+    Witness: string[];
+}
+interface Vout {
+    value: number;
+    n: number;
+    scriptPubKey: ScriptPubKeyResult;
+}
+interface ScriptPubKeyResult {
+    asm: string;
+    hex: string;
+    type: string;
+    addresses: string[];
+}
+interface BTCVinVout {
+    BTCHash: string;
+    Vin: Vin[];
+    Vout: Vout[];
+}
 
 declare const Mainnet = "mainnet";
 declare const Testnet = "testnet";
@@ -1146,6 +1191,7 @@ declare class TcClient {
     getTCTxByHash: (tcTxID: string) => Promise<GetTxByHashResp>;
     getTCTxReceipt: (tcTxID: string) => Promise<any>;
     getPendingInscribeTxs: (tcAddress: string) => Promise<any[]>;
+    getPendingInscribeTxsDetail: (tcAddress: string) => Promise<GetPendingInscribeTxsResp[]>;
 }
 
 declare const increaseGasPrice: (wei: BigNumber) => BigNumber;
@@ -1186,4 +1232,4 @@ declare const requestAccountResponse: (payload: RequestAccountResponse) => Promi
 declare const URL_MAINNET = "https://trustlesswallet.io";
 declare const URL_REGTEST = "https://dev.trustlesswallet.io";
 
-export { BNZero, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, GetTxByHashResp, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, ISignPSBTResp, InputSize, Inscription, Mainnet, MinSats, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, TCTxDetail, Target, TcClient, Testnet, URL_MAINNET, URL_REGTEST, UTXO, Validator, Wallet, WalletType, actionRequest, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createDummyUTXOFromCardinal, createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createPSBTToBuy, createPSBTToSell, createRawPSBTToSell, createRawRevealTx, createRawTx, createRawTxDummyUTXOForSale, createRawTxDummyUTXOFromCardinal, createRawTxSendBTC, createRawTxSplitFundFromOrdinalUTXO, createRawTxToPrepareUTXOsToBuyMultiInscs, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSplitFundFromOrdinalUTXO, createTxWithSpecificUTXOs, decryptWallet, deriveETHWallet, derivePasswordWallet, deriveSegwitWallet, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getBTCBalance, getBitcoinKeySignContent, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, prepareUTXOsToBuyMultiInscriptions, reqBuyInscription, reqBuyInscriptionFromAnyWallet, reqBuyMultiInscriptions, reqBuyMultiInscriptionsFromAnyWallet, reqListForSaleInscFromAnyWallet, reqListForSaleInscription, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner };
+export { BNZero, BTCVinVout, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DefaultSequence, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, GetPendingInscribeTxsResp, GetTxByHashResp, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, ISignPSBTResp, InputSize, Inscription, Mainnet, MinSats, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, ScriptPubKeyResult, TCTxDetail, Target, TcClient, Testnet, URL_MAINNET, URL_REGTEST, UTXO, Validator, Vin, Vout, Wallet, WalletType, actionRequest, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createDummyUTXOFromCardinal, createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createPSBTToBuy, createPSBTToSell, createRawPSBTToSell, createRawRevealTx, createRawTx, createRawTxDummyUTXOForSale, createRawTxDummyUTXOFromCardinal, createRawTxSendBTC, createRawTxSplitFundFromOrdinalUTXO, createRawTxToPrepareUTXOsToBuyMultiInscs, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSplitFundFromOrdinalUTXO, createTxWithSpecificUTXOs, decryptWallet, deriveETHWallet, derivePasswordWallet, deriveSegwitWallet, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, estimateTxSize, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getBTCBalance, getBitcoinKeySignContent, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, prepareUTXOsToBuyMultiInscriptions, reqBuyInscription, reqBuyInscriptionFromAnyWallet, reqBuyMultiInscriptions, reqBuyMultiInscriptionsFromAnyWallet, reqListForSaleInscFromAnyWallet, reqListForSaleInscription, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner };

@@ -9,6 +9,13 @@ import { Psbt } from "bitcoinjs-lib";
 */
 declare const estimateTxFee: (numIns: number, numOuts: number, feeRatePerByte: number) => number;
 /**
+* estimateTxSize estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction
+* @returns returns the estimated transaction size in byte
+*/
+declare const estimateTxSize: (numIns: number, numOuts: number) => number;
+/**
 * estimateNumInOutputs estimates number of inputs and outputs by parameters:
 * @param inscriptionID id of inscription to send (if any)
 * @param sendAmount satoshi amount need to send
@@ -32,4 +39,4 @@ declare const estimateNumInOutputsForBuyInscription: (estNumInputsFromBuyer: num
 };
 declare const fromSat: (sat: number) => number;
 declare const toSat: (value: number) => number;
-export { estimateTxFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, fromSat, toSat, };
+export { estimateTxFee, estimateTxSize, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, fromSat, toSat, };

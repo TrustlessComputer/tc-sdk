@@ -1,4 +1,5 @@
-import { BNZero, BlockStreamURL, DummyUTXOValue, MinSats } from "./constants";
+import { BNZero, DefaultSequence, DummyUTXOValue, MinSats } from "./constants";
+import { BlockStreamURL, Network } from "./network";
 import { BuyReqFullInfo, ICreateRawTxResp, ICreateTxResp, ICreateTxSplitInscriptionResp, ISignPSBTResp, Inscription, NeedPaymentUTXO, PaymentInfo, UTXO } from "./types";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly, tweakSigner } from "./wallet";
 import { Psbt, Transaction, payments } from "bitcoinjs-lib";
@@ -8,7 +9,6 @@ import { estimateTxFee, fromSat } from "./utils";
 import { filterAndSortCardinalUTXOs, findExactValueUTXO, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs } from "./selectcoin";
 
 import BigNumber from "bignumber.js";
-import { Network } from "./network";
 import { handleSignPsbtWithSpecificWallet } from "./xverse";
 
 /**
@@ -513,12 +513,14 @@ const createTxSendBTC = (
         inscriptions,
         paymentInfos,
         feeRatePerByte,
+        sequence = DefaultSequence,
     }: {
         senderPrivateKey: Buffer,
         utxos: UTXO[],
         inscriptions: { [key: string]: Inscription[] },
         paymentInfos: PaymentInfo[],
         feeRatePerByte: number,
+        sequence?: number,
     }
 ): ICreateTxResp => {
     // validation
@@ -547,6 +549,7 @@ const createTxSendBTC = (
             index: input.tx_output_n,
             witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output as Buffer },
             tapInternalKey: toXOnly(keyPair.publicKey),
+            sequence: sequence
         });
     }
 

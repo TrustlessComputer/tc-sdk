@@ -2,10 +2,10 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var bitcoinjsLib = require('bitcoinjs-lib');
 var ecc = require('@bitcoinerlab/secp256k1');
 var cryptoJs = require('crypto-js');
 var ecpair = require('ecpair');
-var bitcoinjsLib = require('bitcoinjs-lib');
 var ethers = require('ethers');
 var BIP32Factory = require('bip32');
 var Web3 = require('web3');
@@ -2931,12 +2931,13 @@ function toFixedPoint(str, e, z) {
 
 var BigNumber = clone();
 
-const BlockStreamURL = "https://blockstream.info/api";
+// const BlockStreamURL = "https://blockstream.info/api";
 const MinSats = 1000;
 const DummyUTXOValue = 1000;
 const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
+const DefaultSequence = 4294967295;
 const WalletType = {
     Xverse: 1,
     Hiro: 2,
@@ -2944,6 +2945,7 @@ const WalletType = {
 
 // default is bitcoin mainnet
 exports.Network = bitcoinjsLib.networks.bitcoin;
+exports.BlockStreamURL = "https://blockstream.info/api";
 const NetworkType = {
     Mainnet: 1,
     Testnet: 2,
@@ -2953,14 +2955,17 @@ const setBTCNetwork = (netType) => {
     switch (netType) {
         case NetworkType.Mainnet: {
             exports.Network = bitcoinjsLib.networks.bitcoin;
+            exports.BlockStreamURL = "https://blockstream.info/api";
             break;
         }
         case NetworkType.Testnet: {
             exports.Network = bitcoinjsLib.networks.testnet;
+            exports.BlockStreamURL = "https://blockstream.info/testnet/api";
             break;
         }
         case NetworkType.Regtest: {
             exports.Network = bitcoinjsLib.networks.regtest;
+            exports.BlockStreamURL = "https://blockstream.regtest.trustless.computer/regtest/api";
             break;
         }
     }
@@ -2987,6 +2992,12 @@ const ERROR_CODE = {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
+    NOT_FOUND_TX_TO_RBF: "-30",
+    COMMIT_TX_EMPTY: "-31",
+    REVEAL_TX_EMPTY: "-32",
+    OLD_VIN_EMPTY: "-33",
+    INVALID_NEW_FEE_RBF: "-34",
+    GET_UTXO_VALUE_ERR: "-35",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -3065,6 +3076,30 @@ const ERROR_MESSAGE = {
         message: "Call RPC submit btc tx error.",
         desc: "Call RPC submit btc tx error.",
     },
+    [ERROR_CODE.NOT_FOUND_TX_TO_RBF]: {
+        message: "BTC transaction was not found from TC node.",
+        desc: "BTC transaction was not found from TC node.",
+    },
+    [ERROR_CODE.COMMIT_TX_EMPTY]: {
+        message: "Commit tx need to RBF is empty.",
+        desc: "Commit tx need to RBF is empty.",
+    },
+    [ERROR_CODE.REVEAL_TX_EMPTY]: {
+        message: "Reveal tx need to RBF is empty.",
+        desc: "Reveal tx need to RBF is empty.",
+    },
+    [ERROR_CODE.OLD_VIN_EMPTY]: {
+        message: "Can not get vin from inscribe tx to RBF.",
+        desc: "Can not get vin from inscribe tx to RBF.",
+    },
+    [ERROR_CODE.INVALID_NEW_FEE_RBF]: {
+        message: "New fee for RBF tx must be greater than the old one.",
+        desc: "New fee for RBF tx must be greater than the old one.",
+    },
+    [ERROR_CODE.GET_UTXO_VALUE_ERR]: {
+        message: "Get UTXO value from blockstream not found.",
+        desc: "Get UTXO value from blockstream not found.",
+    },
 };
 class SDKError extends Error {
     constructor(code, desc) {
@@ -3089,6 +3124,16 @@ class SDKError extends Error {
 const estimateTxFee = (numIns, numOuts, feeRatePerByte) => {
     const fee = (68 * numIns + 43 * numOuts) * feeRatePerByte;
     return fee;
+};
+/**
+* estimateTxSize estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction
+* @returns returns the estimated transaction size in byte
+*/
+const estimateTxSize = (numIns, numOuts) => {
+    const size = (68 * numIns + 43 * numOuts);
+    return size;
 };
 /**
 * estimateNumInOutputs estimates number of inputs and outputs by parameters:
@@ -4133,7 +4178,7 @@ walletType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, cancelFn, }) => {
 * @returns the hex signed transaction
 * @returns the network fee
 */
-const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, }) => {
+const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence = DefaultSequence, }) => {
     // validation
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
@@ -4155,6 +4200,7 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
             index: input.tx_output_n,
             witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output },
             tapInternalKey: toXOnly(keyPair.publicKey),
+            sequence: sequence
         });
     }
     // add outputs send BTC
@@ -4613,7 +4659,7 @@ const createRawTxToPrepareUTXOsToBuyMultiInscs = ({ pubKey, address, utxos, insc
 };
 const broadcastTx = async (txHex) => {
     const blockstream = new axios__default["default"].Axios({
-        baseURL: BlockStreamURL
+        baseURL: exports.BlockStreamURL
     });
     const response = await blockstream.post("/tx", txHex);
     const { status, data } = response;
@@ -5994,7 +6040,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee }) => {
+const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = DefaultSequence, }) => {
     const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
@@ -6008,7 +6054,8 @@ const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLo
         witnessUtxo: { value: revealTxFee + MinSats, script: script_p2tr.output },
         tapLeafScript: [
             tapLeafScript
-        ]
+        ],
+        sequence,
     });
     psbt.addOutput({
         address: p2pktr_addr,
@@ -6108,6 +6155,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
         feeRatePerByte,
+        sequence: feeRatePerByte,
     });
     const newUTXOs = [];
     if (changeAmount.gt(BNZero)) {
@@ -6127,6 +6175,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
+        sequence: feeRatePerByte,
     });
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
@@ -6309,12 +6358,18 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
         totalFee: new BigNumber(totalFee),
     };
 };
-const createLockScript = async ({ internalPubKey, tcTxIDs, tcClient, }) => {
+const createLockScript = async ({ 
+// privateKey,
+internalPubKey, tcTxIDs, tcClient, }) => {
     // Create a tap tree with two spend paths
     // One path should allow spending using secret
     // The other path should pay to another pubkey
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair.makeRandom({ network: exports.Network });
+    // TODO:
+    // const hashLockPrivateKey = hash256(privateKey);
+    // const hashLockKeyPair = ECPair.fromPrivateKey(hashLockPrivateKey, { network: Network });
+    // console.log("REMOVE hashLockPrivateKey: ", hashLockPrivateKey);
     // call TC node to get Tapscript and hash lock redeem
     const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
     const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
@@ -6374,45 +6429,43 @@ const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
         }
     }
     console.log("pendingUTXOs: ", pendingUTXOs);
-    const newUTXOs = [];
-    for (const tx of txs) {
-        const btcTxID = tx.BTCHash;
-        for (let i = 0; i < tx.Vout.length; i++) {
-            const vout = tx.Vout[i];
-            try {
-                const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), exports.Network);
-                if (receiverAddress === btcAddress) {
-                    newUTXOs.push({
-                        tx_hash: btcTxID,
-                        tx_output_n: i,
-                        value: new BigNumber(toSat(vout.value))
-                    });
-                }
-            }
-            catch (e) {
-                continue;
-            }
-        }
-    }
-    console.log("newUTXOs: ", newUTXOs);
-    const tmpUTXOs = [...utxos, ...newUTXOs];
-    console.log("tmpUTXOs: ", tmpUTXOs);
-    const ids = [];
-    const tmpUniqUTXOs = [];
-    for (const utxo of tmpUTXOs) {
-        const id = utxo.tx_hash + ":" + utxo.tx_output_n;
-        console.log("id: ", id);
-        if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
-            continue;
-        }
-        else {
-            tmpUniqUTXOs.push(utxo);
-            ids.push(id);
-        }
-    }
-    console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
+    // const newUTXOs: UTXO[] = [];
+    // for (const tx of txs) {
+    //     const btcTxID = tx.BTCHash;
+    //     for (let i = 0; i < tx.Vout.length; i++) {
+    //         const vout = tx.Vout[i];
+    //         try {
+    //             const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+    //             if (receiverAddress === btcAddress) {
+    //                 newUTXOs.push({
+    //                     tx_hash: btcTxID,
+    //                     tx_output_n: i,
+    //                     value: new BigNumber(toSat(vout.value))
+    //                 });
+    //             }
+    //         } catch (e) {
+    //             continue;
+    //         }
+    //     }
+    // }
+    // console.log("newUTXOs: ", newUTXOs);
+    const tmpUTXOs = [...utxos];
+    // console.log("tmpUTXOs: ", tmpUTXOs);
+    // const ids: string[] = [];
+    // const tmpUniqUTXOs: UTXO[] = [];
+    // for (const utxo of tmpUTXOs) {
+    //     const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+    //     console.log("id: ", id);
+    //     if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
+    //         continue;
+    //     } else {
+    //         tmpUniqUTXOs.push(utxo);
+    //         ids.push(id);
+    //     }
+    // }
+    // console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
     const result = [];
-    for (const utxo of tmpUniqUTXOs) {
+    for (const utxo of tmpUTXOs) {
         const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
             return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
         });
@@ -6435,7 +6488,7 @@ const Regtest = "regtest";
 const SupportedTCNetworkType = [Mainnet, Testnet, Regtest];
 const DefaultEndpointTCNodeTestnet = "http://139.162.54.236:22225";
 const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
-const DefaultEndpointTCNodeRegtest = "";
+const DefaultEndpointTCNodeRegtest = "https://tc-node-manual.regtest.trustless.computer";
 const MethodPost = "POST";
 class TcClient {
     constructor(...params) {
@@ -6601,6 +6654,16 @@ class TcClient {
             }
             return btcTx;
         };
+        // getPendingInscribeTxs returns pending BTC inscribe txs in TC node (both broadcasted and holding)
+        this.getPendingInscribeTxsDetail = async (tcAddress) => {
+            const payload = [tcAddress];
+            const resp = await this.callRequest(payload, MethodPost, "eth_getPendingInscribedUTXOByAddress");
+            console.log("Resp eth_getPendingInscribedUTXOByAddress detail: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            return resp;
+        };
         if (params.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS);
         }
@@ -6706,7 +6769,7 @@ const requestAccountResponse = async (payload) => {
 };
 
 exports.BNZero = BNZero;
-exports.BlockStreamURL = BlockStreamURL;
+exports.DefaultSequence = DefaultSequence;
 exports.DummyUTXOValue = DummyUTXOValue;
 exports.ECPair = ECPair;
 exports.ERROR_CODE = ERROR_CODE;
@@ -6758,6 +6821,7 @@ exports.estimateInscribeFee = estimateInscribeFee;
 exports.estimateNumInOutputs = estimateNumInOutputs;
 exports.estimateNumInOutputsForBuyInscription = estimateNumInOutputsForBuyInscription;
 exports.estimateTxFee = estimateTxFee;
+exports.estimateTxSize = estimateTxSize;
 exports.filterAndSortCardinalUTXOs = filterAndSortCardinalUTXOs;
 exports.findExactValueUTXO = findExactValueUTXO;
 exports.fromSat = fromSat;

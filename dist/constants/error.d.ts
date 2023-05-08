@@ -19,6 +19,12 @@ export declare const ERROR_CODE: {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: string;
     RPC_SUBMIT_BTCTX_ERROR: string;
     RPC_GET_TAPSCRIPT_INFO: string;
+    NOT_FOUND_TX_TO_RBF: string;
+    COMMIT_TX_EMPTY: string;
+    REVEAL_TX_EMPTY: string;
+    OLD_VIN_EMPTY: string;
+    INVALID_NEW_FEE_RBF: string;
+    GET_UTXO_VALUE_ERR: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {
