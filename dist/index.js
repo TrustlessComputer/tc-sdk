@@ -6770,19 +6770,10 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
             isRBFable = false;
         }
     }
-    // if pending > 0: latest
-    // getPendingInscribeTxsDetail
-    // else: block stream: latest
     console.log("HHH  oldCommitUTXOs: ", oldCommitUTXOs);
     // const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
     for (let i = 0; i < oldCommitUTXOs.length; i++) {
         const utxoValue = await getOutputCoinValue(oldCommitUTXOs[i].tx_hash, oldCommitUTXOs[i].tx_output_n);
-        // const tmpUTXO = utxoFromBlockStream.find(utxo => {
-        //     return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
-        // });
-        // if (tmpUTXO === null || tmpUTXO === undefined) {
-        //     throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
-        // }
         oldCommitUTXOs[i].value = utxoValue;
     }
     // get old fee rate, old fee of commit tx
@@ -6804,6 +6795,16 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
     console.log("HHH oldCommitFee: ", oldCommitFee);
     console.log("HHH oldCommitTxSize: ", oldCommitTxSize);
     console.log("HHH oldCommitFeeRate: ", oldCommitFeeRate);
+    // get old fee rate, old fee of reveal tx 
+    const totalRevealVin = oldCommitVouts[0].value;
+    const totalRevealVout = oldRevealTx.Vout[0].value;
+    const oldRevealFee = totalRevealVin - totalRevealVout;
+    const revealTxSize = oldRevealFee / oldCommitFeeRate;
+    console.log("oldRevealFee: ", oldRevealFee);
+    console.log("revealTxSize: ", revealTxSize);
+    const totalOldFee = oldCommitFee.plus(new BigNumber(oldRevealFee));
+    const newCommitFee = totalOldFee.plus(new BigNumber(1000)); // extra
+    const minSat = newCommitFee.toNumber() / oldCommitTxSize;
     return {
         oldCommitUTXOs,
         oldCommitVouts,
@@ -6816,11 +6817,13 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
         totalCommitVin,
         totalCommitVOut,
         oldRevealTx,
+        revealTxSize,
         isRBFable,
+        minSat,
     };
 };
 const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
-    const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx } = await extractOldTxInfo({
+    const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx, minSat, revealTxSize, } = await extractOldTxInfo({
         revealTxID,
         tcClient,
         tcAddress,
@@ -6829,78 +6832,9 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
     if (!isRBFable) {
         throw new SDKError(ERROR_CODE.IS_NOT_RBFABLE, revealTxID);
     }
-    // const txs = await tcClient.getPendingInscribeTxsDetail(tcAddress);
-    // const needToRBFTxInfos = txs.filter((tx) => {
-    //     return tx.Reveal.BTCHash === revealTxID;
-    // });
-    // if (needToRBFTxInfos.length == 0) {
-    //     throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
-    // }
-    // const needToRBFTCTxIDs = [];
-    // for (const tx of needToRBFTxInfos) {
-    //     needToRBFTCTxIDs.push(tx.TCHash);
-    // }
-    // if (needToRBFTxInfos.length == 0) {
-    //     throw new SDKError(ERROR_CODE.NOT_FOUND_TX_TO_RBF, revealTxID);
-    // }
-    // // need to inscribe tx
-    // // parse vin from old tx info
-    // const oldCommitUTXOs: UTXO[] = [];
-    // const oldCommitTx = needToRBFTxInfos[0].Commit;
-    // const oldRevealTx = needToRBFTxInfos[0].Reveal;
-    // if (oldCommitTx === null || oldCommitTx === undefined) {
-    //     throw new SDKError(ERROR_CODE.COMMIT_TX_EMPTY, revealTxID);
-    // }
-    // if (oldRevealTx === null || oldRevealTx === undefined) {
-    //     throw new SDKError(ERROR_CODE.REVEAL_TX_EMPTY, revealTxID);
-    // }
-    // const oldCommitVins = oldCommitTx.Vin;
-    // const oldCommitVouts = oldCommitTx.Vout;
-    // if (oldCommitVins.length === 0) {
-    //     throw new SDKError(ERROR_CODE.OLD_VIN_EMPTY, revealTxID);
-    // }
-    // for (const vin of oldCommitVins) {
-    //     oldCommitUTXOs.push({
-    //         tx_hash: vin.txid,
-    //         tx_output_n: vin.vout,
-    //         value: BNZero,   // TODO: 2525
-    //     });
-    // }
-    // const utxoFromBlockStream = await getUTXOsFromBlockStream(btcAddress);
-    // for (let i = 0; i < oldCommitUTXOs.length; i++) {
-    //     const tmpUTXO = utxoFromBlockStream.find(utxo => {
-    //         return utxo.tx_hash === oldCommitUTXOs[i].tx_hash && utxo.tx_output_n === oldCommitUTXOs[i].tx_output_n;
-    //     });
-    //     if (tmpUTXO === null || tmpUTXO === undefined) {
-    //         throw new SDKError(ERROR_CODE.GET_UTXO_VALUE_ERR, oldCommitUTXOs[i].tx_hash + ":" + oldCommitUTXOs[i].tx_output_n);
-    //     }
-    //     oldCommitUTXOs[i].value = tmpUTXO?.value;
-    // }
-    // // get old fee rate, old fee of commit tx
-    // let totalCommitVin = BNZero;
-    // for (const vout of oldCommitUTXOs) {
-    //     totalCommitVin = totalCommitVin.plus(new BigNumber(vout.value));
-    // }
-    // let totalCommitVOut = BNZero;
-    // for (const vout of oldCommitVouts) {
-    //     totalCommitVOut = totalCommitVOut.plus(new BigNumber(vout.value));
-    // }
-    // const oldCommitFee = totalCommitVOut.minus(totalCommitVin);
-    // const oldCommitTxSize = estimateTxSize(oldCommitUTXOs.length, oldCommitVouts.length);
-    // const oldCommitFeeRate = oldCommitFee.toNumber() / oldCommitTxSize;
-    console.log("oldCommitFee: ", oldCommitFee);
-    console.log("oldCommitTxSize: ", oldCommitTxSize);
-    console.log("oldCommitFeeRate: ", oldCommitFeeRate);
-    // get old fee rate, old fee of reveal tx 
-    const totalRevealVin = oldCommitVouts[0].value;
-    const totalRevealVout = oldRevealTx.Vout[0].value;
-    const oldRevealFee = totalRevealVin - totalRevealVout;
-    const revealTxSize = oldRevealFee / oldCommitFeeRate;
-    console.log("oldRevealFee: ", oldRevealFee);
-    console.log("revealTxSize: ", revealTxSize);
     // estimate new fee with new fee rate
-    if (feeRatePerByte < oldCommitFeeRate) {
-        throw new SDKError(ERROR_CODE.INVALID_NEW_FEE_RBF, "Old fee: " + oldCommitFeeRate + " New fee: " + feeRatePerByte);
+    if (feeRatePerByte < minSat) {
+        throw new SDKError(ERROR_CODE.INVALID_NEW_FEE_RBF, "Require new fee: " + minSat + " New fee: " + feeRatePerByte);
     }
     const estCommitTxFee = estimateTxFee(oldCommitVins.length, oldCommitVouts.length, feeRatePerByte);
     const estRevealTxFee = revealTxSize * feeRatePerByte;
@@ -6928,7 +6862,7 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
     return resp;
 };
 const isRBFable = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
-    const { isRBFable, oldCommitFeeRate } = await extractOldTxInfo({
+    const { isRBFable, oldCommitFeeRate, minSat } = await extractOldTxInfo({
         revealTxID,
         tcClient,
         tcAddress,
@@ -6937,6 +6871,7 @@ const isRBFable = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
     return {
         isRBFable,
         oldFeeRate: oldCommitFeeRate,
+        minSat,
     };
 };
 

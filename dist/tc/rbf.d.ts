@@ -29,5 +29,6 @@ declare const isRBFable: ({ revealTxID, tcClient, tcAddress, btcAddress, }: {
 }) => Promise<{
     isRBFable: boolean;
     oldFeeRate: number;
+    minSat: number;
 }>;
 export { replaceByFeeInscribeTx, isRBFable, };

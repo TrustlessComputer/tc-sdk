@@ -1231,6 +1231,7 @@ declare const isRBFable: ({ revealTxID, tcClient, tcAddress, btcAddress, }: {
 }) => Promise<{
     isRBFable: boolean;
     oldFeeRate: number;
+    minSat: number;
 }>;
 
 type Target = "_blank" | "_parent" | "_self" | "_top";
