@@ -722,14 +722,11 @@ const aggregateUTXOsV0 = async ({
 */
 const aggregateUTXOs = async ({
     tcAddress,
-    btcAddress,
     utxos,
-    tcClient,
 }: {
     tcAddress: string,
     btcAddress: string,
     utxos: UTXO[],
-    tcClient: TcClient,
 }): Promise<UTXO[]> => {
 
     const txs = await tcClient.getPendingInscribeTxs(tcAddress);

@@ -6771,7 +6771,7 @@ const estimateInscribeFee = ({ tcTxSizeByte, feeRatePerByte, }) => {
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
-const aggregateUTXOs = async ({ tcAddress, btcAddress, utxos, tcClient, }) => {
+const aggregateUTXOs = async ({ tcAddress, utxos, }) => {
     const txs = await tcClient.getPendingInscribeTxs(tcAddress);
     const pendingUTXOs = [];
     for (const tx of txs) {

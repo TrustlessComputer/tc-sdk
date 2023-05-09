@@ -1148,11 +1148,10 @@ declare const estimateInscribeFee: ({ tcTxSizeByte, feeRatePerByte, }: {
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
-declare const aggregateUTXOs: ({ tcAddress, btcAddress, utxos, tcClient, }: {
+declare const aggregateUTXOs: ({ tcAddress, utxos, }: {
     tcAddress: string;
     btcAddress: string;
     utxos: UTXO[];
-    tcClient: TcClient;
 }) => Promise<UTXO[]>;
 
 interface TCTxDetail {
