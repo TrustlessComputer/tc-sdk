@@ -133,10 +133,6 @@ export const ERROR_MESSAGE = {
         message: "This transaction doesn't support to speed up.",
         desc: "This transaction doesn't support to speed up.",
     },
-
-
-
-
 };
 
 class SDKError extends Error {
