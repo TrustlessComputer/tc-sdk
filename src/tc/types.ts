@@ -31,11 +31,49 @@ interface GetTxByHashResp {
     hash: string,
 }
 
+interface GetPendingInscribeTxsResp {
+    TCHash: string,
+    OnHold: boolean,
+    Commit: BTCVinVout,
+    Reveal: BTCVinVout,
+}
 
+interface Vin {
+    coinbase: string,
+    txid: string,
+    vout: number,
+    // ScriptSig * ScriptSig`json:"scriptSig"`
+    Sequence: number,
+    Witness: string[],
+}
 
+interface Vout {
+    value: number,
+    n: number,
+    scriptPubKey: ScriptPubKeyResult
+}
+
+interface ScriptPubKeyResult {
+    asm: string,
+    hex: string,
+    // reqSigs   int32`json:"reqSigs,omitempty"`
+    type: string,
+    addresses: string[]
+}
+
+interface BTCVinVout {
+    BTCHash: string,
+    Vin: Vin[],
+    Vout: Vout[],
+}
 
 export {
     TCTxDetail,
     BatchInscribeTxResp,
-    GetTxByHashResp
+    GetTxByHashResp,
+    GetPendingInscribeTxsResp,
+    Vin,
+    Vout,
+    ScriptPubKeyResult,
+    BTCVinVout,
 };

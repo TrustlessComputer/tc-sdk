@@ -1,4 +1,5 @@
-import { BNZero, BlockStreamURL, DummyUTXOValue, MinSats } from "./constants";
+import { BNZero, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, MinSats } from "./constants";
+import { BlockStreamURL, Network } from "./network";
 import { BuyReqFullInfo, ICreateRawTxResp, ICreateTxResp, ICreateTxSplitInscriptionResp, ISignPSBTResp, Inscription, NeedPaymentUTXO, PaymentInfo, UTXO } from "./types";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly, tweakSigner } from "./wallet";
 import { Psbt, Transaction, payments } from "bitcoinjs-lib";
@@ -361,7 +362,7 @@ const createRawTx = ({
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
     }
     // select UTXOs
-    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam);
+    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
     let feeRes = fee;
 
     // init key pair and tweakedSigner from senderPrivateKey
@@ -512,14 +513,20 @@ const createTxSendBTC = (
         inscriptions,
         paymentInfos,
         feeRatePerByte,
+        sequence = DefaultSequenceRBF,
+        isSelectUTXOs = true,
     }: {
         senderPrivateKey: Buffer,
         utxos: UTXO[],
         inscriptions: { [key: string]: Inscription[] },
         paymentInfos: PaymentInfo[],
         feeRatePerByte: number,
+        sequence?: number,
+        isSelectUTXOs?: boolean,
     }
 ): ICreateTxResp => {
+
+    console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
     // validation
     let totalPaymentAmount = BNZero;
 
@@ -531,8 +538,10 @@ const createTxSendBTC = (
     }
 
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
     let feeRes = fee;
+
+
 
     // init key pair and tweakedSigner from senderPrivateKey
     const { keyPair, senderAddress, tweakedSigner, p2pktr } = generateTaprootKeyPair(senderPrivateKey);
@@ -546,6 +555,7 @@ const createTxSendBTC = (
             index: input.tx_output_n,
             witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output as Buffer },
             tapInternalKey: toXOnly(keyPair.publicKey),
+            sequence: sequence
         });
     }
 
@@ -624,7 +634,7 @@ const createRawTxSendBTC = (
     }
 
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, true);
     let feeRes = fee;
     let changeAmountRes = changeAmount;
 

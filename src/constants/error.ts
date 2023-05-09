@@ -24,6 +24,13 @@ export const ERROR_CODE = {
     TAPROOT_FROM_MNEMONIC: "-22",
     MNEMONIC_GEN_TAPROOT: "-23",
     CANNOT_FIND_ACCOUNT: "-24",
+    NOT_FOUND_TX_TO_RBF: "-30",
+    COMMIT_TX_EMPTY: "-31",
+    REVEAL_TX_EMPTY: "-32",
+    OLD_VIN_EMPTY: "-33",
+    INVALID_NEW_FEE_RBF: "-34",
+    GET_UTXO_VALUE_ERR: "-35",
+    IS_NOT_RBFABLE: "-36",
 };
 
 export const ERROR_MESSAGE = {
@@ -118,6 +125,34 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.CANNOT_FIND_ACCOUNT]: {
         message: "Can not find account.",
         desc: "an not find account.",
+    },
+    [ERROR_CODE.NOT_FOUND_TX_TO_RBF]: {
+        message: "BTC transaction was not found from TC node.",
+        desc: "BTC transaction was not found from TC node.",
+    },
+    [ERROR_CODE.COMMIT_TX_EMPTY]: {
+        message: "Commit tx need to RBF is empty.",
+        desc: "Commit tx need to RBF is empty.",
+    },
+    [ERROR_CODE.REVEAL_TX_EMPTY]: {
+        message: "Reveal tx need to RBF is empty.",
+        desc: "Reveal tx need to RBF is empty.",
+    },
+    [ERROR_CODE.OLD_VIN_EMPTY]: {
+        message: "Can not get vin from inscribe tx to RBF.",
+        desc: "Can not get vin from inscribe tx to RBF.",
+    },
+    [ERROR_CODE.INVALID_NEW_FEE_RBF]: {
+        message: "New fee for RBF tx must be greater than the old one.",
+        desc: "New fee for RBF tx must be greater than the old one.",
+    },
+    [ERROR_CODE.GET_UTXO_VALUE_ERR]: {
+        message: "Get UTXO value from blockstream not found.",
+        desc: "Get UTXO value from blockstream not found.",
+    },
+    [ERROR_CODE.IS_NOT_RBFABLE]: {
+        message: "This transaction doesn't support to speed up.",
+        desc: "This transaction doesn't support to speed up.",
     },
 };
 

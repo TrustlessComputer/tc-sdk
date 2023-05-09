@@ -1,5 +1,7 @@
 import { ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx } from "../src";
-import { UTXO, aggregateUTXOs } from '..';
+import { NetworkType, setBTCNetwork } from "../src/bitcoin";
+import { UTXO, aggregateUTXOs, } from '..';
+import { getOutputCoins, getTxFromBlockStream } from '../src/tc/blockstream';
 
 import BigNumber from 'bignumber.js';
 import { ECPairInterface } from 'ecpair';
@@ -25,7 +27,7 @@ console.log("buyerPrivateKeyWIF ", buyerPrivateKeyWIF);
 console.log("buyerAddress ", buyerAddress);
 
 
-const tcClient = new TcClient(Mainnet);
+const tcClient = new TcClient(Regtest);
 
 let sellerUTXOs = [
     // inscription UTXOs
@@ -92,15 +94,20 @@ describe("TC client", async () => {
     // });
 
     it("get uninscribed txs", async () => {
-        console.log("tcClient.network ", tcClient.network);
-        console.log("tcClient.url ", tcClient.url);
-        const tcAddress = "0xDa08dD1c849d8DEC0Da09ec541506CefaD6D8F5c";
+        // console.log("tcClient.network ", tcClient.network);
+        // console.log("tcClient.url ", tcClient.url);
+        // const tcAddress = "0xF91cEe2DE943733e338891Ef602c962eF4D7Eb81";
 
-        for (let i = 0; i < 100; i++) {
-            const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
-            console.log("HHH Length: ", resp.unInscribedTxDetails.length);
-            sleep(1000);
-        }
+        // const resp = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+        // // console.log("HHH Length: ", resp.unInscribedTxDetails.length);
+
+        const btcTxID = "9f1d62525690f3b9246269e510ace17b5c3de14d998091ac0ff3efdaa5465a74";
+        setBTCNetwork(NetworkType.Regtest);
+        const res = await getTxFromBlockStream(btcTxID);
+        console.log("RES: ", res);
+
+        const res2 = await getOutputCoins(btcTxID, 1)
+        console.log("RES: ", res2);
 
     });
 

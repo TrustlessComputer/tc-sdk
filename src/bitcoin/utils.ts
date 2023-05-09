@@ -15,6 +15,17 @@ const estimateTxFee = (numIns: number, numOuts: number, feeRatePerByte: number):
 };
 
 /**
+* estimateTxSize estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction
+* @returns returns the estimated transaction size in byte
+*/
+const estimateTxSize = (numIns: number, numOuts: number): number => {
+    const size = (68 * numIns + 43 * numOuts);
+    return size;
+};
+
+/**
 * estimateNumInOutputs estimates number of inputs and outputs by parameters: 
 * @param inscriptionID id of inscription to send (if any)
 * @param sendAmount satoshi amount need to send 
@@ -66,6 +77,7 @@ const toSat = (value: number): number => {
 
 export {
     estimateTxFee,
+    estimateTxSize,
     estimateNumInOutputs,
     estimateNumInOutputsForBuyInscription,
     fromSat,

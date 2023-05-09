@@ -1,10 +1,10 @@
 import { CallWalletPayload, Target, RequestPayload, RequestFunction, RequestAccountResponse } from "./type";
-import { URL } from "./constant";
 import { Validator } from "@/utils";
+import { URL_MAINNET, URL_REGTEST } from "./constant";
 
 const window = globalThis || global;
 
-const openWindow = ({ url = URL, search, target }: { url?: string, search: string, target: Target }) => {
+const openWindow = ({ url = URL_MAINNET, search, target }: { url?: string, search: string, target: Target }) => {
     if (window) {
         setTimeout(() => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -24,6 +24,7 @@ export const signTransaction = (payload: CallWalletPayload) => {
             search += `&isRedirect=${payload.isRedirect}`;
         }
         openWindow({
+            url: payload.isMainnet ? URL_MAINNET : URL_REGTEST,
             search,
             target: _target
         });
@@ -37,6 +38,7 @@ export const actionRequest = async (payload: RequestPayload) => {
     if (window && URLSearchParams) {
         const search = `?function=${RequestFunction.request}&method=${payload.method}&redirectURL=${payload.redirectURL}`;
         openWindow({
+            url: payload.isMainnet ? URL_MAINNET : URL_REGTEST,
             search,
             target: _target
         });
