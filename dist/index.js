@@ -6511,13 +6511,13 @@ class TcClient {
             const { status, data } = response;
             console.log("data from response: ", data);
             if (status !== 200) {
-                throw new SDKError(ERROR_CODE.RPC_ERROR, data);
+                console.log("status from response: ", status);
+                throw new SDKError(ERROR_CODE.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
             }
             const dataResp = JSON.parse(data);
             console.log("Data resp: ", dataResp);
             if (dataResp.error || !dataResp.result) {
-                console.log("Data resp error: ", typeof dataResp.error, dataResp.error, dataResp.error?.message);
-                throw new SDKError(ERROR_CODE.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
+                throw new SDKError(ERROR_CODE.RPC_ERROR, typeof dataResp.error === "string" ? dataResp.error : dataResp?.error?.message);
             }
             return dataResp.result;
         };
