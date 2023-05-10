@@ -5763,7 +5763,7 @@ const reqBuyMultiInscriptions = (params) => {
     let fee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
     // select cardinal UTXOs to pay fee
     console.log("BUY Fee estimate: ", fee.toNumber());
-    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, {}, fee);
+    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, inscriptions, fee);
     // create PBTS from the seller's one
     const res = createPSBTToBuyMultiInscriptions({
         buyReqFullInfos,
@@ -5899,7 +5899,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
     let fee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
     // select cardinal UTXOs to pay fee
     console.log("BUY Fee estimate: ", fee.toNumber());
-    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, {}, fee);
+    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, inscriptions, fee);
     // create PBTS from the seller's one
     const rawBuyRes = createRawPSBTToBuyMultiInscriptions({
         buyReqFullInfos,
