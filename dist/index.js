@@ -5789,7 +5789,7 @@ const reqBuyMultiInscriptions = (params) => {
     let fee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
     // select cardinal UTXOs to pay fee
     console.log("BUY Fee estimate: ", fee.toNumber());
-    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, {}, fee);
+    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, inscriptions, fee);
     // create PBTS from the seller's one
     const res = createPSBTToBuyMultiInscriptions({
         buyReqFullInfos,
@@ -5925,7 +5925,7 @@ const reqBuyMultiInscriptionsFromAnyWallet = async ({ buyReqInfos, pubKey, utxos
     let fee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
     // select cardinal UTXOs to pay fee
     console.log("BUY Fee estimate: ", fee.toNumber());
-    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, {}, fee);
+    const { selectedUTXOs: feeSelectedUTXOs, totalInputAmount } = selectCardinalUTXOs(newUTXOs, inscriptions, fee);
     // create PBTS from the seller's one
     const rawBuyRes = createRawPSBTToBuyMultiInscriptions({
         buyReqFullInfos,
@@ -6870,13 +6870,13 @@ class TcClient {
             const { status, data } = response;
             console.log("data from response: ", data);
             if (status !== 200) {
-                throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, data);
+                console.log("status from response: ", status);
+                throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
             }
             const dataResp = JSON.parse(data);
             console.log("Data resp: ", dataResp);
             if (dataResp.error || !dataResp.result) {
-                console.log("Data resp error: ", typeof dataResp.error, dataResp.error, dataResp.error?.message);
-                throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
+                throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, typeof dataResp.error === "string" ? dataResp.error : dataResp?.error?.message);
             }
             return dataResp.result;
         };
