@@ -1038,7 +1038,7 @@ declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair,
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence, isSelectUTXOs, }: {
+declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -1046,7 +1046,6 @@ declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxID
     };
     tcTxIDs: string[];
     feeRatePerByte: number;
-    tcClient: TcClient;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
 }) => Promise<{
@@ -1075,7 +1074,7 @@ declare const splitBatchInscribeTx: ({ tcTxDetails }: {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence, }: {
+declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -1083,7 +1082,6 @@ declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, 
     };
     tcTxDetails: TCTxDetail[];
     feeRatePerByte: number;
-    tcClient: TcClient;
     sequence?: number | undefined;
 }) => Promise<BatchInscribeTxResp[]>;
 /**
@@ -1245,7 +1243,7 @@ declare class TcClient {
 
 declare const increaseGasPrice: (wei: BigNumber) => BigNumber;
 
-declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence, }: {
+declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -1253,7 +1251,6 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     };
     revealTxID: string;
     feeRatePerByte: number;
-    tcClient: TcClient;
     tcAddress: string;
     btcAddress: string;
     sequence?: number | undefined;

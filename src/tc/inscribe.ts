@@ -198,7 +198,6 @@ const createInscribeTx = async ({
     inscriptions,
     tcTxIDs,
     feeRatePerByte,
-    tcClient,
     sequence = DefaultSequenceRBF,
     isSelectUTXOs = true,
 }: {
@@ -207,7 +206,6 @@ const createInscribeTx = async ({
     inscriptions: { [key: string]: Inscription[] },
     tcTxIDs: string[],
     feeRatePerByte: number,
-    tcClient: TcClient,
     sequence?: number;
     isSelectUTXOs?: boolean,
 }): Promise<{
@@ -367,7 +365,6 @@ const createBatchInscribeTxs = async ({
     inscriptions,
     tcTxDetails,
     feeRatePerByte,
-    tcClient,
     sequence = DefaultSequenceRBF,
 }: {
     senderPrivateKey: Buffer,
@@ -375,7 +372,6 @@ const createBatchInscribeTxs = async ({
     inscriptions: { [key: string]: Inscription[] },
     tcTxDetails: TCTxDetail[],
     feeRatePerByte: number,
-    tcClient: TcClient,
     sequence?: number,
 }): Promise<BatchInscribeTxResp[]> => {
 
@@ -394,7 +390,6 @@ const createBatchInscribeTxs = async ({
                 inscriptions,
                 tcTxIDs: batch,
                 feeRatePerByte,
-                tcClient,
                 sequence,
             });
 

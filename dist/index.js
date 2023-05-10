@@ -6476,7 +6476,7 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
     const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly$1(keyPair.publicKey);
     // create lock script for commit tx
@@ -6594,7 +6594,7 @@ const splitBatchInscribeTx = ({ tcTxDetails }) => {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence = DefaultSequenceRBF, }) => {
+const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence = DefaultSequenceRBF, }) => {
     const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
     const result = [];
     const newUTXOs = [...utxos];
@@ -6607,7 +6607,6 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
                 inscriptions,
                 tcTxIDs: batch,
                 feeRatePerByte,
-                tcClient,
                 sequence,
             });
             if (sequence < DefaultSequence) {
@@ -7182,7 +7181,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
         minSat,
     };
 };
-const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
+const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
     const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx, minSat, revealTxSize, } = await extractOldTxInfo({
         revealTxID,
         tcClient,
@@ -7216,7 +7215,6 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
         inscriptions,
         tcTxIDs: needToRBFTCTxIDs,
         feeRatePerByte,
-        tcClient,
         sequence,
         isSelectUTXOs: false,
     });

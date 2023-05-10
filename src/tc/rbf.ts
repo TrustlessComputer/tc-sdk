@@ -185,7 +185,6 @@ const replaceByFeeInscribeTx = async (
         inscriptions,
         revealTxID,
         feeRatePerByte,
-        tcClient,
         tcAddress,
         btcAddress,
         sequence = DefaultSequenceRBF,
@@ -196,7 +195,6 @@ const replaceByFeeInscribeTx = async (
         inscriptions: { [key: string]: Inscription[] },
         revealTxID: string,
         feeRatePerByte: number,
-        tcClient: TcClient,
         tcAddress: string,
         btcAddress: string,
         sequence?: number,
@@ -269,7 +267,6 @@ const replaceByFeeInscribeTx = async (
         inscriptions,
         tcTxIDs: needToRBFTCTxIDs,
         feeRatePerByte,
-        tcClient,
         sequence,
         isSelectUTXOs: false,
     });
