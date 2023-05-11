@@ -7497,6 +7497,7 @@ class HDWallet$1 {
             });
             nodes.push(childNode);
             await this.saveWallet(wallet, password);
+            return childNode;
         };
         this.deletedAccount = async ({ password, address }) => {
             const wallet = await getStorageHDWallet$1(password);
@@ -7630,6 +7631,7 @@ class HDWallet {
             });
             nodes.push(childNode);
             await this.saveWallet(wallet, password);
+            return childNode;
         };
         this.deletedAccount = async ({ password, address }) => {
             const wallet = await getStorageHDWallet$1(password);

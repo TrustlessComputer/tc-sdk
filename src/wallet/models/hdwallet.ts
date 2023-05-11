@@ -55,6 +55,7 @@ class HDWallet {
         });
         nodes.push(childNode);
         await this.saveWallet(wallet, password);
+        return childNode;
     };
 
     deletedAccount = async ({ password, address }: { password: string, address: string }) => {

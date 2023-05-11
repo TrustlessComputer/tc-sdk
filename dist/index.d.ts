@@ -1358,7 +1358,7 @@ declare class HDWallet {
     createNewAccount: ({ password, name }: {
         password: string;
         name?: string | undefined;
-    }) => Promise<void>;
+    }) => Promise<IDeriveKey$1 | undefined>;
     deletedAccount: ({ password, address }: {
         password: string;
         address: string;
