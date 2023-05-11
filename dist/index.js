@@ -6661,6 +6661,69 @@ class TcClient {
             }
             return resp;
         };
+        // get UTXO info from TC node by TC address
+        this.getUTXOsInfoByTcAddress = async ({ tcAddress, btcAddress, tcClient, }) => {
+            const txs = await tcClient.getPendingInscribeTxs(tcAddress);
+            const pendingUTXOs = [];
+            for (const tx of txs) {
+                for (const vin of tx.Vin) {
+                    pendingUTXOs.push({
+                        tx_hash: vin.txid,
+                        tx_output_n: vin.vout,
+                        value: BNZero
+                    });
+                }
+            }
+            console.log("pendingUTXOs: ", pendingUTXOs);
+            const incomingUTXOs = [];
+            for (const tx of txs) {
+                const btcTxID = tx.BTCHash;
+                for (let i = 0; i < tx.Vout.length; i++) {
+                    const vout = tx.Vout[i];
+                    try {
+                        const receiverAddress = bitcoinjsLib.address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), exports.Network);
+                        if (receiverAddress === btcAddress) {
+                            incomingUTXOs.push({
+                                tx_hash: btcTxID,
+                                tx_output_n: i,
+                                value: new BigNumber(toSat(vout.value))
+                            });
+                        }
+                    }
+                    catch (e) {
+                        continue;
+                    }
+                }
+            }
+            console.log("newUTXOs: ", incomingUTXOs);
+            return { pendingUTXOs, incomingUTXOs };
+            // const tmpUTXOs = [...utxos];
+            // // console.log("tmpUTXOs: ", tmpUTXOs);
+            // // const ids: string[] = [];
+            // // const tmpUniqUTXOs: UTXO[] = [];
+            // // for (const utxo of tmpUTXOs) {
+            // //     const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+            // //     console.log("id: ", id);
+            // //     if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
+            // //         continue;
+            // //     } else {
+            // //         tmpUniqUTXOs.push(utxo);
+            // //         ids.push(id);
+            // //     }
+            // // }
+            // // console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
+            // const result: UTXO[] = [];
+            // for (const utxo of tmpUTXOs) {
+            //     const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
+            //         return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
+            //     });
+            //     if (foundIndex === -1) {
+            //         result.push(utxo);
+            //     }
+            // }
+            // console.log("result: ", result);
+            // return result;
+        };
         if (params.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS);
         }
@@ -6692,41 +6755,41 @@ class TcClient {
     }
 }
 
+/**
+* getUTXOsFromBlockStream get UTXOs from Blockstream service.
+* the result was filtered spending UTXOs in Bitcoin mempool.
+* @param btcAddress bitcoin address
+* @param isConfirmed filter UTXOs by confirmed or not
+* @returns list of UTXOs
+*/
+const getUTXOsFromBlockStream = async (btcAddress, isConfirmed) => {
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    const res = await axios__default["default"].get(`${exports.BlockStreamURL}/address/${btcAddress}/utxo`);
+    const data = res.data;
+    const utxos = [];
+    for (const item of data) {
+        if ((isConfirmed && !item.status?.confirmed) || (!isConfirmed && item.status?.confirmed)) {
+            continue;
+        }
+        utxos.push({
+            tx_hash: item.txid,
+            tx_output_n: item.vout,
+            value: new BigNumber(item.value)
+        });
+    }
+    return utxos;
+};
 const getTxFromBlockStream = async (txID) => {
     // if (!txID) return [];
     // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
-    console.log("URL: ", `${exports.BlockStreamURL}/tx/${txID}`);
     const res = await axios__default["default"].get(`${exports.BlockStreamURL}/tx/${txID}`);
-    console.log(res);
-    // const utxos: UTXO[] = [];
-    // for (const item of res) {
-    //     utxos.push({
-    //         tx_hash: item.txid,
-    //         tx_output_n: item.vout,
-    //         value: new BigNumber(item.value)
-    //     });
-    // }
     return res.data;
 };
 const getOutputCoinValue = async (txID, voutIndex) => {
-    // if (!txID) return [];
-    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
-    // console.log("URL: ", `${BlockStreamURL}/tx/${txID}`);
-    // const res: any = await axios.get(`${BlockStreamURL}/tx/${txID}`);
-    // console.log(res);
     const tx = await getTxFromBlockStream(txID);
     if (voutIndex >= tx.vout.length) {
         throw new SDKError(ERROR_CODE.INVALID_PARAMS);
     }
-    // console.log("HHH: ", tx.vout[voutIndex]);
-    // const utxos: UTXO[] = [];
-    // for (const item of res) {
-    //     utxos.push({
-    //         tx_hash: item.txid,
-    //         tx_output_n: item.vout,
-    //         value: new BigNumber(item.value)
-    //     });
-    // }
     return new BigNumber(tx.vout[voutIndex].value);
 };
 
@@ -6877,6 +6940,95 @@ const isRBFable = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
     };
 };
 
+const ServiceGetUTXOType = {
+    BlockStream: 1,
+    Mempool: 2,
+};
+/**
+* getUTXOs get UTXOs to create txs.
+* the result was filtered spending UTXOs in Bitcoin mempool and spending UTXOs was used for pending txs in TC node.
+* dont include incomming UTXOs
+* @param btcAddress bitcoin address
+* @param serviceType service is used to get UTXOs, default is BlockStream
+* @returns list of UTXOs
+*/
+const getUTXOs = async ({ btcAddress, tcAddress, tcClient, serviceType = ServiceGetUTXOType.BlockStream, }) => {
+    let availableUTXOs = [];
+    const incomingUTXOs = [];
+    let incomingUTXOsTmp = [];
+    switch (serviceType) {
+        case ServiceGetUTXOType.BlockStream: {
+            availableUTXOs = await getUTXOsFromBlockStream(btcAddress, true);
+            // get list incoming utxos
+            incomingUTXOsTmp = await getUTXOsFromBlockStream(btcAddress, false);
+            break;
+            // utxos = await aggregateUTXOs({ tcAddress, btcAddress, utxos, tcClient });
+            // let availableBalance = BNZero;
+            // for (const utxo of utxos) {
+            //     availableBalance = availableBalance.plus(utxo.value);
+            // }
+            // const incomingBalance = BNZero;
+            // return { utxos, availableBalance, incomingBalance };
+        }
+        case ServiceGetUTXOType.Mempool: {
+            // TODO: 2525
+            availableUTXOs = await getUTXOsFromBlockStream(btcAddress, true);
+            // get list incoming utxos
+            incomingUTXOsTmp = await getUTXOsFromBlockStream(btcAddress, false);
+            break;
+            // utxos = await aggregateUTXOs({ tcAddress, btcAddress, utxos, tcClient });
+            // let availableBalance = BNZero;
+            // for (const utxo of utxos) {
+            //     availableBalance = availableBalance.plus(utxo.value);
+            // }
+            // const incomingBalance = BNZero;
+            // return { utxos, availableBalance, incomingBalance };
+        }
+        default: {
+            throw new SDKError(ERROR_CODE.INVALID_CODE, "Invalid service type");
+        }
+    }
+    // get utxo info from tc node of tc address
+    const { pendingUTXOs, incomingUTXOs: incommingUTXOsFromTCNode } = await tcClient.getUTXOsInfoByTcAddress({ tcAddress, btcAddress, tcClient });
+    // filter pending UTXOs from TC node
+    for (const utxo of availableUTXOs) {
+        const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
+            return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
+        });
+        if (foundIndex !== -1) {
+            availableUTXOs.splice(foundIndex, 1);
+        }
+    }
+    incomingUTXOsTmp.push(...incommingUTXOsFromTCNode);
+    const ids = [];
+    for (const utxo of incomingUTXOsTmp) {
+        const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+        if (
+        // duplicate incoming utxos
+        ids.findIndex((idTmp) => idTmp === id) !== -1 ||
+            // found in pending UTXOs
+            pendingUTXOs.findIndex((pendingUTXO) => {
+                return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
+            }) !== -1) {
+            continue;
+        }
+        else {
+            incomingUTXOs.push(utxo);
+            ids.push(id);
+        }
+    }
+    // calculate balance
+    let availableBalance = BNZero;
+    for (const utxo of availableUTXOs) {
+        availableBalance = availableBalance.plus(utxo.value);
+    }
+    let incomingBalance = BNZero;
+    for (const utxo of incomingUTXOs) {
+        incomingBalance = incomingBalance.plus(utxo.value);
+    }
+    return { availableUTXOs, incomingUTXOs, availableBalance, incomingBalance };
+};
+
 exports.RequestFunction = void 0;
 (function (RequestFunction) {
     RequestFunction["sign"] = "sign";
@@ -6964,6 +7116,7 @@ exports.NetworkType = NetworkType;
 exports.OutputSize = OutputSize;
 exports.Regtest = Regtest;
 exports.SDKError = SDKError;
+exports.ServiceGetUTXOType = ServiceGetUTXOType;
 exports.TcClient = TcClient;
 exports.Testnet = Testnet;
 exports.URL_MAINNET = URL_MAINNET;
@@ -7015,6 +7168,7 @@ exports.generateTaprootAddressFromPubKey = generateTaprootAddressFromPubKey;
 exports.generateTaprootKeyPair = generateTaprootKeyPair;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
+exports.getUTXOs = getUTXOs;
 exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;

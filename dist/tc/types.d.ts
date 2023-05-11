@@ -56,4 +56,16 @@ interface BTCVinVout {
     Vin: Vin[];
     Vout: Vout[];
 }
-export { TCTxDetail, BatchInscribeTxResp, GetTxByHashResp, GetPendingInscribeTxsResp, Vin, Vout, ScriptPubKeyResult, BTCVinVout, };
+interface UTXOFromBlockStream {
+    txid: string;
+    vout: number;
+    status: UTXOStatusFromBlockStream;
+    value: number;
+}
+interface UTXOStatusFromBlockStream {
+    confirmed: boolean;
+    block_height: number;
+    block_hash: string;
+    block_time: number;
+}
+export { TCTxDetail, BatchInscribeTxResp, GetTxByHashResp, GetPendingInscribeTxsResp, Vin, Vout, ScriptPubKeyResult, BTCVinVout, UTXOStatusFromBlockStream, UTXOFromBlockStream, };

@@ -96,15 +96,23 @@ describe("TC client", async () => {
     it("get uninscribed txs", async () => {
         // console.log("tcClient.network ", tcClient.network);
         // console.log("tcClient.url ", tcClient.url);
-        const tcAddress = "0x48d11882D1a28F1e0cFeF25c1EaDCA0239b1Af09";
+        const tcAddress = "0x35F5d3C48169292bA4D2A79c3Be97540999C9468";
 
         // 0x9802dfb0831568adb13e4217ab4a9f2ba2ed622f27ba184961277959ace989c8
 
-        // const resp = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+        const resp = await tcClient.getPendingInscribeTxsDetail(tcAddress);
         // console.log("resp: ", resp);
 
-        const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
-        console.log("resp: ", resp);
+        for (const vin of resp[0].Commit.Vin) {
+            console.log("vin: ", vin);
+        }
+
+        for (const vout of resp[0].Commit.Vout) {
+            console.log("vout: ", vout);
+        }
+
+        // const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+        // console.log("resp: ", resp);
         // // console.log("HHH Length: ", resp.unInscribedTxDetails.length);
 
         // const btcTxID = "9f1d62525690f3b9246269e510ace17b5c3de14d998091ac0ff3efdaa5465a74";

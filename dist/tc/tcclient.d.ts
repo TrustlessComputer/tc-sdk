@@ -1,3 +1,4 @@
+import { UTXO } from "../bitcoin";
 import { GetPendingInscribeTxsResp, GetTxByHashResp, TCTxDetail } from "./types";
 declare const Mainnet = "mainnet";
 declare const Testnet = "testnet";
@@ -28,5 +29,13 @@ declare class TcClient {
     getTCTxReceipt: (tcTxID: string) => Promise<any>;
     getPendingInscribeTxs: (tcAddress: string) => Promise<any[]>;
     getPendingInscribeTxsDetail: (tcAddress: string) => Promise<GetPendingInscribeTxsResp[]>;
+    getUTXOsInfoByTcAddress: ({ tcAddress, btcAddress, tcClient, }: {
+        tcAddress: string;
+        btcAddress: string;
+        tcClient: TcClient;
+    }) => Promise<{
+        pendingUTXOs: UTXO[];
+        incomingUTXOs: UTXO[];
+    }>;
 }
 export { TcClient, Mainnet, Testnet, Regtest, };
