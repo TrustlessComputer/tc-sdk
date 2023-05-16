@@ -1,10 +1,11 @@
-import { BNZero, UTXO } from "../bitcoin";
+import { BNZero, Network, UTXO, toSat } from "../bitcoin";
 import { ERROR_CODE, ERROR_MESSAGE } from "../constants/error";
 import { GetPendingInscribeTxsResp, GetTxByHashResp, TCTxDetail } from "./types";
 import axios, { AxiosResponse } from "axios";
 
 import BigNumber from "bignumber.js";
 import SDKError from "../constants/error";
+import { address } from "bitcoinjs-lib";
 import { increaseGasPrice } from "./utils";
 
 const Mainnet = "mainnet";
@@ -281,6 +282,89 @@ class TcClient {
 
         return resp;
     };
+
+    // get UTXO info from TC node by TC address
+    getUTXOsInfoByTcAddress = async ({
+        tcAddress,
+        btcAddress,
+        tcClient,
+    }: {
+        tcAddress: string,
+        btcAddress: string,
+        tcClient: TcClient,
+    }): Promise<{ pendingUTXOs: UTXO[], incomingUTXOs: UTXO[] }> => {
+
+        const txs = await tcClient.getPendingInscribeTxs(tcAddress);
+
+        const pendingUTXOs: UTXO[] = [];
+        for (const tx of txs) {
+            for (const vin of tx.Vin) {
+                pendingUTXOs.push({
+                    tx_hash: vin.txid,
+                    tx_output_n: vin.vout,
+                    value: BNZero
+                });
+            }
+        }
+
+        console.log("pendingUTXOs: ", pendingUTXOs);
+
+        const incomingUTXOs: UTXO[] = [];
+        for (const tx of txs) {
+            const btcTxID = tx.BTCHash;
+            for (let i = 0; i < tx.Vout.length; i++) {
+                const vout = tx.Vout[i];
+                try {
+                    const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+                    if (receiverAddress === btcAddress) {
+                        incomingUTXOs.push({
+                            tx_hash: btcTxID,
+                            tx_output_n: i,
+                            value: new BigNumber(toSat(vout.value))
+                        });
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+        }
+        console.log("newUTXOs: ", incomingUTXOs);
+
+        return { pendingUTXOs, incomingUTXOs };
+        // const tmpUTXOs = [...utxos];
+
+        // // console.log("tmpUTXOs: ", tmpUTXOs);
+        // // const ids: string[] = [];
+        // // const tmpUniqUTXOs: UTXO[] = [];
+
+        // // for (const utxo of tmpUTXOs) {
+        // //     const id = utxo.tx_hash + ":" + utxo.tx_output_n;
+        // //     console.log("id: ", id);
+        // //     if (ids.findIndex((idTmp) => idTmp === id) !== -1) {
+        // //         continue;
+        // //     } else {
+        // //         tmpUniqUTXOs.push(utxo);
+        // //         ids.push(id);
+        // //     }
+        // // }
+
+        // // console.log("tmpUniqUTXOs ", tmpUniqUTXOs);
+
+        // const result: UTXO[] = [];
+        // for (const utxo of tmpUTXOs) {
+        //     const foundIndex = pendingUTXOs.findIndex((pendingUTXO) => {
+        //         return pendingUTXO.tx_hash === utxo.tx_hash && pendingUTXO.tx_output_n === utxo.tx_output_n;
+        //     });
+        //     if (foundIndex === -1) {
+        //         result.push(utxo);
+        //     }
+        // }
+
+        // console.log("result: ", result);
+
+        // return result;
+    };
+
 }
 
 
