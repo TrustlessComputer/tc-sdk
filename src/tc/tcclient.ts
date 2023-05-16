@@ -104,34 +104,17 @@ class TcClient {
     };
 
     // call to tc node to get inscribeable nonce and gas price (if need to replace previous orphan tx(s))
-    getNonceInscribeable = async (tcAddress: string): Promise<{ nonce: number, gasPrice: number }> => {
+    getInscribeableNonce = async (tcAddress: string): Promise<number> => {
         const payload = [tcAddress];
 
-        const resp = await this.callRequest(payload, MethodPost, "eth_getInscribableInfo");
-        console.log("Resp getNonceInscribeable: ", resp);
+        const resp = await this.callRequest(payload, MethodPost, "eth_getInscribeableNonce");
+        console.log("Resp getInscribeableNonce: ", resp);
 
         if (resp === "") {
             throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
         }
 
-        const strs = resp.split(":");
-        console.log("strs: ", strs);
-        if (strs.length !== 2) {
-            throw new SDKError(ERROR_CODE.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
-        }
-
-        const gasPrice = new BigNumber(strs[1]);
-
-        let gasPriceRes: number;
-        if (gasPrice.eq(BNZero)) {
-            gasPriceRes = -1;
-        } else {
-            gasPriceRes = increaseGasPrice(gasPrice).toNumber();
-        }
-        return {
-            nonce: Number(strs[0]),
-            gasPrice: gasPriceRes,
-        };
+        return resp;
     };
 
     // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
