@@ -276,12 +276,10 @@ const replaceByFeeInscribeTx = async (
 
 const isRBFable = async ({
     revealTxID,
-    tcClient,
     tcAddress,
     btcAddress,
 }: {
     revealTxID: string,
-    tcClient: TcClient,
     tcAddress: string,
     btcAddress: string,
 }): Promise<{

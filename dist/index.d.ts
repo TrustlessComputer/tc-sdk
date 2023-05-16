@@ -1280,9 +1280,8 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-declare const isRBFable: ({ revealTxID, tcClient, tcAddress, btcAddress, }: {
+declare const isRBFable: ({ revealTxID, tcAddress, btcAddress, }: {
     revealTxID: string;
-    tcClient: TcClient;
     tcAddress: string;
     btcAddress: string;
 }) => Promise<{

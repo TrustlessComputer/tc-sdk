@@ -7267,7 +7267,7 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
     });
     return resp;
 };
-const isRBFable = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
+const isRBFable = async ({ revealTxID, tcAddress, btcAddress, }) => {
     const { isRBFable, oldCommitFeeRate, minSat } = await extractOldTxInfo({
         revealTxID,
         tcClient,
