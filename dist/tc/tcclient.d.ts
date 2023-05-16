@@ -9,10 +9,7 @@ declare class TcClient {
     constructor(network: string, url: string);
     constructor(network: string);
     callRequest: (payload: any, methodType: string, method: string) => Promise<any>;
-    getNonceInscribeable: (tcAddress: string) => Promise<{
-        nonce: number;
-        gasPrice: number;
-    }>;
+    getInscribeableNonce: (tcAddress: string) => Promise<number>;
     submitInscribeTx: (btcTxHex: string[]) => Promise<{
         btcTxID: string[];
     }>;

@@ -6831,11 +6831,6 @@ const aggregateUTXOs = async ({ tcAddress, utxos, }) => {
     return result;
 };
 
-const increaseGasPrice = (wei) => {
-    const res = wei.plus(new BigNumber(1000000000));
-    return res;
-};
-
 const Mainnet = "mainnet";
 const Testnet = "testnet";
 const Regtest = "regtest";
@@ -6880,30 +6875,14 @@ class TcClient {
             return dataResp.result;
         };
         // call to tc node to get inscribeable nonce and gas price (if need to replace previous orphan tx(s))
-        this.getNonceInscribeable = async (tcAddress) => {
+        this.getInscribeableNonce = async (tcAddress) => {
             const payload = [tcAddress];
-            const resp = await this.callRequest(payload, MethodPost, "eth_getInscribableInfo");
-            console.log("Resp getNonceInscribeable: ", resp);
+            const resp = await this.callRequest(payload, MethodPost, "eth_getInscribeableNonce");
+            console.log("Resp getInscribeableNonce: ", resp);
             if (resp === "") {
                 throw new SDKError$1(ERROR_CODE$1.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is empty");
             }
-            const strs = resp.split(":");
-            console.log("strs: ", strs);
-            if (strs.length !== 2) {
-                throw new SDKError$1(ERROR_CODE$1.RPC_GET_INSCRIBEABLE_INFO_ERROR, "response is invalid");
-            }
-            const gasPrice = new BigNumber(strs[1]);
-            let gasPriceRes;
-            if (gasPrice.eq(BNZero)) {
-                gasPriceRes = -1;
-            }
-            else {
-                gasPriceRes = increaseGasPrice(gasPrice).toNumber();
-            }
-            return {
-                nonce: Number(strs[0]),
-                gasPrice: gasPriceRes,
-            };
+            return resp;
         };
         // submitInscribeTx submits btc tx into TC node and then it will broadcast txs to Bitcoin fullnode
         this.submitInscribeTx = async (btcTxHex) => {
@@ -7112,6 +7091,11 @@ class TcClient {
         }
     }
 }
+
+const increaseGasPrice = (wei) => {
+    const res = wei.plus(new BigNumber(1000000000));
+    return res;
+};
 
 /**
 * getUTXOsFromBlockStream get UTXOs from Blockstream service.
