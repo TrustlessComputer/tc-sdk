@@ -12,7 +12,7 @@ import {
     toSat,
 } from "..";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
-import { Psbt, address, payments, script } from "bitcoinjs-lib";
+import { Psbt, address, opcodes, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
 import BigNumber from "bignumber.js";
@@ -36,7 +36,7 @@ const createRawRevealTx = ({
     hashLockRedeem,
     script_p2tr,
     revealTxFee,
-    sequence = DefaultSequenceRBF,
+    sequence = 0,
 }: {
     internalPubKey: Buffer,
     commitTxID: string,
@@ -58,18 +58,23 @@ const createRawRevealTx = ({
     psbt.addInput({
         hash: commitTxID,
         index: 0,
-        witnessUtxo: { value: revealTxFee + MinSats, script: script_p2tr.output! },
+        witnessUtxo: { value: revealTxFee, script: script_p2tr.output! },
         tapLeafScript: [
             tapLeafScript
         ],
         sequence,
     });
 
+    // output has OP_RETURN zero value
+    const data = Buffer.from("https://trustless.computer", "utf-8");
+    const scriptEmbed = script.compile([
+        opcodes.OP_RETURN,
+        data,
+    ]);
     psbt.addOutput({
-        address: p2pktr_addr,
-        value: MinSats
+        value: 0,
+        script: scriptEmbed,
     });
-
 
     // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
     psbt.signInput(0, hashLockKeyPair);
@@ -114,9 +119,15 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
         ]
     });
 
+    // output has OP_RETURN zero value
+    const data = Buffer.from("https://trustless.computer", "utf-8");
+    const scriptEmbed = script.compile([
+        opcodes.OP_RETURN,
+        data,
+    ]);
     psbt.addOutput({
-        address: p2pktr_addr,
-        value: 1
+        value: 0,
+        script: scriptEmbed,
     });
 
     psbt.signInput(0, hash_lock_keypair);
@@ -248,7 +259,7 @@ const createInscribeTx = async ({
         senderPrivateKey,
         utxos,
         inscriptions,
-        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee) }],
         feeRatePerByte,
         sequence,
         isSelectUTXOs
@@ -284,11 +295,13 @@ const createInscribeTx = async ({
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
 
-    newUTXOs.push({
-        tx_hash: revealTxID,
-        tx_output_n: 0,
-        value: new BigNumber(MinSats),
-    });
+
+
+    // newUTXOs.push({
+    //     tx_hash: revealTxID,
+    //     tx_output_n: 0,
+    //     value: new BigNumber(MinSats),
+    // });
 
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
@@ -503,7 +516,7 @@ const createInscribeTxFromAnyWallet = async ({
         pubKey,
         utxos,
         inscriptions,
-        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee) }],
         feeRatePerByte,
     });
 
