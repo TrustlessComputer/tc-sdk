@@ -3642,7 +3642,7 @@ const getKeyPairInfo = ({ privateKey, address, }) => {
         case BTCAddressType.P2TR: {
             // Tweak the original keypair
             const tweakedSigner = tweakSigner$1(keyPair, { network: tcBTCNetwork });
-            signer = tweakSigner$1;
+            signer = tweakedSigner;
             sigHashTypeDefault = bitcoinjsLib.Transaction.SIGHASH_DEFAULT;
             // Generate an address from the tweaked public key
             payment = bitcoinjsLib.payments.p2tr({

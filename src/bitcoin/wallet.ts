@@ -211,7 +211,7 @@ const getKeyPairInfo = ({
         case BTCAddressType.P2TR: {
             // Tweak the original keypair
             const tweakedSigner = tweakSigner(keyPair, { network: tcBTCNetwork });
-            signer = tweakSigner;
+            signer = tweakedSigner;
             sigHashTypeDefault = Transaction.SIGHASH_DEFAULT;
 
             // Generate an address from the tweaked public key

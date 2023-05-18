@@ -30,12 +30,6 @@ import {
 } from "../dist";
 
 import BigNumber from "bignumber.js";
-import { DefaultDeserializer } from "v8";
-import { assert } from "chai";
-import { getUTXOsFromBlockStream } from '../src/tc/blockstream';
-import { globalAgent } from "http";
-import { networks } from 'bitcoinjs-lib';
-import { number } from "bitcoinjs-lib/src/script";
 
 require("dotenv").config({ path: __dirname + "/.env" });
 
@@ -45,6 +39,7 @@ let address1 = process.env.ADDRESS_1 || "";
 
 let privateKeyWIF2 = process.env.PRIV_KEY_2 || "";
 let address2 = process.env.ADDRESS_2_P2WPKH_REGTEST || "";
+let address2Taproot = process.env.ADDRESS_2_REGTEST || "";
 let privateKey2 = convertPrivateKeyFromStr(privateKeyWIF2);
 
 
@@ -79,8 +74,7 @@ describe("Create tx with multiple UTXOs Tests", () => {
     it("send insciption offset != 0 : should use inscription to pay fee", async () => {
         let sendInscriptionID = "";
         let isUseInscriptionPayFeeParam = false;
-        let sendAmount = new BigNumber(100000);
-        let receiverAddress = "bcrt1pj2t2szx6rqzcyv63t3xepgdnhuj2zd3kfggrqmd9qwlg3vsx37fq7lj7tn";
+        let sendAmount = new BigNumber(1000);
 
         let utxos: UTXO[] = [
             {
@@ -118,14 +112,9 @@ describe("Create tx with multiple UTXOs Tests", () => {
         // taproot address
         let utxos2: UTXO[] = [
             {
-                tx_hash: "df9705a0d332f98c4bd7d690788b04967f5c2b39ee43418be667225bb2f67cb1",
+                tx_hash: "27505b6375c6b215da2859880a4ca147a02fcd5265db54ed842899d075bd8b55",
                 tx_output_n: 1,
-                value: new BigNumber(396638)
-            },
-            {
-                tx_hash: "ed93a71f4d873208125d9f5433bb510e38b66afeea897b91f058aecaa749f0b3",
-                tx_output_n: 0,
-                value: new BigNumber(92220)
+                value: new BigNumber(41025)
             },
         ]
 
@@ -135,8 +124,8 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
         const { txID, txHex, fee: feeRes } = createTx({
             senderPrivateKey: privateKey2,
-            senderAddress: address2,
-            utxos,
+            senderAddress: address2Taproot,
+            utxos: utxos2,
             inscriptions: {},
             sendInscriptionID,
             receiverInsAddress: address2,
