@@ -3,6 +3,7 @@ import { GetPendingInscribeTxsResp, GetTxByHashResp, TCTxDetail } from "./types"
 declare const Mainnet = "mainnet";
 declare const Testnet = "testnet";
 declare const Regtest = "regtest";
+declare const DefaultEndpointTCNodeMainnet = "https://tc-node.trustless.computer";
 declare class TcClient {
     url: string;
     network: string;
@@ -34,5 +35,6 @@ declare class TcClient {
         pendingUTXOs: UTXO[];
         incomingUTXOs: UTXO[];
     }>;
+    getBalance: (tcAddress: string) => Promise<any>;
 }
-export { TcClient, Mainnet, Testnet, Regtest, };
+export { DefaultEndpointTCNodeMainnet, TcClient, Mainnet, Testnet, Regtest, };

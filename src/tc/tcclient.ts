@@ -348,10 +348,25 @@ class TcClient {
         // return result;
     };
 
+    // getTCTxReceipt get TC tx receipt
+    getBalance = async (tcAddress: string) => {
+        const payload = [tcAddress];
+
+        const resp = await this.callRequest(payload, MethodPost, "eth_getBalance");
+        console.log("Resp eth_getBalance: ", resp);
+
+        if (resp === "") {
+            throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+        }
+
+        return resp;
+    };
+
 }
 
 
 export {
+    DefaultEndpointTCNodeMainnet,
     TcClient,
     Mainnet,
     Testnet,

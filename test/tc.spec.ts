@@ -164,8 +164,11 @@ describe("Sign msg Tx", async () => {
         // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
         const tcAddress = "0xF91cEe2DE943733e338891Ef602c962eF4D7Eb81";
 
+        setBTCNetwork(NetworkType.Regtest);
+        const tcClient = new TcClient(Regtest);
 
-
+        // const res = await tcClient.getUnInscribedTransactionByAddress(tcAddress);
+        // console.log("Uninscribe tx: ", res);
 
         // const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
         // console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
@@ -181,21 +184,16 @@ describe("Sign msg Tx", async () => {
             //     tx_output_n: 0,
             //     value: new BigNumber(10000000)
             // },
-            // {
-            //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
-            //     tx_output_n: 0,
-            //     value: new BigNumber(10000)
-            // },
+            {
+                tx_hash: "1aa4b592a68ac2a88f344ade69f7855eddfaf059665e3f1ea00410ad5a232820",
+                tx_output_n: 1,
+                value: new BigNumber(26635)
+            },
             // {
             //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
             //     tx_output_n: 1,
             //     value: new BigNumber(10000)
             // },
-            {
-                tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
-                tx_output_n: 2,
-                value: new BigNumber(5000)
-            },
             // {
             //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
             //     tx_output_n: 3,
@@ -207,8 +205,7 @@ describe("Sign msg Tx", async () => {
             //     value: new BigNumber(77849369)
             // },
         ];
-        setBTCNetwork(NetworkType.Regtest);
-        const tcClient = new TcClient(Regtest);
+
 
         const tcTxDetails: any[] = [{
             Nonce: 6,
@@ -221,7 +218,7 @@ describe("Sign msg Tx", async () => {
             tcTxDetails: tcTxDetails,
             utxos: UTXOs,
             inscriptions: {},
-            feeRatePerByte: 5,
+            feeRatePerByte: 10,
             tcClient: tcClient,
             sequence: DefaultSequenceRBF,
         });
