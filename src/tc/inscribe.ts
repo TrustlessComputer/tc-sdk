@@ -31,7 +31,6 @@ const remove0x = (data: string): string => {
 };
 
 const createRawRevealTx = ({
-    internalPubKey,
     commitTxID,
     hashLockKeyPair,
     hashLockRedeem,
@@ -39,7 +38,6 @@ const createRawRevealTx = ({
     revealTxFee,
     sequence = 0,
 }: {
-    internalPubKey: Buffer,
     commitTxID: string,
     hashLockKeyPair: ECPairInterface,
     hashLockRedeem: any,
@@ -47,7 +45,6 @@ const createRawRevealTx = ({
     revealTxFee: number,
     sequence?: number,
 }): { revealTxHex: string, revealTxID: string } => {
-    const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
 
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
@@ -283,13 +280,8 @@ const createInscribeTx = async ({
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
 
-    // if (sequence < DefaultSequence) {
-    //     sequence++;
-    // }
-
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
-        internalPubKey,
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -300,14 +292,6 @@ const createInscribeTx = async ({
 
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
-
-
-
-    // newUTXOs.push({
-    //     tx_hash: revealTxID,
-    //     tx_output_n: 0,
-    //     value: new BigNumber(MinSats),
-    // });
 
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
@@ -541,7 +525,6 @@ const createInscribeTxFromAnyWallet = async ({
 
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
-        internalPubKey: pubKey,
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,

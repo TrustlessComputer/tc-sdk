@@ -741,8 +741,7 @@ interface ISetupPayload {
 }
 declare const setupConfig: ({ storage, tcClient, netType }: ISetupPayload) => void;
 
-declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence, }: {
-    internalPubKey: Buffer;
+declare const createRawRevealTx: ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence, }: {
     commitTxID: string;
     hashLockKeyPair: ECPairInterface;
     hashLockRedeem: any;
@@ -993,9 +992,8 @@ declare class TcClient {
 
 declare const increaseGasPrice: (wei: BigNumber) => BigNumber;
 
-declare const replaceByFeeInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence, }: {
+declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence, }: {
     senderPrivateKey: Buffer;
-    senderAddress: string;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];

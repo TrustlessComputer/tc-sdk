@@ -4961,8 +4961,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const createRawRevealTx = ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
-    generateTaprootAddressFromPubKey(internalPubKey);
+const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -5104,12 +5103,8 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     }
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
-    // if (sequence < DefaultSequence) {
-    //     sequence++;
-    // }
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
-        internalPubKey,
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5119,11 +5114,6 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     });
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
-    // newUTXOs.push({
-    //     tx_hash: revealTxID,
-    //     tx_output_n: 0,
-    //     value: new BigNumber(MinSats),
-    // });
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
     return {
@@ -5287,7 +5277,6 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
-        internalPubKey: pubKey,
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5829,7 +5818,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
         minSat,
     };
 };
-const replaceByFeeInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
+const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
     const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx, minSat, revealTxSize, } = await extractOldTxInfo({
         revealTxID,
         tcClient,
@@ -5859,7 +5848,7 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, 
     console.log("createInscribeTx: ", createInscribeTx);
     const resp = await createInscribeTx({
         senderPrivateKey,
-        senderAddress,
+        senderAddress: btcAddress,
         utxos: utxosForRBFTx,
         inscriptions,
         tcTxIDs: needToRBFTCTxIDs,
