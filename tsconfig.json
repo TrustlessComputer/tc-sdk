@@ -15,10 +15,22 @@
     "esModuleInterop": true,
     "baseUrl": "./src",
     "paths": {
-      "@src/*": ["./*"],
-      "@root/*": ["../*"]
-    }
+      "@src/*": [
+        "./*"
+      ],
+      "@root/*": [
+        "../*"
+      ]
+    },
+    "resolveJsonModule": true,
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "build", "dist", "test"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "test"
+  ],
 }

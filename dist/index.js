@@ -6715,6 +6715,16 @@ class TcClient {
             // console.log("result: ", result);
             // return result;
         };
+        // getTCTxReceipt get TC tx receipt
+        this.getBalance = async (tcAddress) => {
+            const payload = [tcAddress];
+            const resp = await this.callRequest(payload, MethodPost, "eth_getBalance");
+            console.log("Resp eth_getBalance: ", resp);
+            if (resp === "") {
+                throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            return resp;
+        };
         if (params.length === 0) {
             throw new SDKError(ERROR_CODE.INVALID_PARAMS);
         }
@@ -7099,6 +7109,7 @@ const requestAccountResponse = async (payload) => {
 };
 
 exports.BNZero = BNZero;
+exports.DefaultEndpointTCNodeMainnet = DefaultEndpointTCNodeMainnet;
 exports.DefaultSequence = DefaultSequence;
 exports.DefaultSequenceRBF = DefaultSequenceRBF;
 exports.DummyUTXOValue = DummyUTXOValue;
