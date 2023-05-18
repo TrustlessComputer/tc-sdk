@@ -846,8 +846,7 @@ declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcT
     revealTxID: string;
     totalFee: BigNumber;
 }>;
-declare const createLockScript: ({ internalPubKey, tcTxIDs, tcClient, }: {
-    internalPubKey: Buffer;
+declare const createLockScript: ({ tcTxIDs, tcClient, }: {
     tcTxIDs: string[];
     tcClient: TcClient;
 }) => Promise<{

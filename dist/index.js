@@ -5063,13 +5063,12 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 * @returns the total network fee
 */
 const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
-    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
-    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
-    const internalPubKey = toXOnly$1(keyPair.publicKey);
+    // const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
-        internalPubKey,
+        // internalPubKey,
         tcTxIDs,
         tcClient
     });
@@ -5114,6 +5113,8 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     });
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
     return {
@@ -5244,7 +5245,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
-        internalPubKey: pubKey,
+        // internalPubKey: pubKey,
         tcTxIDs,
         tcClient,
     });
@@ -5294,12 +5295,14 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
 };
 const createLockScript = async ({ 
 // privateKey,
-internalPubKey, tcTxIDs, tcClient, }) => {
+// internalPubKey,
+tcTxIDs, tcClient, }) => {
     // Create a tap tree with two spend paths
     // One path should allow spending using secret
     // The other path should pay to another pubkey
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair$1.makeRandom({ network: tcBTCNetwork });
+    const internalPubKey = toXOnly$1(hashLockKeyPair.publicKey);
     // TODO:
     // const hashLockPrivateKey = hash256(privateKey);
     // const hashLockKeyPair = ECPair.fromPrivateKey(hashLockPrivateKey, { network: Network });

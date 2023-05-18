@@ -1,8 +1,39 @@
-import { DefaultSequenceRBF, Network, NetworkType, UTXO, convertPrivateKeyFromStr, setBTCNetwork, } from "../src/bitcoin";
-import { Mainnet, TcClient, Testnet, aggregateUTXOs, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, replaceByFeeInscribeTx, splitBatchInscribeTx } from "../src/tc";
+// import { DefaultSequenceRBF, Network, NetworkType, UTXO, convertPrivateKeyFromStr, setBTCNetwork, } from "../src/bitcoin";
+// import { Mainnet, TcClient, Testnet, aggregateUTXOs, createBatchInscribeTxs, createInscribeTx, createRawRevealTx, replaceByFeeInscribeTx, splitBatchInscribeTx } from "../src/tc";
+
+import {
+    BNZero,
+    DefaultSequenceRBF,
+    Inscription,
+    MinSats,
+    NetworkType,
+    Regtest,
+    UTXO,
+    broadcastTx,
+    convertPrivateKey,
+    convertPrivateKeyFromStr,
+    createBatchInscribeTxs,
+    createTx,
+    createTxSendBTC,
+    createTxWithSpecificUTXOs,
+    selectUTXOs,
+    setBTCNetwork,
+} from "../dist";
+import {
+    Mainnet,
+    MasterWallet,
+    StorageService,
+    TcClient,
+    decryptAES,
+    encryptAES,
+    getStorageHDWallet,
+    randomMnemonic,
+    setStorageHDWallet,
+    setupConfig,
+    validateHDWallet
+} from "../dist";
 
 import BigNumber from 'bignumber.js';
-import { Regtest } from "../dist";
 import { assert } from 'chai';
 import { ethers } from "ethers";
 
@@ -12,15 +43,14 @@ var Web3 = require('web3');
 
 
 // TODO: fill the private key
-var sellerPrivateKeyWIF = process.env.PRIV_KEY_1 || "";
-var sellerPrivateKey = convertPrivateKeyFromStr(sellerPrivateKeyWIF);
-let sellerAddress = process.env.ADDRESS_1 || "";
+var privateKeyWIF1 = process.env.PRIV_KEY_1 || "";
+var privateKey1 = convertPrivateKeyFromStr(privateKeyWIF1);
+let address1 = process.env.ADDRESS_1 || "";
 
-let buyerPrivateKeyWIF = process.env.PRIV_KEY_2 || "";
-let buyerAddress = process.env.ADDRESS_2_REGTEST || "";
-let buyerPrivateKey = convertPrivateKeyFromStr(buyerPrivateKeyWIF);
-console.log("buyerPrivateKeyWIF ", buyerPrivateKeyWIF);
-console.log("buyerAddress ", buyerAddress);
+let privateKeyWIF2 = process.env.PRIV_KEY_2 || "";
+let address2 = process.env.ADDRESS_2_P2WPKH_REGTEST || "";
+let address2Taproot = process.env.ADDRESS_2_REGTEST || "";
+let privateKey2 = convertPrivateKeyFromStr(privateKeyWIF2);
 
 
 
@@ -88,6 +118,31 @@ let buyerUTXOs = [
 ];
 
 describe("Sign msg Tx", async () => {
+    const password = '1234';
+    const LocalStorage = require('node-localstorage').LocalStorage
+    const localStorage = new LocalStorage('./scratch');
+    const storage = new StorageService()
+    storage.implement({
+        namespace: undefined,
+        getMethod(key: string): Promise<any> {
+            return localStorage.getItem(key);
+        },
+        removeMethod(key: string): Promise<any> {
+            return localStorage.removeItem(key);
+        },
+        setMethod(key: string, data: string): Promise<any> {
+            return localStorage.setItem(key, data);
+        }
+    });
+
+    const tcClient = new TcClient(Regtest)
+    setupConfig({
+        storage,
+        tcClient: tcClient,
+        netType: NetworkType.Regtest
+    })
+    // @ts-ignore
+    globalThis.storage = storage;
     // it("create signed raw tc tx", async () => {
     //     // var web3 = new Web3(Web3.givenProvider);
     //     // const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
@@ -173,53 +228,86 @@ describe("Sign msg Tx", async () => {
         // const tcTxDetails = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
         // console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
 
-        let UTXOs: UTXO[] = [
-            // {
-            //     tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
-            //     tx_output_n: 1,
-            //     value: new BigNumber(50000)
-            // },
-            // {
-            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-            //     tx_output_n: 0,
-            //     value: new BigNumber(10000000)
-            // },
+
+        let utxos: UTXO[] = [
             {
-                tx_hash: "1aa4b592a68ac2a88f344ade69f7855eddfaf059665e3f1ea00410ad5a232820",
+                tx_hash: "df9705a0d332f98c4bd7d690788b04967f5c2b39ee43418be667225bb2f67cb1",
                 tx_output_n: 1,
-                value: new BigNumber(26635)
+                value: new BigNumber(396638)
+            },
+            {
+                tx_hash: "ed93a71f4d873208125d9f5433bb510e38b66afeea897b91f058aecaa749f0b3",
+                tx_output_n: 0,
+                value: new BigNumber(92220)
+            },
+            {
+                tx_hash: "c31f0c13d282eefe39fd5815e45b3512c3c976e161ca22b9b8e3f94a0531dad5",
+                tx_output_n: 0,
+                value: new BigNumber(532620)
             },
             // {
-            //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
-            //     tx_output_n: 1,
-            //     value: new BigNumber(10000)
+            //     tx_hash: "c155d03caf2151845b49bbd7ce117312bd4c72639a2ed91ae5f343cd062c5930",
+            //     tx_output_n: 0,
+            //     value: new BigNumber(30520)
             // },
             // {
-            //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
-            //     tx_output_n: 3,
-            //     value: new BigNumber(9974230)
+            //     tx_hash: "e2431b7b0b719bfa074ecdfd9428f046fd65285c18b48544b6046e3bccfd5f32",
+            //     tx_output_n: 0,
+            //     value: new BigNumber(23520)
             // },
-            // {
-            //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-            //     tx_output_n: 3,
-            //     value: new BigNumber(77849369)
-            // },
+            {
+                tx_hash: "ca66df6c32842846e34df437364835ed14e332af58e089b36d351012db302fed",
+                tx_output_n: 0,
+                value: new BigNumber(35680)
+            },
         ];
+        // let UTXOs: UTXO[] = [
+        //     // {
+        //     //     tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
+        //     //     tx_output_n: 1,
+        //     //     value: new BigNumber(50000)
+        //     // },
+        //     // {
+        //     //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+        //     //     tx_output_n: 0,
+        //     //     value: new BigNumber(10000000)
+        //     // },
+        //     {
+        //         tx_hash: "1aa4b592a68ac2a88f344ade69f7855eddfaf059665e3f1ea00410ad5a232820",
+        //         tx_output_n: 1,
+        //         value: new BigNumber(26635)
+        //     },
+        //     // {
+        //     //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
+        //     //     tx_output_n: 1,
+        //     //     value: new BigNumber(10000)
+        //     // },
+        //     // {
+        //     //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
+        //     //     tx_output_n: 3,
+        //     //     value: new BigNumber(9974230)
+        //     // },
+        //     // {
+        //     //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
+        //     //     tx_output_n: 3,
+        //     //     value: new BigNumber(77849369)
+        //     // },
+        // ];
 
 
         const tcTxDetails: any[] = [{
             Nonce: 6,
-            Hash: "0x16974b3408cdad74ccc74072fe20a94d60328db3d596347e46bbc74fe25f8435",
+            Hash: "0x5e1ce37b564d57d599929a6ecf9ae205c0f44887dff9fb6609fc052ce927bfaf",
         },
         ];
 
         const resp = await createBatchInscribeTxs({
-            senderPrivateKey: buyerPrivateKey,
+            senderPrivateKey: privateKey2,
+            senderAddress: address2,
             tcTxDetails: tcTxDetails,
-            utxos: UTXOs,
+            utxos,
             inscriptions: {},
             feeRatePerByte: 10,
-            tcClient: tcClient,
             sequence: DefaultSequenceRBF,
         });
         console.log("resp: ", resp);

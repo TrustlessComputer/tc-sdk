@@ -233,11 +233,11 @@ const createInscribeTx = async ({
     const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
 
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
-    const internalPubKey = toXOnly(keyPair.publicKey);
+    // const internalPubKey = toXOnly(keyPair.publicKey);
 
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
-        internalPubKey,
+        // internalPubKey,
         tcTxIDs,
         tcClient
     });
@@ -292,6 +292,8 @@ const createInscribeTx = async ({
 
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
 
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
@@ -483,7 +485,7 @@ const createInscribeTxFromAnyWallet = async ({
 
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
-        internalPubKey: pubKey,
+        // internalPubKey: pubKey,
         tcTxIDs,
         tcClient,
     });
@@ -544,12 +546,12 @@ const createInscribeTxFromAnyWallet = async ({
 
 const createLockScript = async ({
     // privateKey,
-    internalPubKey,
+    // internalPubKey,
     tcTxIDs,
     tcClient,
 }: {
     // privateKey: Buffer,
-    internalPubKey: Buffer,
+    // internalPubKey: Buffer,
     tcTxIDs: string[],
     tcClient: TcClient,
 }): Promise<{
@@ -564,6 +566,7 @@ const createLockScript = async ({
 
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair.makeRandom({ network: tcBTCNetwork });
+    const internalPubKey = toXOnly(hashLockKeyPair.publicKey);
 
     // TODO:
     // const hashLockPrivateKey = hash256(privateKey);
