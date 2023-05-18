@@ -32,6 +32,8 @@ export declare const ERROR_CODE: {
     GET_UTXO_VALUE_ERR: string;
     IS_NOT_RBFABLE: string;
     INVALID_BTC_ADDRESS_TYPE: string;
+    MNEMONIC_GEN_SEGWIT: string;
+    SEGWIT_FROM_MNEMONIC: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

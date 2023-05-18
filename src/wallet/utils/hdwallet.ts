@@ -1,4 +1,4 @@
-import { ETHDerivationPath, generateTaprootHDNodeFromMnemonic, IDeriveKey, IDeriveReq, IHDWallet } from "@/wallet";
+import { ETHDerivationPath, generateSegwitHDNodeFromMnemonic, IDeriveKey, IDeriveReq, IHDWallet } from "@/wallet";
 import { ethers } from "ethers";
 import { decryptAES, encryptAES, Validator } from "@/utils";
 import { StorageKeys } from "@/index";
@@ -20,7 +20,7 @@ const deriveHDNodeByIndex = (payload: IDeriveReq): IDeriveKey => {
 
 const generateHDWalletFromMnemonic = async (mnemonic: string): Promise<IHDWallet> => {
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
-    const btcPrivateKey = await generateTaprootHDNodeFromMnemonic(mnemonic);
+    const btcPrivateKey = await generateSegwitHDNodeFromMnemonic(mnemonic);
     const childNode = deriveHDNodeByIndex({
         mnemonic,
         index: 0,

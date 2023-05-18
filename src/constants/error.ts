@@ -32,6 +32,8 @@ export const ERROR_CODE = {
     GET_UTXO_VALUE_ERR: "-35",
     IS_NOT_RBFABLE: "-36",
     INVALID_BTC_ADDRESS_TYPE: "-37",
+    MNEMONIC_GEN_SEGWIT: "-38",
+    SEGWIT_FROM_MNEMONIC: "-39",
 };
 
 export const ERROR_MESSAGE = {
@@ -158,6 +160,18 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_BTC_ADDRESS_TYPE]: {
         message: "Bitcoin address is invalid or not supported.",
         desc: "Bitcoin address is invalid or not supported.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_TAPROOT]: {
+        message: "Gen taproot from mnemonic error.",
+        desc: "Gen taproot from mnemonic error.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_SEGWIT]: {
+        message: "Gen segwit from mnemonic error.",
+        desc: "Gen segwit from mnemonic error.",
+    },
+    [ERROR_CODE.SEGWIT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
     },
 };
 

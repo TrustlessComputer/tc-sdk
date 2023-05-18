@@ -2983,6 +2983,8 @@ const ERROR_CODE$1 = {
     GET_UTXO_VALUE_ERR: "-35",
     IS_NOT_RBFABLE: "-36",
     INVALID_BTC_ADDRESS_TYPE: "-37",
+    MNEMONIC_GEN_SEGWIT: "-38",
+    SEGWIT_FROM_MNEMONIC: "-39",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -3108,6 +3110,18 @@ const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_BTC_ADDRESS_TYPE]: {
         message: "Bitcoin address is invalid or not supported.",
         desc: "Bitcoin address is invalid or not supported.",
+    },
+    [ERROR_CODE$1.MNEMONIC_GEN_TAPROOT]: {
+        message: "Gen taproot from mnemonic error.",
+        desc: "Gen taproot from mnemonic error.",
+    },
+    [ERROR_CODE$1.MNEMONIC_GEN_SEGWIT]: {
+        message: "Gen segwit from mnemonic error.",
+        desc: "Gen segwit from mnemonic error.",
+    },
+    [ERROR_CODE$1.SEGWIT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
     },
 };
 class SDKError$1 extends Error {
@@ -3489,7 +3503,7 @@ const findExactValueUTXO = (cardinalUTXOs, value) => {
 
 bitcoinjsLib.initEccLib(ecc__namespace);
 const ECPair$1 = ecpair.ECPairFactory(ecc__namespace);
-const bip32$2 = BIP32Factory__default["default"](ecc__namespace);
+const bip32$3 = BIP32Factory__default["default"](ecc__namespace);
 const ETHWalletDefaultPath = "m/44'/60'/0'/0/0";
 const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
 /**
@@ -3677,7 +3691,7 @@ const importBTCPrivateKey = (wifPrivKey) => {
 */
 const deriveSegwitWallet = (privKeyTaproot) => {
     const seedSegwit = ethers.ethers.utils.arrayify(ethers.ethers.utils.keccak256(ethers.ethers.utils.arrayify(privKeyTaproot)));
-    const root = bip32$2.fromSeed(Buffer.from(seedSegwit), tcBTCNetwork);
+    const root = bip32$3.fromSeed(Buffer.from(seedSegwit), tcBTCNetwork);
     const { privateKey: segwitPrivKey, address: segwitAddress } = generateP2PKHKeyFromRoot(root);
     return {
         segwitPrivKeyBuffer: segwitPrivKey,
@@ -4652,6 +4666,8 @@ const ERROR_CODE = {
     GET_UTXO_VALUE_ERR: "-35",
     IS_NOT_RBFABLE: "-36",
     INVALID_BTC_ADDRESS_TYPE: "-37",
+    MNEMONIC_GEN_SEGWIT: "-38",
+    SEGWIT_FROM_MNEMONIC: "-39",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -4777,6 +4793,18 @@ const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_BTC_ADDRESS_TYPE]: {
         message: "Bitcoin address is invalid or not supported.",
         desc: "Bitcoin address is invalid or not supported.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_TAPROOT]: {
+        message: "Gen taproot from mnemonic error.",
+        desc: "Gen taproot from mnemonic error.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_SEGWIT]: {
+        message: "Gen segwit from mnemonic error.",
+        desc: "Gen segwit from mnemonic error.",
+    },
+    [ERROR_CODE.SEGWIT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
     },
 };
 class SDKError extends Error {
@@ -6332,26 +6360,27 @@ class HDWallet$1 {
 
 const ETHDerivationPath$1 = "m/44'/60'/0'/0";
 const BTCTaprootDerivationPath$1 = "m/86'/0'/0'/0/0";
+const BTCSegwitDerivationPath$1 = "m/84'/0'/0'/0/0";
 
 bitcoinjsLib.initEccLib(ecc__namespace);
-const bip32$1 = BIP32Factory__default["default"](ecc__namespace);
+BIP32Factory__default["default"](ecc__namespace);
 const validateMnemonicBTC$1 = (mnemonic) => {
     return bip39__namespace.validateMnemonic(mnemonic);
 };
-const generateTaprootHDNodeFromMnemonic$1 = async (mnemonic) => {
+
+bitcoinjsLib.initEccLib(ecc__namespace);
+const bip32$2 = BIP32Factory__default["default"](ecc__namespace);
+const generateSegwitHDNodeFromMnemonic$1 = async (mnemonic) => {
     const isValid = validateMnemonicBTC$1(mnemonic);
     if (!isValid) {
-        throw new SDKError(ERROR_CODE.MNEMONIC_GEN_TAPROOT);
+        throw new SDKError(ERROR_CODE.MNEMONIC_GEN_SEGWIT);
     }
     const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
-    const rootKey = bip32$1.fromSeed(seed);
-    const childNode = rootKey.derivePath(BTCTaprootDerivationPath$1);
-    const { address } = bitcoinjsLib.payments.p2tr({
-        internalPubkey: toXOnly(childNode.publicKey),
-    });
+    const rootKey = bip32$2.fromSeed(seed);
+    const childNode = rootKey.derivePath(BTCSegwitDerivationPath$1);
     const privateKeyBuffer = childNode.privateKey;
-    if (!privateKeyBuffer || !address) {
-        throw new SDKError(ERROR_CODE.TAPROOT_FROM_MNEMONIC);
+    if (!privateKeyBuffer) {
+        throw new SDKError(ERROR_CODE.SEGWIT_FROM_MNEMONIC);
     }
     const privateKeyStr = convertPrivateKey(privateKeyBuffer);
     return privateKeyStr;
@@ -6474,6 +6503,7 @@ class Masterless {
 
 const ETHDerivationPath = "m/44'/60'/0'/0";
 const BTCTaprootDerivationPath = "m/86'/0'/0'/0/0";
+const BTCSegwitDerivationPath = "m/84'/0'/0'/0/0";
 
 const deriveHDNodeByIndex = (payload) => {
     const hdNode = ethers.ethers.utils.HDNode
@@ -6491,7 +6521,7 @@ const deriveHDNodeByIndex = (payload) => {
 };
 const generateHDWalletFromMnemonic = async (mnemonic) => {
     new Validator("Generate mnemonic", mnemonic).mnemonic().required();
-    const btcPrivateKey = await generateTaprootHDNodeFromMnemonic$1(mnemonic);
+    const btcPrivateKey = await generateSegwitHDNodeFromMnemonic$1(mnemonic);
     const childNode = deriveHDNodeByIndex({
         mnemonic,
         index: 0,
@@ -6545,7 +6575,7 @@ const setStorageHDWallet = async (wallet, password) => {
 };
 
 bitcoinjsLib.initEccLib(ecc__namespace);
-const bip32 = BIP32Factory__default["default"](ecc__namespace);
+const bip32$1 = BIP32Factory__default["default"](ecc__namespace);
 const validateMnemonicBTC = (mnemonic) => {
     return bip39__namespace.validateMnemonic(mnemonic);
 };
@@ -6555,7 +6585,7 @@ const generateTaprootHDNodeFromMnemonic = async (mnemonic) => {
         throw new SDKError(ERROR_CODE.MNEMONIC_GEN_TAPROOT);
     }
     const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
-    const rootKey = bip32.fromSeed(seed);
+    const rootKey = bip32$1.fromSeed(seed);
     const childNode = rootKey.derivePath(BTCTaprootDerivationPath$1);
     const { address } = bitcoinjsLib.payments.p2tr({
         internalPubkey: toXOnly(childNode.publicKey),
@@ -6568,8 +6598,27 @@ const generateTaprootHDNodeFromMnemonic = async (mnemonic) => {
     return privateKeyStr;
 };
 
+bitcoinjsLib.initEccLib(ecc__namespace);
+const bip32 = BIP32Factory__default["default"](ecc__namespace);
+const generateSegwitHDNodeFromMnemonic = async (mnemonic) => {
+    const isValid = validateMnemonicBTC$1(mnemonic);
+    if (!isValid) {
+        throw new SDKError(ERROR_CODE.MNEMONIC_GEN_SEGWIT);
+    }
+    const seed = await bip39__namespace.mnemonicToSeed(mnemonic);
+    const rootKey = bip32.fromSeed(seed);
+    const childNode = rootKey.derivePath(BTCSegwitDerivationPath$1);
+    const privateKeyBuffer = childNode.privateKey;
+    if (!privateKeyBuffer) {
+        throw new SDKError(ERROR_CODE.SEGWIT_FROM_MNEMONIC);
+    }
+    const privateKeyStr = convertPrivateKey(privateKeyBuffer);
+    return privateKeyStr;
+};
+
 exports.BNZero = BNZero;
 exports.BTCAddressType = BTCAddressType;
+exports.BTCSegwitDerivationPath = BTCSegwitDerivationPath;
 exports.BTCTaprootDerivationPath = BTCTaprootDerivationPath;
 exports.DefaultSequence = DefaultSequence;
 exports.DefaultSequenceRBF = DefaultSequenceRBF;
@@ -6633,6 +6682,7 @@ exports.generateP2PKHKeyFromRoot = generateP2PKHKeyFromRoot;
 exports.generateP2PKHKeyPair = generateP2PKHKeyPair;
 exports.generateP2WPKHKeyPair = generateP2WPKHKeyPair;
 exports.generateP2WPKHKeyPairFromPubKey = generateP2WPKHKeyPairFromPubKey;
+exports.generateSegwitHDNodeFromMnemonic = generateSegwitHDNodeFromMnemonic;
 exports.generateTaprootAddress = generateTaprootAddress;
 exports.generateTaprootAddressFromPubKey = generateTaprootAddressFromPubKey;
 exports.generateTaprootHDNodeFromMnemonic = generateTaprootHDNodeFromMnemonic;

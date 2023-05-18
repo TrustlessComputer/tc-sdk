@@ -12,7 +12,9 @@ import {
     validateHDWallet,
     setupConfig,
     Mainnet,
-    TcClient
+    TcClient,
+    // convertPrivateKeyFromStr,
+    // generateP2WPKHKeyPair
 } from "../dist";
 
 describe("Wallet", async () => {
@@ -54,6 +56,9 @@ describe("Wallet", async () => {
         await setStorageHDWallet(hdWallet, password);
         const masterWallet = new MasterWallet();
         await masterWallet.load(password);
+        // const btcPrivateKeyBuffer = convertPrivateKeyFromStr(hdWallet.btcPrivateKey);
+        // const { address } = generateP2WPKHKeyPair(btcPrivateKeyBuffer);
+        // console.log('BTC Segwit address:', address)
         assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
     });
 
