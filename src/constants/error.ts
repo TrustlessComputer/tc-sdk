@@ -31,6 +31,8 @@ export const ERROR_CODE = {
     INVALID_NEW_FEE_RBF: "-34",
     GET_UTXO_VALUE_ERR: "-35",
     IS_NOT_RBFABLE: "-36",
+    MNEMONIC_GEN_SEGWIT: "-36",
+    SEGWIT_FROM_MNEMONIC: "-37",
 };
 
 export const ERROR_MESSAGE = {
@@ -153,6 +155,18 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.IS_NOT_RBFABLE]: {
         message: "This transaction doesn't support to speed up.",
         desc: "This transaction doesn't support to speed up.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_TAPROOT]: {
+        message: "Gen taproot from mnemonic error.",
+        desc: "Gen taproot from mnemonic error.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_SEGWIT]: {
+        message: "Gen segwit from mnemonic error.",
+        desc: "Gen segwit from mnemonic error.",
+    },
+    [ERROR_CODE.SEGWIT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
     },
 };
 

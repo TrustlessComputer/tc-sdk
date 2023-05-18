@@ -31,6 +31,8 @@ export declare const ERROR_CODE: {
     INVALID_NEW_FEE_RBF: string;
     GET_UTXO_VALUE_ERR: string;
     IS_NOT_RBFABLE: string;
+    MNEMONIC_GEN_SEGWIT: string;
+    SEGWIT_FROM_MNEMONIC: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {
