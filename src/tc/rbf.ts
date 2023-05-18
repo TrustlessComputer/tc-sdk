@@ -181,6 +181,7 @@ const extractOldTxInfo = async (
 const replaceByFeeInscribeTx = async (
     {
         senderPrivateKey,
+        senderAddress,
         utxos,
         inscriptions,
         revealTxID,
@@ -191,6 +192,7 @@ const replaceByFeeInscribeTx = async (
 
     }: {
         senderPrivateKey: Buffer,
+        senderAddress: string,
         utxos: UTXO[],
         inscriptions: { [key: string]: Inscription[] },
         revealTxID: string,
@@ -263,6 +265,7 @@ const replaceByFeeInscribeTx = async (
     console.log("createInscribeTx: ", createInscribeTx);
     const resp = await createInscribeTx({
         senderPrivateKey,
+        senderAddress,
         utxos: utxosForRBFTx,
         inscriptions,
         tcTxIDs: needToRBFTCTxIDs,

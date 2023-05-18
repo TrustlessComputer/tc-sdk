@@ -1,4 +1,4 @@
-import { BatchInscribeTxResp, Inscription, TCTxDetail, TcClient, UTXO } from "..";
+import { BatchInscribeTxResp, Inscription, TCTxDetail, TcClient, UTXO } from "../";
 import { payments } from "bitcoinjs-lib";
 import { Tapleaf } from "bitcoinjs-lib/src/types";
 import BigNumber from "bignumber.js";
@@ -29,8 +29,9 @@ declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair,
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence, isSelectUTXOs, }: {
+declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
+    senderAddress: string;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];
@@ -65,8 +66,9 @@ declare const splitBatchInscribeTx: ({ tcTxDetails }: {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence, }: {
+declare const createBatchInscribeTxs: ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence, }: {
     senderPrivateKey: Buffer;
+    senderAddress: string;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];

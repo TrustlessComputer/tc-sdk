@@ -116,21 +116,6 @@ declare const createRawTx: ({ keyPairInfo, utxos, inscriptions, sendInscriptionI
     sequence?: number | undefined;
 }) => ICreateRawTxResp;
 /**
-* createRawTx creates the raw Bitcoin transaction (including sending inscriptions), but don't sign tx.
-* NOTE: Currently, the function only supports sending from Taproot address.
-* @param pubKey buffer public key of the sender (It is the internal pubkey for Taproot address)
-* @param utxos list of utxos (include non-inscription and inscription utxos)
-* @param inscriptions list of inscription infos of the sender
-* @param sendInscriptionID id of inscription to send
-* @param receiverInsAddress the address of the inscription receiver
-* @param sendAmount satoshi amount need to send
-* @param feeRatePerByte fee rate per byte (in satoshi)
-* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
-* @returns the transaction id
-* @returns the hex signed transaction
-* @returns the network fee
-*/
-/**
 * createTxFromAnyWallet creates the raw Bitcoin transaction (including sending inscriptions), but don't sign tx.
 * NOTE: Currently, the function only supports sending from Taproot address.
 * @param pubKey buffer public key of the sender (It is the internal pubkey for Taproot address)
@@ -174,8 +159,9 @@ declare const createTxFromAnyWallet: ({ keyPairInfo, utxos, inscriptions, sendIn
 * @returns the hex signed transaction
 * @returns the network fee
 */
-declare const createTxSendBTC: ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence, isSelectUTXOs, }: {
+declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
+    senderAddress: string;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];

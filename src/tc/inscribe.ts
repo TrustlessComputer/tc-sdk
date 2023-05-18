@@ -1,6 +1,7 @@
 import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
     BatchInscribeTxResp,
+    IKeyPairInfo,
     Inscription,
     SDKError,
     TCTxDetail,
@@ -10,8 +11,8 @@ import {
     createTxSendBTC,
     estimateTxFee,
     toSat,
-} from "..";
-import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
+} from "../";
+import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getKeyPairInfo, toXOnly } from "../bitcoin/wallet";
 import { Psbt, address, payments } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
@@ -194,6 +195,7 @@ function getCommitVirtualSize(p2pk_p2tr: any, keypair: any, script_addr: any, tw
 */
 const createInscribeTx = async ({
     senderPrivateKey,
+    senderAddress,
     utxos,
     inscriptions,
     tcTxIDs,
@@ -202,6 +204,7 @@ const createInscribeTx = async ({
     isSelectUTXOs = true,
 }: {
     senderPrivateKey: Buffer,
+    senderAddress: string,
     utxos: UTXO[],
     inscriptions: { [key: string]: Inscription[] },
     tcTxIDs: string[],
@@ -217,7 +220,11 @@ const createInscribeTx = async ({
     selectedUTXOs: UTXO[],
     newUTXOs: UTXO[],
 }> => {
-    const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+
+    const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly(keyPair.publicKey);
 
     // create lock script for commit tx
@@ -244,6 +251,7 @@ const createInscribeTx = async ({
 
     const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
         senderPrivateKey,
+        senderAddress,
         utxos,
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
@@ -361,6 +369,7 @@ const splitBatchInscribeTx = ({
 */
 const createBatchInscribeTxs = async ({
     senderPrivateKey,
+    senderAddress,
     utxos,
     inscriptions,
     tcTxDetails,
@@ -368,6 +377,7 @@ const createBatchInscribeTxs = async ({
     sequence = DefaultSequenceRBF,
 }: {
     senderPrivateKey: Buffer,
+    senderAddress: string,
     utxos: UTXO[],
     inscriptions: { [key: string]: Inscription[] },
     tcTxDetails: TCTxDetail[],
@@ -386,6 +396,7 @@ const createBatchInscribeTxs = async ({
         try {
             const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
                 senderPrivateKey,
+                senderAddress,
                 utxos: newUTXOs,
                 inscriptions,
                 tcTxIDs: batch,

@@ -4204,6 +4204,7 @@ const addInputs = ({ psbt, addressType, inputs, payment, sequence, keyPair, }) =
 */
 const createRawTx = ({ keyPairInfo, utxos, inscriptions, sendInscriptionID = "", receiverInsAddress, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam = true, // default is true
 sequence = DefaultSequenceRBF, }) => {
+    const { keyPair, payment, address: senderAddress, addressType } = keyPairInfo;
     // validation
     if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
         throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
@@ -4211,22 +4212,9 @@ sequence = DefaultSequenceRBF, }) => {
     // select UTXOs
     const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
     let feeRes = fee;
-    const { keyPair, payment, address: senderAddress, addressType } = keyPairInfo;
     let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
     // add inputs
     psbt = addInputs({ psbt, addressType, inputs: selectedUTXOs, payment, sequence, keyPair });
-    // for (const input of selectedUTXOs) {
-    //     const inputData: any = {
-    //         hash: input.tx_hash,
-    //         index: input.tx_output_n,
-    //         witnessUtxo: { value: input.value.toNumber(), script: payment.output as Buffer },
-    //         sequence,
-    //     };
-    //     if (addressType === BTCAddressType.P2TR) {
-    //         inputData.tapInternalKey = toXOnly(keyPair.publicKey);
-    //     }
-    //     psbt.addInput(inputData);
-    // }
     // add outputs
     if (sendInscriptionID !== "") {
         // add output inscription
@@ -4260,102 +4248,6 @@ sequence = DefaultSequenceRBF, }) => {
     }
     return { base64Psbt: psbt.toBase64(), fee: feeRes, changeAmount, selectedUTXOs, indicesToSign };
 };
-/**
-* createRawTx creates the raw Bitcoin transaction (including sending inscriptions), but don't sign tx.
-* NOTE: Currently, the function only supports sending from Taproot address.
-* @param pubKey buffer public key of the sender (It is the internal pubkey for Taproot address)
-* @param utxos list of utxos (include non-inscription and inscription utxos)
-* @param inscriptions list of inscription infos of the sender
-* @param sendInscriptionID id of inscription to send
-* @param receiverInsAddress the address of the inscription receiver
-* @param sendAmount satoshi amount need to send
-* @param feeRatePerByte fee rate per byte (in satoshi)
-* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
-* @returns the transaction id
-* @returns the hex signed transaction
-* @returns the network fee
-*/
-// const createTxSendInscriptionFromAddress = ({
-//     senderPrivateKey,
-//     senderAddress,
-//     utxos,
-//     inscriptions,
-//     sendInscriptionID = "",
-//     receiverInsAddress,
-//     sendAmount,
-//     feeRatePerByte,
-//     isUseInscriptionPayFeeParam = true, // default is true
-//     sequence = DefaultSequenceRBF,
-// }: {
-//     senderPrivateKey: Buffer,
-//     senderAddress: string,
-//     utxos: UTXO[],
-//     inscriptions: { [key: string]: Inscription[] },
-//     sendInscriptionID: string,
-//     receiverInsAddress: string,
-//     sendAmount: BigNumber,
-//     feeRatePerByte: number,
-//     isUseInscriptionPayFeeParam: boolean,
-//     sequence?: number,
-// }): ICreateTxResp => {
-//     // validation
-//     if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
-//         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
-//     }
-//     // select UTXOs
-//     // const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
-//     // let feeRes = fee;
-//     // get address type from 
-//     const keyPair = ECPair.fromPrivateKey(senderPrivateKey, { network: tcBTCNetwork });
-//     const addressType = getAddressType({ btcAddress: senderAddress, pubKey: keyPair.publicKey });
-//     switch (addressType) {
-//         case BTCAddressType.P2TR: {
-//             // init key pair and tweakedSigner from senderPrivateKey
-//             const { keyPair, senderAddress, tweakedSigner, p2pktr } = generateTaprootKeyPair(senderPrivateKey);
-//             const { base64Psbt, fee, changeAmount, selectedUTXOs, indicesToSign } = createRawTx({
-//                 pubKey: toXOnly(keyPair.publicKey),
-//                 utxos,
-//                 inscriptions,
-//                 sendInscriptionID,
-//                 receiverInsAddress,
-//                 sendAmount,
-//                 feeRatePerByte,
-//                 isUseInscriptionPayFeeParam,
-//                 sequence,
-//             });
-//             const { signedBase64PSBT, msgTx, msgTxID, msgTxHex } = signPSBT({
-//                 senderPrivateKey,
-//                 psbtB64: base64Psbt,
-//                 indicesToSign,
-//                 sigHashType: Transaction.SIGHASH_DEFAULT
-//             });
-//             return { txID: msgTxID, txHex: msgTxHex, fee, selectedUTXOs, changeAmount, tx: msgTx };
-//         }
-//         case BTCAddressType.P2WPKH: {
-//             const { keyPair } = generateP2WPKHKeyPair(senderPrivateKey);
-//             const { base64Psbt, fee, changeAmount, selectedUTXOs, indicesToSign } = createRawTxFromP2WPKH({
-//                 pubKey: keyPair.publicKey,
-//                 utxos,
-//                 inscriptions,
-//                 sendInscriptionID,
-//                 receiverInsAddress,
-//                 sendAmount,
-//                 feeRatePerByte,
-//                 isUseInscriptionPayFeeParam,
-//                 sequence,
-//             });
-//             const { signedBase64PSBT, msgTx, msgTxID, msgTxHex } = signPSBTFromP2WPKH({
-//                 senderPrivateKey,
-//                 psbtB64: base64Psbt,
-//                 indicesToSign,
-//                 sigHashType: Transaction.SIGHASH_DEFAULT
-//             });
-//             return { txID: msgTxID, txHex: msgTxHex, fee, selectedUTXOs, changeAmount, tx: msgTx };
-//         }
-//     }
-//     // todo:
-//     throw new SDKError(ERROR_CODE.INVALID_BTC_ADDRESS_TYPE);
-// };
 /**
 * createTxFromAnyWallet creates the raw Bitcoin transaction (including sending inscriptions), but don't sign tx.
 * NOTE: Currently, the function only supports sending from Taproot address.
@@ -4416,7 +4308,9 @@ walletType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, cancelFn, }) => {
 * @returns the hex signed transaction
 * @returns the network fee
 */
-const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
     console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
     // validation
     let totalPaymentAmount = BNZero;
@@ -4429,19 +4323,16 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
     // select UTXOs
     const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
     let feeRes = fee;
-    // init key pair and tweakedSigner from senderPrivateKey
-    const { keyPair, senderAddress, tweakedSigner, p2pktr } = generateTaprootKeyPair(senderPrivateKey);
-    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
     // add inputs
-    for (const input of selectedUTXOs) {
-        psbt.addInput({
-            hash: input.tx_hash,
-            index: input.tx_output_n,
-            witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output },
-            tapInternalKey: toXOnly$1(keyPair.publicKey),
-            sequence: sequence
-        });
-    }
+    psbt = addInputs({
+        psbt,
+        addressType: addressType,
+        inputs: selectedUTXOs,
+        payment: payment,
+        sequence,
+        keyPair: keyPair,
+    });
     // add outputs send BTC
     for (const info of paymentInfos) {
         psbt.addOutput({
@@ -4463,7 +4354,7 @@ const createTxSendBTC = ({ senderPrivateKey, utxos, inscriptions, paymentInfos, 
     }
     // sign tx
     for (let i = 0; i < selectedUTXOs.length; i++) {
-        psbt.signInput(i, tweakedSigner);
+        psbt.signInput(i, signer, [sigHashTypeDefault]);
     }
     psbt.finalizeAllInputs();
     // get tx hex
@@ -5160,8 +5051,10 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
-    const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly$1(keyPair.publicKey);
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
@@ -5181,6 +5074,7 @@ const createInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, tcTxIDs
     }
     const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
         senderPrivateKey,
+        senderAddress,
         utxos,
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats) }],
@@ -5278,7 +5172,7 @@ const splitBatchInscribeTx = ({ tcTxDetails }) => {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence = DefaultSequenceRBF, }) => {
+const createBatchInscribeTxs = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence = DefaultSequenceRBF, }) => {
     const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
     const result = [];
     const newUTXOs = [...utxos];
@@ -5287,6 +5181,7 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, utxos, inscriptions, t
         try {
             const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
                 senderPrivateKey,
+                senderAddress,
                 utxos: newUTXOs,
                 inscriptions,
                 tcTxIDs: batch,
@@ -5912,7 +5807,7 @@ const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }
         minSat,
     };
 };
-const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
+const replaceByFeeInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence = DefaultSequenceRBF, }) => {
     const { oldCommitVouts, oldCommitUTXOs, oldCommitVins, oldCommitFee, oldCommitTxSize, oldCommitFeeRate, needToRBFTCTxIDs, needToRBFTxInfos, totalCommitVin, totalCommitVOut, isRBFable, oldRevealTx, minSat, revealTxSize, } = await extractOldTxInfo({
         revealTxID,
         tcClient,
@@ -5942,6 +5837,7 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
     console.log("createInscribeTx: ", createInscribeTx);
     const resp = await createInscribeTx({
         senderPrivateKey,
+        senderAddress,
         utxos: utxosForRBFTx,
         inscriptions,
         tcTxIDs: needToRBFTCTxIDs,
