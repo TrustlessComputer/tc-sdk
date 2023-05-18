@@ -31,6 +31,7 @@ export const ERROR_CODE = {
     INVALID_NEW_FEE_RBF: "-34",
     GET_UTXO_VALUE_ERR: "-35",
     IS_NOT_RBFABLE: "-36",
+    INVALID_BTC_ADDRESS_TYPE: "-37",
 };
 
 export const ERROR_MESSAGE = {
@@ -153,6 +154,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.IS_NOT_RBFABLE]: {
         message: "This transaction doesn't support to speed up.",
         desc: "This transaction doesn't support to speed up.",
+    },
+    [ERROR_CODE.INVALID_BTC_ADDRESS_TYPE]: {
+        message: "Bitcoin address is invalid or not supported.",
+        desc: "Bitcoin address is invalid or not supported.",
     },
 };
 

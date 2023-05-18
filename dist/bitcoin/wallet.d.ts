@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import { ECPairAPI } from "ecpair";
-import { Inscription, UTXO, Wallet } from "./types";
+import { ECPairAPI, ECPairInterface } from 'ecpair';
+import { IKeyPairInfo, Inscription, UTXO, Wallet } from "./types";
 import { Signer, payments } from "bitcoinjs-lib";
 import { ethers } from "ethers";
 import { BIP32Interface } from "bip32";
@@ -27,23 +27,37 @@ declare const generateTaprootAddressFromPubKey: (pubKey: Buffer) => {
     p2pktr: payments.Payment;
 };
 declare const generateTaprootKeyPair: (privateKey: Buffer) => {
-    keyPair: import("ecpair").ECPairInterface;
+    keyPair: ECPairInterface;
     senderAddress: string;
     tweakedSigner: Signer;
     p2pktr: payments.Payment;
 };
 declare const generateP2PKHKeyPair: (privateKey: Buffer) => {
-    keyPair: import("ecpair").ECPairInterface;
+    keyPair: ECPairInterface;
     address: string;
     p2pkh: payments.Payment;
     privateKey: Buffer;
 };
 declare const generateP2PKHKeyFromRoot: (root: BIP32Interface) => {
-    keyPair: import("ecpair").ECPairInterface;
+    keyPair: ECPairInterface;
     address: string;
     p2pkh: payments.Payment;
     privateKey: Buffer;
 };
+declare const generateP2WPKHKeyPair: (privateKey: Buffer) => {
+    keyPair: ECPairInterface;
+    address: string;
+    p2wpkh: payments.Payment;
+    privateKey: Buffer;
+};
+declare const generateP2WPKHKeyPairFromPubKey: (pubKey: Buffer) => {
+    address: string;
+    p2wpkh: payments.Payment;
+};
+declare const getKeyPairInfo: ({ privateKey, address, }: {
+    privateKey: Buffer;
+    address: string;
+}) => IKeyPairInfo;
 /**
 * getBTCBalance returns the Bitcoin balance from cardinal utxos.
 */
@@ -109,4 +123,17 @@ declare const encryptWallet: (wallet: Wallet, password: string) => string;
 * @returns the Wallet object
 */
 declare const decryptWallet: (ciphertext: string, password: string) => Wallet;
-export { ECPair, convertPrivateKey, convertPrivateKeyFromStr, toXOnly, tweakSigner, tapTweakHash, generateTaprootAddress, generateTaprootKeyPair, generateP2PKHKeyPair, generateP2PKHKeyFromRoot, getBTCBalance, importBTCPrivateKey, derivePasswordWallet, getBitcoinKeySignContent, encryptWallet, decryptWallet, deriveSegwitWallet, deriveETHWallet, signByETHPrivKey, generateTaprootAddressFromPubKey, };
+declare const BTCAddressType: {
+    P2TR: number;
+    P2WPKH: number;
+};
+/**
+* getAddressType return the type of btc address.
+* @param address Bitcoin address. Currently, only support Taproot and Segwit (P2WPKH)
+* @returns the address type
+*/
+declare const getAddressType: ({ btcAddress, pubKey, }: {
+    btcAddress: string;
+    pubKey: Buffer;
+}) => number;
+export { ECPair, convertPrivateKey, convertPrivateKeyFromStr, toXOnly, tweakSigner, tapTweakHash, generateTaprootAddress, generateTaprootKeyPair, generateP2PKHKeyPair, generateP2PKHKeyFromRoot, getBTCBalance, importBTCPrivateKey, derivePasswordWallet, getBitcoinKeySignContent, encryptWallet, decryptWallet, deriveSegwitWallet, deriveETHWallet, signByETHPrivKey, generateTaprootAddressFromPubKey, getAddressType, BTCAddressType, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, getKeyPairInfo, };

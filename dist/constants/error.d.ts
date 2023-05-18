@@ -31,6 +31,7 @@ export declare const ERROR_CODE: {
     INVALID_NEW_FEE_RBF: string;
     GET_UTXO_VALUE_ERR: string;
     IS_NOT_RBFABLE: string;
+    INVALID_BTC_ADDRESS_TYPE: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

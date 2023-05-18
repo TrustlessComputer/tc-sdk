@@ -1,19 +1,24 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
 
 import { AES, enc } from "crypto-js";
-import { ECPairAPI, ECPairFactory } from "ecpair";
-import { Inscription, UTXO, Wallet } from "./types";
+import { ECPairAPI, ECPairFactory, ECPairInterface } from 'ecpair';
+import { IKeyPairInfo, Inscription, UTXO, Wallet } from "./types";
 import {
     Signer,
     crypto,
     initEccLib,
     payments
 } from "bitcoinjs-lib";
+import { Transaction, address } from 'bitcoinjs-lib';
 import { ethers, utils } from "ethers";
 
+import { AddressPurposes } from "sats-connect";
 import BIP32Factory from "bip32";
 import { BIP32Interface } from "bip32";
 import BigNumber from "bignumber.js";
+import { ERROR_CODE } from '../constants/error';
+import { Network } from "./network";
+import SDKError from '../constants/error';
 import Web3 from "web3";
 import { filterAndSortCardinalUTXOs } from "./selectcoin";
 import { hdkey } from "ethereumjs-wallet";
@@ -152,6 +157,86 @@ const generateP2PKHKeyFromRoot = (root: BIP32Interface) => {
     const privateKey = childSegwit.privateKey as Buffer;
 
     return generateP2PKHKeyPair(privateKey);
+};
+
+const generateP2WPKHKeyPair = (privateKey: Buffer) => {
+    // init key pair from senderPrivateKey
+    const keyPair = ECPair.fromPrivateKey(privateKey, { network: tcBTCNetwork });
+
+    // Generate an address from the tweaked public key
+    const p2wpkh = payments.p2wpkh({
+        pubkey: keyPair.publicKey,
+        network: tcBTCNetwork
+    });
+    const address = p2wpkh.address ? p2wpkh.address : "";
+    if (address === "") {
+        throw new Error("Can not get sender address from private key");
+    }
+
+    return { keyPair, address, p2wpkh, privateKey };
+};
+
+const generateP2WPKHKeyPairFromPubKey = (pubKey: Buffer) => {
+    // Generate an address from the tweaked public key
+    const p2wpkh = payments.p2wpkh({
+        pubkey: pubKey,
+        network: tcBTCNetwork
+    });
+    const address = p2wpkh.address ? p2wpkh.address : "";
+    if (address === "") {
+        throw new Error("Can not get sender address from private key");
+    }
+
+    return { address, p2wpkh };
+};
+
+
+const getKeyPairInfo = ({
+    privateKey, address,
+}: {
+    privateKey: Buffer, address: string
+}): IKeyPairInfo => {
+    // init key pair from senderPrivateKey
+    const keyPair = ECPair.fromPrivateKey(privateKey, { network: tcBTCNetwork });
+
+    // get address type 
+    const addressType = getAddressType({ btcAddress: address, pubKey: keyPair.publicKey });
+
+    // get payment and signer for each address type
+    let payment: payments.Payment;
+    let signer: any;
+    let sigHashTypeDefault: number;
+
+    switch (addressType) {
+        case BTCAddressType.P2TR: {
+            // Tweak the original keypair
+            const tweakedSigner = tweakSigner(keyPair, { network: tcBTCNetwork });
+            signer = tweakSigner;
+            sigHashTypeDefault = Transaction.SIGHASH_DEFAULT;
+
+            // Generate an address from the tweaked public key
+            payment = payments.p2tr({
+                pubkey: toXOnly(tweakedSigner.publicKey),
+                network: tcBTCNetwork
+            });
+            break;
+        }
+        case BTCAddressType.P2WPKH: {
+            signer = keyPair;
+            sigHashTypeDefault = Transaction.SIGHASH_ALL;
+
+            payment = payments.p2wpkh({
+                pubkey: keyPair.publicKey,
+                network: tcBTCNetwork
+            });
+
+            break;
+        }
+        default:
+            throw new SDKError(ERROR_CODE.INVALID_BTC_ADDRESS_TYPE);
+    }
+
+    return { address, addressType, keyPair, payment, signer, sigHashTypeDefault };
 };
 
 
@@ -301,6 +386,35 @@ const decryptWallet = (ciphertext: string, password: string): Wallet => {
     return wallet;
 };
 
+const BTCAddressType = {
+    P2TR: 1,
+    P2WPKH: 2,
+};
+
+/**
+* getAddressType return the type of btc address. 
+* @param address Bitcoin address. Currently, only support Taproot and Segwit (P2WPKH)
+* @returns the address type
+*/
+const getAddressType = ({
+    btcAddress,
+    pubKey,
+}: {
+    btcAddress: string, pubKey: Buffer
+}): number => {
+
+    const { address: taprootAddress } = generateTaprootAddressFromPubKey(toXOnly(pubKey));
+    const { address: p2wpkhAddress } = generateP2WPKHKeyPairFromPubKey(pubKey);
+    switch (btcAddress) {
+        case taprootAddress:
+            return BTCAddressType.P2TR;
+        case p2wpkhAddress:
+            return BTCAddressType.P2WPKH;
+        default:
+            throw new SDKError(ERROR_CODE.INVALID_BTC_ADDRESS_TYPE);
+    }
+};
+
 
 export {
     ECPair,
@@ -323,4 +437,9 @@ export {
     deriveETHWallet,
     signByETHPrivKey,
     generateTaprootAddressFromPubKey,
+    getAddressType,
+    BTCAddressType,
+    generateP2WPKHKeyPair,
+    generateP2WPKHKeyPairFromPubKey,
+    getKeyPairInfo,
 };

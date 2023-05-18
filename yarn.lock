@@ -1271,9 +1271,9 @@ bip39@^3.1.0:
   dependencies:
     "@noble/hashes" "^1.2.0"
 
-"bitcoinjs-lib@github:generative-xyz/bitcoinjs-lib":
+"bitcoinjs-lib@https://github.com/generative-xyz/bitcoinjs-lib":
   version "6.1.0"
-  resolved "git+ssh://git@github.com/generative-xyz/bitcoinjs-lib.git#71b05e14bec8001bc344f0d020ae6cc9e2365022"
+  resolved "https://github.com/generative-xyz/bitcoinjs-lib#71b05e14bec8001bc344f0d020ae6cc9e2365022"
   dependencies:
     bech32 "^2.0.0"
     bip174 "^2.1.0"

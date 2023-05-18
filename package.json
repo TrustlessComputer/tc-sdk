@@ -30,7 +30,8 @@
     "test-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/wallet.spec.ts'",
     "test-tc": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tc.spec.ts'",
     "test-tc-client": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tcclient.spec.ts'",
-    "test-hd-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/hdwallet.spec.ts'"
+    "test-hd-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/hdwallet.spec.ts'",
+    "test-tx": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tx.spec.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",
@@ -67,7 +68,7 @@
     "bignumber.js": "^9.1.1",
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",
-    "bitcoinjs-lib": "github:generative-xyz/bitcoinjs-lib",
+    "bitcoinjs-lib": "https://github.com/generative-xyz/bitcoinjs-lib",
     "browserify": "^17.0.0",
     "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
