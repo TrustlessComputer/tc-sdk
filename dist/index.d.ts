@@ -1033,10 +1033,9 @@ declare const ServiceGetUTXOType: {
 * @param serviceType service is used to get UTXOs, default is BlockStream
 * @returns list of UTXOs
 */
-declare const getUTXOs: ({ btcAddress, tcAddress, tcClient, serviceType, }: {
+declare const getUTXOs: ({ btcAddress, tcAddress, serviceType, }: {
     btcAddress: string;
     tcAddress: string;
-    tcClient: TcClient;
     serviceType?: number | undefined;
 }) => Promise<{
     availableUTXOs: UTXO[];

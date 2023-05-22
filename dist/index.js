@@ -5887,7 +5887,7 @@ const ServiceGetUTXOType = {
 * @param serviceType service is used to get UTXOs, default is BlockStream
 * @returns list of UTXOs
 */
-const getUTXOs = async ({ btcAddress, tcAddress, tcClient, serviceType = ServiceGetUTXOType.BlockStream, }) => {
+const getUTXOs = async ({ btcAddress, tcAddress, serviceType = ServiceGetUTXOType.BlockStream, }) => {
     let availableUTXOs = [];
     const incomingUTXOs = [];
     let incomingUTXOsTmp = [];
