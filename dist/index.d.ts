@@ -908,6 +908,7 @@ interface GetTxByHashResp {
     blockNumber: string;
     transactionIndex: string;
     hash: string;
+    status: string;
 }
 interface GetPendingInscribeTxsResp {
     TCHash: string;
