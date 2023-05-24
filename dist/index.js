@@ -2985,6 +2985,7 @@ const ERROR_CODE$1 = {
     INVALID_BTC_ADDRESS_TYPE: "-37",
     MNEMONIC_GEN_SEGWIT: "-38",
     SEGWIT_FROM_MNEMONIC: "-39",
+    RESTORE_MASTERLESS_WALLET: "-40",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -3068,8 +3069,8 @@ const ERROR_MESSAGE$1 = {
         desc: "Restore hd wallet error.",
     },
     [ERROR_CODE$1.DECRYPT]: {
-        message: "Decrypt error.",
-        desc: "Decrypt error.",
+        message: "Incorrect password.",
+        desc: "Incorrect password.",
     },
     [ERROR_CODE$1.TAPROOT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
@@ -3122,6 +3123,10 @@ const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.SEGWIT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
         desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE$1.RESTORE_MASTERLESS_WALLET]: {
+        message: "Restore masterless wallet error.",
+        desc: "Restore masterless wallet error.",
     },
 };
 class SDKError$1 extends Error {
@@ -4518,7 +4523,7 @@ const broadcastTx = async (txHex) => {
 exports.StorageKeys = void 0;
 (function (StorageKeys) {
     StorageKeys["HDWallet"] = "hd-wallet-cipher";
-    StorageKeys["masterless"] = "masterless-cipher";
+    StorageKeys["Masterless"] = "masterless-cipher";
 })(exports.StorageKeys || (exports.StorageKeys = {}));
 
 new BigNumber(0);
@@ -4559,6 +4564,7 @@ const ERROR_CODE = {
     INVALID_BTC_ADDRESS_TYPE: "-37",
     MNEMONIC_GEN_SEGWIT: "-38",
     SEGWIT_FROM_MNEMONIC: "-39",
+    RESTORE_MASTERLESS_WALLET: "-40",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -4642,8 +4648,8 @@ const ERROR_MESSAGE = {
         desc: "Restore hd wallet error.",
     },
     [ERROR_CODE.DECRYPT]: {
-        message: "Decrypt error.",
-        desc: "Decrypt error.",
+        message: "Incorrect password.",
+        desc: "Incorrect password.",
     },
     [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
@@ -4696,6 +4702,10 @@ const ERROR_MESSAGE = {
     [ERROR_CODE.SEGWIT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
         desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE.RESTORE_MASTERLESS_WALLET]: {
+        message: "Restore masterless wallet error.",
+        desc: "Restore masterless wallet error.",
     },
 };
 class SDKError extends Error {
@@ -4761,7 +4771,7 @@ const NetworkType = {
 var StorageKeys;
 (function (StorageKeys) {
     StorageKeys["HDWallet"] = "hd-wallet-cipher";
-    StorageKeys["masterless"] = "masterless-cipher";
+    StorageKeys["Masterless"] = "masterless-cipher";
 })(StorageKeys || (StorageKeys = {}));
 
 function isPrivateKey$1(privateKey) {
@@ -6268,6 +6278,68 @@ class HDWallet$1 {
     }
 }
 
+class Masterless$1 {
+    constructor() {
+        this.set = (listMasterless) => {
+            validateMasterless$1(listMasterless, "mlset");
+            this.nodes = listMasterless;
+        };
+        this.saveWallet = async (listMasterless, password) => {
+            this.set(listMasterless);
+            await setStorageMasterless$1(listMasterless, password);
+        };
+        this.importNewAccount = async ({ password, name, privateKey, nodes }) => {
+            const listMasterless = await getStorageMasterless$1(password);
+            validateMasterless$1(listMasterless, "import-masterless");
+            if (!listMasterless)
+                return;
+            const masterless = deriveMasterless$1({
+                name,
+                privateKey
+            });
+            for (const node of nodes) {
+                if (node.address.toLowerCase() === masterless.name.toLowerCase()) {
+                    throw new Error("Account is existed.");
+                }
+                if (node.name.toLowerCase() === masterless.name.toLowerCase()) {
+                    throw new Error("This account name is existed.");
+                }
+            }
+            listMasterless.push(masterless);
+            await this.saveWallet(listMasterless, password);
+            return masterless;
+        };
+        this.deletedMasterless = async ({ password, address }) => {
+            const listMasterless = await getStorageMasterless$1(password);
+            validateMasterless$1(listMasterless, "delete-masterless");
+            if (!listMasterless)
+                return;
+            const masterless = listMasterless.find(node => node.address.toLowerCase() === address.toLowerCase());
+            if (!masterless) {
+                throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
+            }
+            const newListMasterless = listMasterless.filter(node => node.address.toLowerCase() !== address.toLowerCase());
+            await this.saveWallet(newListMasterless, password);
+        };
+        this.restore = async (password) => {
+            new Validator("restore-password: ", password).string().required();
+            try {
+                const wallet = await getStorageMasterless$1(password);
+                this.set(wallet);
+                return wallet;
+            }
+            catch (error) {
+                let message = "";
+                if (error instanceof Error) {
+                    message = error.message;
+                }
+                throw new SDKError(ERROR_CODE.RESTORE_MASTERLESS_WALLET, message);
+            }
+        };
+        this.nodes = undefined;
+    }
+}
+
 const ETHDerivationPath$1 = "m/44'/60'/0'/0";
 const BTCTaprootDerivationPath$1 = "m/86'/0'/0'/0/0";
 const BTCSegwitDerivationPath$1 = "m/84'/0'/0'/0/0";
@@ -6296,6 +6368,43 @@ const generateSegwitHDNodeFromMnemonic$1 = async (mnemonic) => {
     return privateKeyStr;
 };
 
+const validateMasterless$1 = (listMasterless, methodName) => {
+    if (listMasterless) {
+        for (const node of listMasterless) {
+            new Validator(`${methodName}-` + "validate-derive-name", node.name).required();
+            new Validator(`${methodName}-` + "validate-derive-index", node.index).required();
+            new Validator(`${methodName}-` + "validate-derive-privateKey", node.privateKey).required();
+            new Validator(`${methodName}-` + "validate-derive-address", node.address).required();
+        }
+    }
+};
+const deriveMasterless$1 = (payload) => {
+    const newMasterless = new ethers.ethers.Wallet(payload.privateKey);
+    return {
+        name: payload.name,
+        index: Number(new Date().getTime()),
+        privateKey: newMasterless.privateKey,
+        address: newMasterless.address,
+    };
+};
+const getStorageMasterlessCipherText$1 = () => {
+    return tcStorage.get(StorageKeys.Masterless);
+};
+const getStorageMasterless$1 = async (password) => {
+    const cipherText = await getStorageMasterlessCipherText$1();
+    if (!cipherText) {
+        return [];
+    }
+    const rawText = decryptAES(cipherText, password);
+    const listMasterless = JSON.parse(rawText);
+    validateMasterless$1(listMasterless, "getStorageMasterless");
+    return listMasterless;
+};
+const setStorageMasterless$1 = async (wallet, password) => {
+    const cipherText = encryptAES(JSON.stringify(wallet), password);
+    await tcStorage.set(StorageKeys.Masterless, cipherText);
+};
+
 class MasterWallet {
     constructor() {
         this.restoreHDWallet = async (password) => {
@@ -6309,16 +6418,28 @@ class MasterWallet {
                 return wallet;
             }
         };
+        this.restoreMasterless = async (password) => {
+            const masterlessIns = new Masterless$1();
+            const masterless = await masterlessIns.restore(password);
+            this._masterless = masterlessIns;
+            return masterless;
+        };
         this.load = async (password) => {
             new Validator("password", password).string().required();
             const hdWallet = await this.restoreHDWallet(password);
+            const masterless = await this.restoreMasterless(password);
             return {
-                hdWallet
+                hdWallet,
+                masterless
             };
         };
         this.getHDWallet = () => {
             new Validator("Get HDWallet", this._hdWallet).required("Please restore wallet.");
             return this._hdWallet;
+        };
+        this.getMasterless = () => {
+            new Validator("Get Masterless", this._masterless).required("Please restore wallet.");
+            return this._masterless;
         };
         this.getBTCPrivateKey = () => {
             return this._hdWallet?.btcPrivateKey;
@@ -6405,9 +6526,63 @@ class HDWallet {
 
 class Masterless {
     constructor() {
-        this.name = undefined;
-        this.privateKey = undefined;
-        this.address = undefined;
+        this.set = (listMasterless) => {
+            validateMasterless$1(listMasterless, "mlset");
+            this.nodes = listMasterless;
+        };
+        this.saveWallet = async (listMasterless, password) => {
+            this.set(listMasterless);
+            await setStorageMasterless$1(listMasterless, password);
+        };
+        this.importNewAccount = async ({ password, name, privateKey, nodes }) => {
+            const listMasterless = await getStorageMasterless$1(password);
+            validateMasterless$1(listMasterless, "import-masterless");
+            if (!listMasterless)
+                return;
+            const masterless = deriveMasterless$1({
+                name,
+                privateKey
+            });
+            for (const node of nodes) {
+                if (node.address.toLowerCase() === masterless.name.toLowerCase()) {
+                    throw new Error("Account is existed.");
+                }
+                if (node.name.toLowerCase() === masterless.name.toLowerCase()) {
+                    throw new Error("This account name is existed.");
+                }
+            }
+            listMasterless.push(masterless);
+            await this.saveWallet(listMasterless, password);
+            return masterless;
+        };
+        this.deletedMasterless = async ({ password, address }) => {
+            const listMasterless = await getStorageMasterless$1(password);
+            validateMasterless$1(listMasterless, "delete-masterless");
+            if (!listMasterless)
+                return;
+            const masterless = listMasterless.find(node => node.address.toLowerCase() === address.toLowerCase());
+            if (!masterless) {
+                throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
+            }
+            const newListMasterless = listMasterless.filter(node => node.address.toLowerCase() !== address.toLowerCase());
+            await this.saveWallet(newListMasterless, password);
+        };
+        this.restore = async (password) => {
+            new Validator("restore-password: ", password).string().required();
+            try {
+                const wallet = await getStorageMasterless$1(password);
+                this.set(wallet);
+                return wallet;
+            }
+            catch (error) {
+                let message = "";
+                if (error instanceof Error) {
+                    message = error.message;
+                }
+                throw new SDKError(ERROR_CODE.RESTORE_MASTERLESS_WALLET, message);
+            }
+        };
+        this.nodes = undefined;
     }
 }
 
@@ -6526,6 +6701,43 @@ const generateSegwitHDNodeFromMnemonic = async (mnemonic) => {
     return privateKeyStr;
 };
 
+const validateMasterless = (listMasterless, methodName) => {
+    if (listMasterless) {
+        for (const node of listMasterless) {
+            new Validator(`${methodName}-` + "validate-derive-name", node.name).required();
+            new Validator(`${methodName}-` + "validate-derive-index", node.index).required();
+            new Validator(`${methodName}-` + "validate-derive-privateKey", node.privateKey).required();
+            new Validator(`${methodName}-` + "validate-derive-address", node.address).required();
+        }
+    }
+};
+const deriveMasterless = (payload) => {
+    const newMasterless = new ethers.ethers.Wallet(payload.privateKey);
+    return {
+        name: payload.name,
+        index: Number(new Date().getTime()),
+        privateKey: newMasterless.privateKey,
+        address: newMasterless.address,
+    };
+};
+const getStorageMasterlessCipherText = () => {
+    return tcStorage.get(StorageKeys.Masterless);
+};
+const getStorageMasterless = async (password) => {
+    const cipherText = await getStorageMasterlessCipherText();
+    if (!cipherText) {
+        return [];
+    }
+    const rawText = decryptAES(cipherText, password);
+    const listMasterless = JSON.parse(rawText);
+    validateMasterless(listMasterless, "getStorageMasterless");
+    return listMasterless;
+};
+const setStorageMasterless = async (wallet, password) => {
+    const cipherText = encryptAES(JSON.stringify(wallet), password);
+    await tcStorage.set(StorageKeys.Masterless, cipherText);
+};
+
 exports.BNZero = BNZero;
 exports.BTCAddressType = BTCAddressType;
 exports.BTCSegwitDerivationPath = BTCSegwitDerivationPath;
@@ -6576,6 +6788,7 @@ exports.decryptAES = decryptAES$1;
 exports.decryptWallet = decryptWallet;
 exports.deriveETHWallet = deriveETHWallet;
 exports.deriveHDNodeByIndex = deriveHDNodeByIndex;
+exports.deriveMasterless = deriveMasterless;
 exports.derivePasswordWallet = derivePasswordWallet;
 exports.deriveSegwitWallet = deriveSegwitWallet;
 exports.encryptAES = encryptAES$1;
@@ -6604,6 +6817,8 @@ exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
 exports.getKeyPairInfo = getKeyPairInfo;
 exports.getStorageHDWallet = getStorageHDWallet;
 exports.getStorageHDWalletCipherText = getStorageHDWalletCipherText;
+exports.getStorageMasterless = getStorageMasterless;
+exports.getStorageMasterlessCipherText = getStorageMasterlessCipherText;
 exports.getUTXOs = getUTXOs;
 exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
@@ -6619,6 +6834,7 @@ exports.selectUTXOs = selectUTXOs;
 exports.selectUTXOsToCreateBuyTx = selectUTXOsToCreateBuyTx;
 exports.setBTCNetwork = setBTCNetwork;
 exports.setStorageHDWallet = setStorageHDWallet;
+exports.setStorageMasterless = setStorageMasterless;
 exports.setupConfig = setupConfig;
 exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
@@ -6630,5 +6846,6 @@ exports.toSat = toSat;
 exports.toXOnly = toXOnly$1;
 exports.tweakSigner = tweakSigner$1;
 exports.validateHDWallet = validateHDWallet;
+exports.validateMasterless = validateMasterless;
 exports.validateMnemonicBTC = validateMnemonicBTC;
 //# sourceMappingURL=index.js.map

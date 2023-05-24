@@ -13,8 +13,6 @@ import {
     setupConfig,
     Mainnet,
     TcClient,
-    // convertPrivateKeyFromStr,
-    // generateP2WPKHKeyPair
 } from "../dist";
 
 describe("Wallet", async () => {
@@ -113,5 +111,21 @@ describe("Wallet", async () => {
             ),
             'Delete node error'
         )
+    });
+
+    it('Import Private Key', async function () {
+        const masterWallet = new MasterWallet();
+        await masterWallet.load(password);
+
+        const masterlessIns = masterWallet.getMasterless();
+
+        const newAccount = await masterlessIns.importNewAccount({
+            nodes: [],
+            password,
+            name: "test",
+            privateKey: ""
+        })
+
+        console.log('Imported accounts: ', newAccount)
     });
 });

@@ -34,6 +34,7 @@ export const ERROR_CODE = {
     INVALID_BTC_ADDRESS_TYPE: "-37",
     MNEMONIC_GEN_SEGWIT: "-38",
     SEGWIT_FROM_MNEMONIC: "-39",
+    RESTORE_MASTERLESS_WALLET: "-40",
 };
 
 export const ERROR_MESSAGE = {
@@ -118,8 +119,8 @@ export const ERROR_MESSAGE = {
         desc: "Restore hd wallet error.",
     },
     [ERROR_CODE.DECRYPT]: {
-        message: "Decrypt error.",
-        desc: "Decrypt error.",
+        message: "Incorrect password.",
+        desc: "Incorrect password.",
     },
     [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
@@ -172,6 +173,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.SEGWIT_FROM_MNEMONIC]: {
         message: "Generate private key by mnemonic error.",
         desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE.RESTORE_MASTERLESS_WALLET]: {
+        message: "Restore masterless wallet error.",
+        desc: "Restore masterless wallet error.",
     },
 };
 

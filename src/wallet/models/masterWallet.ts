@@ -3,7 +3,7 @@ import { Validator } from "@/utils";
 
 class MasterWallet {
     private _hdWallet: HDWallet | undefined;
-    private _masterless: Masterless[] | undefined; // TODO next step
+    private _masterless: Masterless | undefined;
 
     constructor() {
         this._hdWallet = undefined;
@@ -22,17 +22,31 @@ class MasterWallet {
         }
     };
 
+    private restoreMasterless = async (password: string) => {
+        const masterlessIns = new Masterless();
+        const masterless = await masterlessIns.restore(password);
+        this._masterless = masterlessIns;
+        return masterless;
+    };
+
     load = async (password: string) => {
         new Validator("password", password).string().required();
         const hdWallet = await this.restoreHDWallet(password);
+        const masterless = await this.restoreMasterless(password);
         return {
-            hdWallet
+            hdWallet,
+            masterless
         };
     };
 
     getHDWallet = (): HDWallet => {
         new Validator("Get HDWallet", this._hdWallet).required("Please restore wallet.");
         return this._hdWallet!;
+    };
+
+    getMasterless = (): Masterless => {
+        new Validator("Get Masterless", this._masterless).required("Please restore wallet.");
+        return this._masterless!;
     };
 
     getBTCPrivateKey = (): string | undefined => {
