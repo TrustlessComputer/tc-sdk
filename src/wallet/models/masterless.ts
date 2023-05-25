@@ -41,10 +41,10 @@ class Masterless {
         });
         for (const node of nodes) {
             if (node.address.toLowerCase() === masterless.address.toLowerCase()) {
-                throw new Error(`This account is existed with address ${masterless.address}`);
+                throw new Error(`This account has existed with address ${masterless.address}`);
             }
             if (node.name.toLowerCase() === masterless.name.toLowerCase()) {
-                throw new Error("This account name is existed.");
+                throw new Error("This account name has existed.");
             }
         }
         listMasterless.push(masterless);
