@@ -35,6 +35,7 @@ export const ERROR_CODE = {
     MNEMONIC_GEN_SEGWIT: "-38",
     SEGWIT_FROM_MNEMONIC: "-39",
     RESTORE_MASTERLESS_WALLET: "-40",
+    CANNOT_CREATE_ACCOUNT: "-41",
 };
 
 export const ERROR_MESSAGE = {
@@ -177,6 +178,10 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.RESTORE_MASTERLESS_WALLET]: {
         message: "Restore masterless wallet error.",
         desc: "Restore masterless wallet error.",
+    },
+    [ERROR_CODE.CANNOT_CREATE_ACCOUNT]: {
+        message: "Create account error.",
+        desc: "Create account error.",
     },
 };
 

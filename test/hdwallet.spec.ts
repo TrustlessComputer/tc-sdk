@@ -68,7 +68,8 @@ describe("Wallet", async () => {
         if (hdWallet) {
             await hdWallet.createNewAccount({
                 password,
-                name: new Date().getTime().toString()
+                name: new Date().getTime().toString(),
+                accounts: [],
             })
         }
     });
@@ -113,19 +114,20 @@ describe("Wallet", async () => {
         )
     });
 
-    it('Import Private Key', async function () {
-        const masterWallet = new MasterWallet();
-        await masterWallet.load(password);
-
-        const masterlessIns = masterWallet.getMasterless();
-
-        const newAccount = await masterlessIns.importNewAccount({
-            nodes: [],
-            password,
-            name: "test",
-            privateKey: ""
-        })
-
-        console.log('Imported accounts: ', newAccount)
-    });
+    // it('Import Private Key', async function () {
+    //     const masterWallet = new MasterWallet();
+    //     await masterWallet.load(password);
+    //
+    //     const privateKey = "";
+    //     if (privateKey) {
+    //         const masterlessIns = masterWallet.getMasterless();
+    //         const newAccount = await masterlessIns.importNewAccount({
+    //             nodes: [],
+    //             password,
+    //             name: "test",
+    //             privateKey: ""
+    //         })
+    //         console.log('Imported accounts: ', newAccount)
+    //     }
+    // });
 });

@@ -2986,6 +2986,7 @@ const ERROR_CODE$1 = {
     MNEMONIC_GEN_SEGWIT: "-38",
     SEGWIT_FROM_MNEMONIC: "-39",
     RESTORE_MASTERLESS_WALLET: "-40",
+    CANNOT_CREATE_ACCOUNT: "-41",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -3127,6 +3128,10 @@ const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.RESTORE_MASTERLESS_WALLET]: {
         message: "Restore masterless wallet error.",
         desc: "Restore masterless wallet error.",
+    },
+    [ERROR_CODE$1.CANNOT_CREATE_ACCOUNT]: {
+        message: "Create account error.",
+        desc: "Create account error.",
     },
 };
 class SDKError$1 extends Error {
@@ -4565,6 +4570,7 @@ const ERROR_CODE = {
     MNEMONIC_GEN_SEGWIT: "-38",
     SEGWIT_FROM_MNEMONIC: "-39",
     RESTORE_MASTERLESS_WALLET: "-40",
+    CANNOT_CREATE_ACCOUNT: "-41",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -4706,6 +4712,10 @@ const ERROR_MESSAGE = {
     [ERROR_CODE.RESTORE_MASTERLESS_WALLET]: {
         message: "Restore masterless wallet error.",
         desc: "Restore masterless wallet error.",
+    },
+    [ERROR_CODE.CANNOT_CREATE_ACCOUNT]: {
+        message: "Create account error.",
+        desc: "Create account error.",
     },
 };
 class SDKError extends Error {
@@ -6217,7 +6227,7 @@ class HDWallet$1 {
             this.set(wallet);
             await setStorageHDWallet$1(wallet, password);
         };
-        this.createNewAccount = async ({ password, name }) => {
+        this.createNewAccount = async ({ password, name, accounts }) => {
             const wallet = await getStorageHDWallet$1(password);
             validateHDWallet$1(wallet, "create-new-account");
             if (!wallet)
@@ -6230,14 +6240,34 @@ class HDWallet$1 {
                     newNodeIndex += 1;
                 }
             }
-            const childNode = deriveHDNodeByIndex$1({
-                mnemonic,
-                index: newNodeIndex,
-                name
-            });
-            nodes.push(childNode);
-            await this.saveWallet(wallet, password);
-            return childNode;
+            const validateExistNode = (newNode, nodes) => {
+                const isExist = nodes.some(node => node.address.toLowerCase() === newNode.address.toLowerCase());
+                return !isExist;
+            };
+            let newNode = undefined;
+            let isBreak = false;
+            while (!isBreak) {
+                const childNode = deriveHDNodeByIndex$1({
+                    mnemonic,
+                    index: newNodeIndex,
+                    name
+                });
+                const isValid = validateExistNode(childNode, accounts);
+                if (isValid) {
+                    newNode = childNode;
+                    isBreak = true;
+                }
+                else {
+                    isBreak = false;
+                    ++newNodeIndex;
+                }
+            }
+            if (newNode) {
+                nodes.push(newNode);
+                await this.saveWallet(wallet, password);
+                return newNode;
+            }
+            throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
         };
         this.deletedAccount = async ({ password, address }) => {
             const wallet = await getStorageHDWallet$1(password);
@@ -6463,7 +6493,7 @@ class HDWallet {
             this.set(wallet);
             await setStorageHDWallet$1(wallet, password);
         };
-        this.createNewAccount = async ({ password, name }) => {
+        this.createNewAccount = async ({ password, name, accounts }) => {
             const wallet = await getStorageHDWallet$1(password);
             validateHDWallet$1(wallet, "create-new-account");
             if (!wallet)
@@ -6476,14 +6506,34 @@ class HDWallet {
                     newNodeIndex += 1;
                 }
             }
-            const childNode = deriveHDNodeByIndex$1({
-                mnemonic,
-                index: newNodeIndex,
-                name
-            });
-            nodes.push(childNode);
-            await this.saveWallet(wallet, password);
-            return childNode;
+            const validateExistNode = (newNode, nodes) => {
+                const isExist = nodes.some(node => node.address.toLowerCase() === newNode.address.toLowerCase());
+                return !isExist;
+            };
+            let newNode = undefined;
+            let isBreak = false;
+            while (!isBreak) {
+                const childNode = deriveHDNodeByIndex$1({
+                    mnemonic,
+                    index: newNodeIndex,
+                    name
+                });
+                const isValid = validateExistNode(childNode, accounts);
+                if (isValid) {
+                    newNode = childNode;
+                    isBreak = true;
+                }
+                else {
+                    isBreak = false;
+                    ++newNodeIndex;
+                }
+            }
+            if (newNode) {
+                nodes.push(newNode);
+                await this.saveWallet(wallet, password);
+                return newNode;
+            }
+            throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
         };
         this.deletedAccount = async ({ password, address }) => {
             const wallet = await getStorageHDWallet$1(password);

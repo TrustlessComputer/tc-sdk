@@ -674,6 +674,7 @@ declare const ERROR_CODE: {
     MNEMONIC_GEN_SEGWIT: string;
     SEGWIT_FROM_MNEMONIC: string;
     RESTORE_MASTERLESS_WALLET: string;
+    CANNOT_CREATE_ACCOUNT: string;
 };
 declare const ERROR_MESSAGE: {
     [x: string]: {
@@ -1130,9 +1131,10 @@ declare class HDWallet {
     constructor();
     set: (wallet: IHDWallet$1) => void;
     saveWallet: (wallet: IHDWallet$1, password: string) => Promise<void>;
-    createNewAccount: ({ password, name }: {
+    createNewAccount: ({ password, name, accounts }: {
         password: string;
-        name?: string | undefined;
+        name: string;
+        accounts: IDeriveKey$1[];
     }) => Promise<IDeriveKey$1 | undefined>;
     deletedAccount: ({ password, address }: {
         password: string;

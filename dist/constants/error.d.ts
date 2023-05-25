@@ -35,6 +35,7 @@ export declare const ERROR_CODE: {
     MNEMONIC_GEN_SEGWIT: string;
     SEGWIT_FROM_MNEMONIC: string;
     RESTORE_MASTERLESS_WALLET: string;
+    CANNOT_CREATE_ACCOUNT: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

@@ -8,9 +8,10 @@ declare class HDWallet {
     constructor();
     set: (wallet: IHDWallet) => void;
     saveWallet: (wallet: IHDWallet, password: string) => Promise<void>;
-    createNewAccount: ({ password, name }: {
+    createNewAccount: ({ password, name, accounts }: {
         password: string;
-        name?: string | undefined;
+        name: string;
+        accounts: IDeriveKey[];
     }) => Promise<IDeriveKey | undefined>;
     deletedAccount: ({ password, address }: {
         password: string;
