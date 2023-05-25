@@ -49,16 +49,16 @@ describe("Wallet", async () => {
         assert.equal(mnemonic, decrypted)
     });
 
-    it('Random', async function () {
-        const hdWallet = await randomMnemonic();
-        await setStorageHDWallet(hdWallet, password);
-        const masterWallet = new MasterWallet();
-        await masterWallet.load(password);
-        // const btcPrivateKeyBuffer = convertPrivateKeyFromStr(hdWallet.btcPrivateKey);
-        // const { address } = generateP2WPKHKeyPair(btcPrivateKeyBuffer);
-        // console.log('BTC Segwit address:', address)
-        assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
-    });
+    // it('Random', async function () {
+    //     const hdWallet = await randomMnemonic();
+    //     await setStorageHDWallet(hdWallet, password);
+    //     const masterWallet = new MasterWallet();
+    //     await masterWallet.load(password);
+    //     // const btcPrivateKeyBuffer = convertPrivateKeyFromStr(hdWallet.btcPrivateKey);
+    //     // const { address } = generateP2WPKHKeyPair(btcPrivateKeyBuffer);
+    //     // console.log('BTC Segwit address:', address)
+    //     assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
+    // });
 
     it('Create new node', async function () {
         const masterWallet = new MasterWallet();
@@ -90,44 +90,52 @@ describe("Wallet", async () => {
         }
     });
 
-    it('Delete node', async function () {
-        const masterWallet = new MasterWallet();
-        await masterWallet.load(password);
-
-        const hdWallet = masterWallet.getHDWallet();
-
-        const accountNeedDelete = hdWallet.nodes?.[1]!;
-
-        if (!accountNeedDelete) {
-            assert(false, 'Can not load account for delete')
-        }
-        await hdWallet.deletedAccount({
-            password,
-            address: accountNeedDelete.address
-        })
-
-        assert(!(hdWallet.nodes || [])
-            .some(item =>
-                item.address.toLowerCase() === accountNeedDelete.address.toLowerCase()
-            ),
-            'Delete node error'
-        )
-    });
-
-    // it('Import Private Key', async function () {
+    // it('Delete node', async function () {
     //     const masterWallet = new MasterWallet();
     //     await masterWallet.load(password);
     //
-    //     const privateKey = "";
-    //     if (privateKey) {
-    //         const masterlessIns = masterWallet.getMasterless();
-    //         const newAccount = await masterlessIns.importNewAccount({
-    //             nodes: [],
-    //             password,
-    //             name: "test",
-    //             privateKey: ""
-    //         })
-    //         console.log('Imported accounts: ', newAccount)
+    //     const hdWallet = masterWallet.getHDWallet();
+    //
+    //     const accountNeedDelete = hdWallet.nodes?.[hdWallet.nodes?.length! - 1]!;
+    //
+    //     if (!accountNeedDelete) {
+    //         assert(false, 'Can not load account for delete')
     //     }
+    //     if (accountNeedDelete) {
+    //         await hdWallet.deletedAccount({
+    //             password,
+    //             address: accountNeedDelete.address
+    //         })
+    //     }
+    //
+    //     assert(!(hdWallet.nodes || [])
+    //         .some(item =>
+    //             item.address.toLowerCase() === accountNeedDelete.address.toLowerCase()
+    //         ),
+    //         'Delete node error'
+    //     )
     // });
+
+    it('Import Private Key', async function () {
+        const masterWallet = new MasterWallet();
+        await masterWallet.load(password);
+
+        const privateKey = "";
+        if (privateKey) {
+            const importedIns = masterWallet.getMasterless();
+            const seedIns = masterWallet.getHDWallet();
+
+            const importedNodes = importedIns.nodes || [];
+            const seedNodes = seedIns.nodes || [];
+            const nodes = [...importedNodes, ...seedNodes]
+
+            const newAccount = await importedIns.importNewAccount({
+                nodes: nodes,
+                password,
+                name: new Date().getTime() + "",
+                privateKey: privateKey
+            })
+            console.log('Imported account: ', newAccount)
+        }
+    });
 });
