@@ -49,27 +49,35 @@ describe("Wallet", async () => {
         assert.equal(mnemonic, decrypted)
     });
 
-    // it('Random', async function () {
-    //     const hdWallet = await randomMnemonic();
-    //     await setStorageHDWallet(hdWallet, password);
-    //     const masterWallet = new MasterWallet();
-    //     await masterWallet.load(password);
-    //     // const btcPrivateKeyBuffer = convertPrivateKeyFromStr(hdWallet.btcPrivateKey);
-    //     // const { address } = generateP2WPKHKeyPair(btcPrivateKeyBuffer);
-    //     // console.log('BTC Segwit address:', address)
-    //     assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
-    // });
+    it('Random', async function () {
+        const hdWallet = await randomMnemonic();
+        await setStorageHDWallet(hdWallet, password);
+        const masterWallet = new MasterWallet();
+        await masterWallet.load(password);
+        // const btcPrivateKeyBuffer = convertPrivateKeyFromStr(hdWallet.btcPrivateKey);
+        // const { address } = generateP2WPKHKeyPair(btcPrivateKeyBuffer);
+        // console.log('BTC Segwit address:', address)
+        assert.equal(hdWallet.btcPrivateKey, masterWallet.getBTCPrivateKey())
+    });
 
     it('Create new node', async function () {
         const masterWallet = new MasterWallet();
         await masterWallet.load(password);
 
+
+        const importedIns = masterWallet.getMasterless();
+        const seedIns = masterWallet.getHDWallet();
+
+        const importedNodes = importedIns.nodes || [];
+        const seedNodes = seedIns.nodes || [];
+        const nodes = [...importedNodes, ...seedNodes]
+
         const hdWallet = masterWallet.getHDWallet();
         if (hdWallet) {
             await hdWallet.createNewAccount({
                 password,
-                name: new Date().getTime().toString(),
-                accounts: [],
+                name: "Account 1",
+                accounts: nodes,
             })
         }
     });
@@ -116,26 +124,26 @@ describe("Wallet", async () => {
     //     )
     // });
 
-    it('Import Private Key', async function () {
-        const masterWallet = new MasterWallet();
-        await masterWallet.load(password);
-
-        const privateKey = "";
-        if (privateKey) {
-            const importedIns = masterWallet.getMasterless();
-            const seedIns = masterWallet.getHDWallet();
-
-            const importedNodes = importedIns.nodes || [];
-            const seedNodes = seedIns.nodes || [];
-            const nodes = [...importedNodes, ...seedNodes]
-
-            const newAccount = await importedIns.importNewAccount({
-                nodes: nodes,
-                password,
-                name: new Date().getTime() + "",
-                privateKey: privateKey
-            })
-            console.log('Imported account: ', newAccount)
-        }
-    });
+    // it('Import Private Key', async function () {
+    //     const masterWallet = new MasterWallet();
+    //     await masterWallet.load(password);
+    //
+    //     const privateKey = "";
+    //     if (privateKey) {
+    //         const importedIns = masterWallet.getMasterless();
+    //         const seedIns = masterWallet.getHDWallet();
+    //
+    //         const importedNodes = importedIns.nodes || [];
+    //         const seedNodes = seedIns.nodes || [];
+    //         const nodes = [...importedNodes, ...seedNodes]
+    //
+    //         const newAccount = await importedIns.importNewAccount({
+    //             nodes: nodes,
+    //             password,
+    //             name: new Date().getTime() + "",
+    //             privateKey: privateKey
+    //         })
+    //         console.log('Imported account: ', newAccount)
+    //     }
+    // });
 });

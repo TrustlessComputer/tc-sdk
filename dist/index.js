@@ -6233,6 +6233,10 @@ class HDWallet$1 {
             if (!wallet)
                 return;
             const { mnemonic, nodes, deletedIndexs } = wallet;
+            const isExistedName = nodes.some(node => node.name.toLowerCase() === name.toLowerCase());
+            if (isExistedName) {
+                throw new Error("This name has been existed.");
+            }
             const latestNode = maxBy__default["default"](nodes, item => Number(item.index));
             let newNodeIndex = (latestNode?.index || 0) + 1;
             for (const deletedIndex of deletedIndexs) {
@@ -6499,6 +6503,10 @@ class HDWallet {
             if (!wallet)
                 return;
             const { mnemonic, nodes, deletedIndexs } = wallet;
+            const isExistedName = nodes.some(node => node.name.toLowerCase() === name.toLowerCase());
+            if (isExistedName) {
+                throw new Error("This name has been existed.");
+            }
             const latestNode = maxBy__default["default"](nodes, item => Number(item.index));
             let newNodeIndex = (latestNode?.index || 0) + 1;
             for (const deletedIndex of deletedIndexs) {

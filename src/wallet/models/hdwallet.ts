@@ -45,6 +45,15 @@ class HDWallet {
         validateHDWallet(wallet, "create-new-account");
         if (!wallet) return;
         const { mnemonic, nodes, deletedIndexs } = wallet;
+
+        const isExistedName = nodes.some(node =>
+            node.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (isExistedName) {
+            throw new Error("This name has been existed.");
+        }
+
         const latestNode = maxBy(nodes, item => Number(item.index));
         let newNodeIndex = (latestNode?.index || 0) + 1;
         for (const deletedIndex of deletedIndexs) {
