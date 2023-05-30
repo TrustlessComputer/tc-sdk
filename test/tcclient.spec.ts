@@ -1,20 +1,47 @@
-import { DefaultEndpointTCNodeMainnet, ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx } from "../src";
-import { NetworkType, setBTCNetwork } from "../src/bitcoin";
-import { UTXO, aggregateUTXOs, } from '..';
+// import { DefaultEndpointTCNodeMainnet, ECPair, Mainnet, Network, Regtest, TcClient, Testnet, convertPrivateKeyFromStr, createInscribeTx, createRawRevealTx } from "../src";
+// import { NetworkType, setBTCNetwork } from "../src/bitcoin";
+// import { UTXO, aggregateUTXOs, } from '..';
+
+import {
+    BNZero,
+    DefaultSequenceRBF,
+    Inscription,
+    MinSats,
+    NetworkType,
+    Regtest,
+    UTXO,
+    broadcastTx,
+    convertPrivateKey,
+    convertPrivateKeyFromStr,
+    createBatchInscribeTxs,
+    createTx,
+    createTxSendBTC,
+    createTxWithSpecificUTXOs,
+    isRBFable,
+    selectUTXOs,
+    setBTCNetwork,
+} from "../dist";
+import {
+    Mainnet,
+    MasterWallet,
+    StorageService,
+    TcClient,
+    decryptAES,
+    encryptAES,
+    generateP2WPKHKeyPair,
+    getStorageHDWallet,
+    randomMnemonic,
+    setStorageHDWallet,
+    setupConfig,
+    validateHDWallet
+} from "../dist";
 
 import BigNumber from 'bignumber.js';
-import { Contract } from '@ethersproject/contracts';
-import { ECPairInterface } from 'ecpair';
-import { Psbt } from "bitcoinjs-lib";
-import TokenABI from "./token.abi.json";
-import { assert } from 'chai';
-import { ethers } from "ethers";
-import { getTxFromBlockStream } from '../src/tc/blockstream';
-import { time } from "console";
 
 require("dotenv").config({ path: __dirname + "/.env" });
 console.log(__dirname + "../test/.env");
 var Web3 = require('web3');
+
 
 
 // TODO: fill the private key
@@ -66,68 +93,118 @@ let sellerUTXOs = [
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe("TC client", async () => {
-    // it("get inscribeable info", async () => {
-    //     const tcAddress = "0x82268aF8207117ddBCD8ce4e444263CcD8d1bF87";
-    //     const resp = await tcClient.getInscribeableNonce(tcAddress);
-    //     console.log("Final resp: ", resp);
-    // });
 
-    it("check balance of addresses", async () => {
-
-        const PrivateNode = "";
-
-        const tcAddresses = [
-        ];
-        const tokenAddresses = [
-            "0xC24740D6fe62e2205e202dca85E8657AA30ff6eb", // wbtc- shib lp
-            "0xfb83c18569fb43f1abcbae09baf7090bffc8cbbd", //wbtc
-            "0x93c80ab3a566bd31bb29f9a74197ee4987b02086", // shib
-            "0x6094d9ce6d4037116eb34a43b225073363ee8239", // butt
-            "0x13f86cbf0476e1d867342ade6d60164f8e26c14f", // tm
-        ];
-
-        const publicNode = new TcClient(Mainnet);
-        const privateNode = new TcClient(Mainnet, PrivateNode);
-
-        // const publicWeb3 = new Web3(DefaultEndpointTCNodeMainnet);
-        // const privateWeb3 = new Web3("https://tc-node-private-manual.trustless.computer");
-
-
-
-
-        for (const address of tcAddresses) {
-            const balancePublic = await publicNode.getBalance(address);
-            let balancePrivate;
-            try {
-                balancePrivate = await privateNode.getBalance(address);
-
-            } catch (e) {
-                console.log("Call private node error: ", e);
-            }
-
-            if (balancePrivate !== balancePublic) {
-                console.log("DIFF balance ", address, balancePublic, balancePrivate);
-            }
-
-            for (const tokenAddress of tokenAddresses) {
-                const providerPublic = new ethers.providers.JsonRpcProvider(DefaultEndpointTCNodeMainnet);
-                const tokenInst = new Contract(tokenAddress, TokenABI.abi, providerPublic);
-                const balancePublic = await tokenInst.balanceOf(address);
-
-
-                const providerPrivate = new ethers.providers.JsonRpcProvider(PrivateNode);
-                const tokenInstPrivate = new Contract(tokenAddress, TokenABI.abi, providerPrivate);
-                const balancePrivate = await tokenInstPrivate.balanceOf(address);
-
-                if (balancePrivate.toString() !== balancePublic.toString()) {
-                    console.log("DIFF balance ", address, tokenAddress, balancePublic, balancePrivate);
-                }
-
-            }
-
-
+    const password = '1234';
+    const LocalStorage = require('node-localstorage').LocalStorage
+    const localStorage = new LocalStorage('./scratch');
+    const storage = new StorageService()
+    storage.implement({
+        namespace: undefined,
+        getMethod(key: string): Promise<any> {
+            return localStorage.getItem(key);
+        },
+        removeMethod(key: string): Promise<any> {
+            return localStorage.removeItem(key);
+        },
+        setMethod(key: string, data: string): Promise<any> {
+            return localStorage.setItem(key, data);
         }
     });
+
+    const tcClient = new TcClient(Mainnet)
+    setupConfig({
+        storage,
+        tcClient: tcClient,
+        netType: NetworkType.Mainnet
+    })
+    // @ts-ignore
+    globalThis.storage = storage;
+    it("get inscribeable info", async () => {
+        const tcAddress = "0xBc95a631A9a26aD469918832EeF9848F4Dd2af83";
+        const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
+        console.log("Final resp: ", resp);
+
+        const resp2 = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+        console.log("Final resp2: ", resp2);
+
+        // const resp3 = await tcClient.getTCTxByHash("0xf7327d257455b96a2d97a9b458f6661488a3c35d871e0b2e2fb7e5339c26b8c3");
+        // const resp4 = await tcClient.getTCTxByHash("0x7a0cf5f3a1c6bcb75a66534757f327dcdbe911139043350c3b76b763a4e8cc3a");
+        // console.log("Final resp3: ", resp3);
+        // console.log("Final resp4: ", resp4);
+
+        const txCount = await tcClient.getCountTx(tcAddress);
+        console.log("txCount: ", txCount);
+
+
+        // const privateKey = "L2XMEktYChY9HMtvBrc444jvn8e9XxTaKBp8dXjfYXuNCWeXkigu";
+        // const privateKeyBuffer = convertPrivateKeyFromStr(privateKey
+        // );
+        // const { address } = generateP2WPKHKeyPair(privateKeyBuffer);
+        // console.log(
+        //     address
+        // );
+
+
+        // const reps = await tcClient.getTCTxByHash("0x2d748308331073c6f6a03e5b9d0b96b59d989930c23640cb704da49d0187f3ff")
+        // console.log("reps: ", reps);
+    });
+
+    // it("check balance of addresses", async () => {
+
+    //     const PrivateNode = "";
+
+    //     const tcAddresses = [
+    //     ];
+    //     const tokenAddresses = [
+    //         "0xC24740D6fe62e2205e202dca85E8657AA30ff6eb", // wbtc- shib lp
+    //         "0xfb83c18569fb43f1abcbae09baf7090bffc8cbbd", //wbtc
+    //         "0x93c80ab3a566bd31bb29f9a74197ee4987b02086", // shib
+    //         "0x6094d9ce6d4037116eb34a43b225073363ee8239", // butt
+    //         "0x13f86cbf0476e1d867342ade6d60164f8e26c14f", // tm
+    //     ];
+
+    //     const publicNode = new TcClient(Mainnet);
+    //     const privateNode = new TcClient(Mainnet, PrivateNode);
+
+    //     // const publicWeb3 = new Web3(DefaultEndpointTCNodeMainnet);
+    //     // const privateWeb3 = new Web3("https://tc-node-private-manual.trustless.computer");
+
+
+
+
+    //     for (const address of tcAddresses) {
+    //         const balancePublic = await publicNode.getBalance(address);
+    //         let balancePrivate;
+    //         try {
+    //             balancePrivate = await privateNode.getBalance(address);
+
+    //         } catch (e) {
+    //             console.log("Call private node error: ", e);
+    //         }
+
+    //         if (balancePrivate !== balancePublic) {
+    //             console.log("DIFF balance ", address, balancePublic, balancePrivate);
+    //         }
+
+    //         for (const tokenAddress of tokenAddresses) {
+    //             const providerPublic = new ethers.providers.JsonRpcProvider(DefaultEndpointTCNodeMainnet);
+    //             const tokenInst = new Contract(tokenAddress, TokenABI.abi, providerPublic);
+    //             const balancePublic = await tokenInst.balanceOf(address);
+
+
+    //             const providerPrivate = new ethers.providers.JsonRpcProvider(PrivateNode);
+    //             const tokenInstPrivate = new Contract(tokenAddress, TokenABI.abi, providerPrivate);
+    //             const balancePrivate = await tokenInstPrivate.balanceOf(address);
+
+    //             if (balancePrivate.toString() !== balancePublic.toString()) {
+    //                 console.log("DIFF balance ", address, tokenAddress, balancePublic, balancePrivate);
+    //             }
+
+    //         }
+
+
+    //     }
+    // });
     // it("submit btc tx", async () => {
     //     console.log("tcClient.network ", tcClient.network);
     //     console.log("tcClient.url ", tcClient.url);

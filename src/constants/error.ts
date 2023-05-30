@@ -19,6 +19,11 @@ export const ERROR_CODE = {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: "-17",
     RPC_SUBMIT_BTCTX_ERROR: "-18",
     RPC_GET_TAPSCRIPT_INFO: "-19",
+    RESTORE_HD_WALLET: "-20",
+    DECRYPT: "-21",
+    TAPROOT_FROM_MNEMONIC: "-22",
+    MNEMONIC_GEN_TAPROOT: "-23",
+    CANNOT_FIND_ACCOUNT: "-24",
     NOT_FOUND_TX_TO_RBF: "-30",
     COMMIT_TX_EMPTY: "-31",
     REVEAL_TX_EMPTY: "-32",
@@ -26,6 +31,11 @@ export const ERROR_CODE = {
     INVALID_NEW_FEE_RBF: "-34",
     GET_UTXO_VALUE_ERR: "-35",
     IS_NOT_RBFABLE: "-36",
+    INVALID_BTC_ADDRESS_TYPE: "-37",
+    MNEMONIC_GEN_SEGWIT: "-38",
+    SEGWIT_FROM_MNEMONIC: "-39",
+    RESTORE_MASTERLESS_WALLET: "-40",
+    CANNOT_CREATE_ACCOUNT: "-41",
 };
 
 export const ERROR_MESSAGE = {
@@ -105,6 +115,22 @@ export const ERROR_MESSAGE = {
         message: "Call RPC submit btc tx error.",
         desc: "Call RPC submit btc tx error.",
     },
+    [ERROR_CODE.RESTORE_HD_WALLET]: {
+        message: "Restore hd wallet error.",
+        desc: "Restore hd wallet error.",
+    },
+    [ERROR_CODE.DECRYPT]: {
+        message: "Incorrect password.",
+        desc: "Incorrect password.",
+    },
+    [ERROR_CODE.TAPROOT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE.CANNOT_FIND_ACCOUNT]: {
+        message: "Can not find account.",
+        desc: "an not find account.",
+    },
     [ERROR_CODE.NOT_FOUND_TX_TO_RBF]: {
         message: "BTC transaction was not found from TC node.",
         desc: "BTC transaction was not found from TC node.",
@@ -132,6 +158,30 @@ export const ERROR_MESSAGE = {
     [ERROR_CODE.IS_NOT_RBFABLE]: {
         message: "This transaction doesn't support to speed up.",
         desc: "This transaction doesn't support to speed up.",
+    },
+    [ERROR_CODE.INVALID_BTC_ADDRESS_TYPE]: {
+        message: "Bitcoin address is invalid or not supported.",
+        desc: "Bitcoin address is invalid or not supported.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_TAPROOT]: {
+        message: "Gen taproot from mnemonic error.",
+        desc: "Gen taproot from mnemonic error.",
+    },
+    [ERROR_CODE.MNEMONIC_GEN_SEGWIT]: {
+        message: "Gen segwit from mnemonic error.",
+        desc: "Gen segwit from mnemonic error.",
+    },
+    [ERROR_CODE.SEGWIT_FROM_MNEMONIC]: {
+        message: "Generate private key by mnemonic error.",
+        desc: "Generate private key by mnemonic error.",
+    },
+    [ERROR_CODE.RESTORE_MASTERLESS_WALLET]: {
+        message: "Restore masterless wallet error.",
+        desc: "Restore masterless wallet error.",
+    },
+    [ERROR_CODE.CANNOT_CREATE_ACCOUNT]: {
+        message: "Create account error.",
+        desc: "Create account error.",
     },
 };
 

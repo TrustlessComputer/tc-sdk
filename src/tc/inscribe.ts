@@ -1,6 +1,7 @@
 import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
     BatchInscribeTxResp,
+    IKeyPairInfo,
     Inscription,
     SDKError,
     TCTxDetail,
@@ -10,8 +11,8 @@ import {
     createTxSendBTC,
     estimateTxFee,
     toSat,
-} from "..";
-import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, toXOnly } from "../bitcoin/wallet";
+} from "../";
+import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getKeyPairInfo, toXOnly } from "../bitcoin/wallet";
 import { Psbt, address, opcodes, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
 
@@ -30,7 +31,6 @@ const remove0x = (data: string): string => {
 };
 
 const createRawRevealTx = ({
-    internalPubKey,
     commitTxID,
     hashLockKeyPair,
     hashLockRedeem,
@@ -38,7 +38,6 @@ const createRawRevealTx = ({
     revealTxFee,
     sequence = 0,
 }: {
-    internalPubKey: Buffer,
     commitTxID: string,
     hashLockKeyPair: ECPairInterface,
     hashLockRedeem: any,
@@ -46,7 +45,6 @@ const createRawRevealTx = ({
     revealTxFee: number,
     sequence?: number,
 }): { revealTxHex: string, revealTxID: string } => {
-    const { p2pktr, address: p2pktr_addr } = generateTaprootAddressFromPubKey(internalPubKey);
 
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
@@ -54,7 +52,7 @@ const createRawRevealTx = ({
         controlBlock: script_p2tr.witness![script_p2tr.witness!.length - 1],
     };
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     psbt.addInput({
         hash: commitTxID,
         index: 0,
@@ -109,7 +107,7 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
         controlBlock: script_p2tr.witness![script_p2tr.witness!.length - 1]
     };
 
-    const psbt = new Psbt({ network: Network });
+    const psbt = new Psbt({ network: tcBTCNetwork });
     psbt.addInput({
         hash: "00".repeat(32),
         index: 0,
@@ -161,7 +159,7 @@ function getCommitVirtualSize(p2pk_p2tr: any, keypair: any, script_addr: any, tw
         inputValue = inputValue.plus(utxos[i].value);
         useUTXO.push(utxos[i]);
     }
-    const p2pk_psbt = new Psbt({ network: Network });
+    const p2pk_psbt = new Psbt({ network: tcBTCNetwork });
     p2pk_psbt.addOutput({
         address: script_addr,
         value: inputValue.minus(1).toNumber(),
@@ -205,20 +203,20 @@ function getCommitVirtualSize(p2pk_p2tr: any, keypair: any, script_addr: any, tw
 */
 const createInscribeTx = async ({
     senderPrivateKey,
+    senderAddress,
     utxos,
     inscriptions,
     tcTxIDs,
     feeRatePerByte,
-    tcClient,
     sequence = DefaultSequenceRBF,
     isSelectUTXOs = true,
 }: {
     senderPrivateKey: Buffer,
+    senderAddress: string,
     utxos: UTXO[],
     inscriptions: { [key: string]: Inscription[] },
     tcTxIDs: string[],
     feeRatePerByte: number,
-    tcClient: TcClient,
     sequence?: number;
     isSelectUTXOs?: boolean,
 }): Promise<{
@@ -230,12 +228,16 @@ const createInscribeTx = async ({
     selectedUTXOs: UTXO[],
     newUTXOs: UTXO[],
 }> => {
-    const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
-    const internalPubKey = toXOnly(keyPair.publicKey);
+
+    const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    // const internalPubKey = toXOnly(keyPair.publicKey);
 
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
-        internalPubKey,
+        // internalPubKey,
         tcTxIDs,
         tcClient
     });
@@ -257,6 +259,7 @@ const createInscribeTx = async ({
 
     const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
         senderPrivateKey,
+        senderAddress,
         utxos,
         inscriptions,
         paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee) }],
@@ -277,13 +280,8 @@ const createInscribeTx = async ({
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
 
-    // if (sequence < DefaultSequence) {
-    //     sequence++;
-    // }
-
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
-        internalPubKey,
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -294,14 +292,8 @@ const createInscribeTx = async ({
 
     console.log("commitTxHex: ", commitTxHex);
     console.log("revealTxHex: ", revealTxHex);
-
-
-
-    // newUTXOs.push({
-    //     tx_hash: revealTxID,
-    //     tx_output_n: 0,
-    //     value: new BigNumber(MinSats),
-    // });
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
 
     const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
     console.log("btcTxID: ", btcTxID);
@@ -376,19 +368,19 @@ const splitBatchInscribeTx = ({
 */
 const createBatchInscribeTxs = async ({
     senderPrivateKey,
+    senderAddress,
     utxos,
     inscriptions,
     tcTxDetails,
     feeRatePerByte,
-    tcClient,
     sequence = DefaultSequenceRBF,
 }: {
     senderPrivateKey: Buffer,
+    senderAddress: string,
     utxos: UTXO[],
     inscriptions: { [key: string]: Inscription[] },
     tcTxDetails: TCTxDetail[],
     feeRatePerByte: number,
-    tcClient: TcClient,
     sequence?: number,
 }): Promise<BatchInscribeTxResp[]> => {
 
@@ -403,11 +395,11 @@ const createBatchInscribeTxs = async ({
         try {
             const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
                 senderPrivateKey,
+                senderAddress,
                 utxos: newUTXOs,
                 inscriptions,
                 tcTxIDs: batch,
                 feeRatePerByte,
-                tcClient,
                 sequence,
             });
 
@@ -493,7 +485,7 @@ const createInscribeTxFromAnyWallet = async ({
 
     // create lock script for commit tx
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
-        internalPubKey: pubKey,
+        // internalPubKey: pubKey,
         tcTxIDs,
         tcClient,
     });
@@ -535,7 +527,6 @@ const createInscribeTxFromAnyWallet = async ({
 
     // create and sign reveal tx
     const { revealTxHex, revealTxID } = createRawRevealTx({
-        internalPubKey: pubKey,
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -555,12 +546,12 @@ const createInscribeTxFromAnyWallet = async ({
 
 const createLockScript = async ({
     // privateKey,
-    internalPubKey,
+    // internalPubKey,
     tcTxIDs,
     tcClient,
 }: {
     // privateKey: Buffer,
-    internalPubKey: Buffer,
+    // internalPubKey: Buffer,
     tcTxIDs: string[],
     tcClient: TcClient,
 }): Promise<{
@@ -574,7 +565,8 @@ const createLockScript = async ({
     // The other path should pay to another pubkey
 
     // Make random key pair for hash_lock script
-    const hashLockKeyPair = ECPair.makeRandom({ network: Network });
+    const hashLockKeyPair = ECPair.makeRandom({ network: tcBTCNetwork });
+    const internalPubKey = toXOnly(hashLockKeyPair.publicKey);
 
     // TODO:
     // const hashLockPrivateKey = hash256(privateKey);
@@ -595,7 +587,7 @@ const createLockScript = async ({
         internalPubkey: internalPubKey,
         scriptTree,
         redeem: hashLockRedeem,
-        network: Network
+        network: tcBTCNetwork
     });
 
     return {
@@ -676,7 +668,7 @@ const aggregateUTXOsV0 = async ({
             const vout = tx.Vout[i];
 
             try {
-                const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), Network);
+                const receiverAddress = address.fromOutputScript(Buffer.from(vout.scriptPubKey?.hex, "hex"), tcBTCNetwork);
                 if (receiverAddress === btcAddress) {
                     newUTXOs.push({
                         tx_hash: btcTxID,
@@ -735,14 +727,11 @@ const aggregateUTXOsV0 = async ({
 */
 const aggregateUTXOs = async ({
     tcAddress,
-    btcAddress,
     utxos,
-    tcClient,
 }: {
     tcAddress: string,
     btcAddress: string,
     utxos: UTXO[],
-    tcClient: TcClient,
 }): Promise<UTXO[]> => {
 
     const txs = await tcClient.getPendingInscribeTxs(tcAddress);

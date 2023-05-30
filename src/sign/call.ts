@@ -1,5 +1,5 @@
 import { CallWalletPayload, Target, RequestPayload, RequestFunction, RequestAccountResponse } from "./type";
-import Validator from "../utils/validator";
+import { Validator } from "@/utils";
 import { URL_MAINNET, URL_REGTEST } from "./constant";
 
 const window = globalThis || global;

@@ -13,13 +13,10 @@
       "es2020",
     ],
     "esModuleInterop": true,
-    "baseUrl": "./src",
+    "baseUrl": "./",
     "paths": {
-      "@src/*": [
-        "./*"
-      ],
-      "@root/*": [
-        "../*"
+      "@/*": [
+        "src/*"
       ]
     },
     "resolveJsonModule": true,

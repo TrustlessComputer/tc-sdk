@@ -14,7 +14,7 @@ import {
     createTxWithSpecificUTXOs,
     selectUTXOs,
     setBTCNetwork,
-} from "../src/index";
+} from "../src";
 
 import BigNumber from "bignumber.js";
 import { DefaultDeserializer } from "v8";

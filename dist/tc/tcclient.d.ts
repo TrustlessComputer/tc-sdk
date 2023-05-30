@@ -36,5 +36,6 @@ declare class TcClient {
         incomingUTXOs: UTXO[];
     }>;
     getBalance: (tcAddress: string) => Promise<any>;
+    getCountTx: (tcAddress: string) => Promise<any>;
 }
 export { DefaultEndpointTCNodeMainnet, TcClient, Mainnet, Testnet, Regtest, };

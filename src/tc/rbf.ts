@@ -185,7 +185,6 @@ const replaceByFeeInscribeTx = async (
         inscriptions,
         revealTxID,
         feeRatePerByte,
-        tcClient,
         tcAddress,
         btcAddress,
         sequence = DefaultSequenceRBF,
@@ -196,7 +195,6 @@ const replaceByFeeInscribeTx = async (
         inscriptions: { [key: string]: Inscription[] },
         revealTxID: string,
         feeRatePerByte: number,
-        tcClient: TcClient,
         tcAddress: string,
         btcAddress: string,
         sequence?: number,
@@ -265,11 +263,11 @@ const replaceByFeeInscribeTx = async (
     console.log("createInscribeTx: ", createInscribeTx);
     const resp = await createInscribeTx({
         senderPrivateKey,
+        senderAddress: btcAddress,
         utxos: utxosForRBFTx,
         inscriptions,
         tcTxIDs: needToRBFTCTxIDs,
         feeRatePerByte,
-        tcClient,
         sequence,
         isSelectUTXOs: false,
     });
@@ -279,12 +277,10 @@ const replaceByFeeInscribeTx = async (
 
 const isRBFable = async ({
     revealTxID,
-    tcClient,
     tcAddress,
     btcAddress,
 }: {
     revealTxID: string,
-    tcClient: TcClient,
     tcAddress: string,
     btcAddress: string,
 }): Promise<{

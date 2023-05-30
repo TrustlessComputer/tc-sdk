@@ -1,10 +1,9 @@
-import { BatchInscribeTxResp, Inscription, TCTxDetail, TcClient, UTXO } from "..";
+import { BatchInscribeTxResp, Inscription, TCTxDetail, TcClient, UTXO } from "../";
 import { payments } from "bitcoinjs-lib";
 import { Tapleaf } from "bitcoinjs-lib/src/types";
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
-declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence, }: {
-    internalPubKey: Buffer;
+declare const createRawRevealTx: ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence, }: {
     commitTxID: string;
     hashLockKeyPair: ECPairInterface;
     hashLockRedeem: any;
@@ -29,15 +28,15 @@ declare const createRawRevealTx: ({ internalPubKey, commitTxID, hashLockKeyPair,
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, utxos, inscriptions, tcTxIDs, feeRatePerByte, tcClient, sequence, isSelectUTXOs, }: {
+declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
+    senderAddress: string;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];
     };
     tcTxIDs: string[];
     feeRatePerByte: number;
-    tcClient: TcClient;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
 }) => Promise<{
@@ -66,15 +65,15 @@ declare const splitBatchInscribeTx: ({ tcTxDetails }: {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createBatchInscribeTxs: ({ senderPrivateKey, utxos, inscriptions, tcTxDetails, feeRatePerByte, tcClient, sequence, }: {
+declare const createBatchInscribeTxs: ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence, }: {
     senderPrivateKey: Buffer;
+    senderAddress: string;
     utxos: UTXO[];
     inscriptions: {
         [key: string]: Inscription[];
     };
     tcTxDetails: TCTxDetail[];
     feeRatePerByte: number;
-    tcClient: TcClient;
     sequence?: number | undefined;
 }) => Promise<BatchInscribeTxResp[]>;
 /**
@@ -109,8 +108,7 @@ declare const createInscribeTxFromAnyWallet: ({ pubKey, utxos, inscriptions, tcT
     revealTxID: string;
     totalFee: BigNumber;
 }>;
-declare const createLockScript: ({ internalPubKey, tcTxIDs, tcClient, }: {
-    internalPubKey: Buffer;
+declare const createLockScript: ({ tcTxIDs, tcClient, }: {
     tcTxIDs: string[];
     tcClient: TcClient;
 }) => Promise<{
@@ -139,10 +137,9 @@ declare const estimateInscribeFee: ({ tcTxSizeByte, feeRatePerByte, }: {
 * @param feeRatePerByte fee rate per byte (in satoshi)
 * @returns the total BTC fee
 */
-declare const aggregateUTXOs: ({ tcAddress, btcAddress, utxos, tcClient, }: {
+declare const aggregateUTXOs: ({ tcAddress, utxos, }: {
     tcAddress: string;
     btcAddress: string;
     utxos: UTXO[];
-    tcClient: TcClient;
 }) => Promise<UTXO[]>;
 export { createRawRevealTx, createInscribeTx, createInscribeTxFromAnyWallet, estimateInscribeFee, createLockScript, createBatchInscribeTxs, aggregateUTXOs, splitBatchInscribeTx };

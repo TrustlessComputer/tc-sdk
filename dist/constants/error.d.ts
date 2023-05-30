@@ -19,6 +19,11 @@ export declare const ERROR_CODE: {
     RPC_GET_INSCRIBEABLE_INFO_ERROR: string;
     RPC_SUBMIT_BTCTX_ERROR: string;
     RPC_GET_TAPSCRIPT_INFO: string;
+    RESTORE_HD_WALLET: string;
+    DECRYPT: string;
+    TAPROOT_FROM_MNEMONIC: string;
+    MNEMONIC_GEN_TAPROOT: string;
+    CANNOT_FIND_ACCOUNT: string;
     NOT_FOUND_TX_TO_RBF: string;
     COMMIT_TX_EMPTY: string;
     REVEAL_TX_EMPTY: string;
@@ -26,6 +31,11 @@ export declare const ERROR_CODE: {
     INVALID_NEW_FEE_RBF: string;
     GET_UTXO_VALUE_ERR: string;
     IS_NOT_RBFABLE: string;
+    INVALID_BTC_ADDRESS_TYPE: string;
+    MNEMONIC_GEN_SEGWIT: string;
+    SEGWIT_FROM_MNEMONIC: string;
+    RESTORE_MASTERLESS_WALLET: string;
+    CANNOT_CREATE_ACCOUNT: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

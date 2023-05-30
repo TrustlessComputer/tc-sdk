@@ -1,5 +1,6 @@
-import { Psbt, Transaction } from "bitcoinjs-lib";
+import { Psbt, Transaction, payments } from "bitcoinjs-lib";
 import BigNumber from "bignumber.js";
+import { ECPairInterface } from "ecpair";
 interface UTXO {
     tx_hash: string;
     tx_output_n: number;
@@ -75,4 +76,12 @@ interface NeedPaymentUTXO {
     buyInfoIndex: number;
     amount: BigNumber;
 }
-export { UTXO, Inscription, ICreateTxResp, ICreateRawTxResp, ICreateTxSplitInscriptionResp, ICreateTxBuyResp, ICreateTxSellResp, BuyReqInfo, PaymentInfo, BuyReqFullInfo, Wallet, ISignPSBTResp, NeedPaymentUTXO, };
+interface IKeyPairInfo {
+    address: string;
+    addressType: number;
+    keyPair: ECPairInterface;
+    payment: payments.Payment;
+    signer: any;
+    sigHashTypeDefault: number;
+}
+export { UTXO, Inscription, ICreateTxResp, ICreateRawTxResp, ICreateTxSplitInscriptionResp, ICreateTxBuyResp, ICreateTxSellResp, BuyReqInfo, PaymentInfo, BuyReqFullInfo, Wallet, ISignPSBTResp, NeedPaymentUTXO, IKeyPairInfo, };

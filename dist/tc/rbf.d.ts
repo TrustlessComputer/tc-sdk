@@ -1,6 +1,6 @@
-import { Inscription, TcClient, UTXO } from "..";
+import { Inscription, UTXO } from "..";
 import BigNumber from "bignumber.js";
-declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcClient, tcAddress, btcAddress, sequence, }: {
+declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, revealTxID, feeRatePerByte, tcAddress, btcAddress, sequence, }: {
     senderPrivateKey: Buffer;
     utxos: UTXO[];
     inscriptions: {
@@ -8,7 +8,6 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     };
     revealTxID: string;
     feeRatePerByte: number;
-    tcClient: TcClient;
     tcAddress: string;
     btcAddress: string;
     sequence?: number | undefined;
@@ -21,9 +20,8 @@ declare const replaceByFeeInscribeTx: ({ senderPrivateKey, utxos, inscriptions, 
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-declare const isRBFable: ({ revealTxID, tcClient, tcAddress, btcAddress, }: {
+declare const isRBFable: ({ revealTxID, tcAddress, btcAddress, }: {
     revealTxID: string;
-    tcClient: TcClient;
     tcAddress: string;
     btcAddress: string;
 }) => Promise<{

@@ -1,5 +1,5 @@
-import dts from "rollup-plugin-dts";
 // rollup.config.js
+import dts from "rollup-plugin-dts";
 import { nodeResolve as resolve } from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 
@@ -11,9 +11,33 @@ const config = [
             format: "cjs",
             sourcemap: true,
         },
-        external: ["axios", "os", "url", "ecpair", "@bitcoinerlab/secp256k1", "bitcoinjs-lib", "@ethersproject", "crypto-js", "ethers", "js-sha3", "bip32", "web3", "wif", "ethereumjs-wallet", "sats-connect", "varuint-bitcoin", "underscore"],
-        plugins: [resolve(), typescript()]
-    }, {
+        external: [
+            "axios",
+            "os",
+            "url",
+            "ecpair",
+            "@bitcoinerlab/secp256k1",
+            "bitcoinjs-lib",
+            "@ethersproject",
+            "crypto-js",
+            "ethers",
+            "js-sha3",
+            "bip32",
+            "web3",
+            "wif",
+            "ethereumjs-wallet",
+            "sats-connect",
+            "varuint-bitcoin",
+            "underscore",
+            "bip39",
+            "lodash/maxBy"
+        ],
+        plugins: [
+            typescript(),
+            resolve(),
+        ]
+    },
+    {
         input: "build/compiled/index.d.ts",
         output: {
             file: "dist/index.d.ts",
