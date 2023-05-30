@@ -135,11 +135,11 @@ describe("Sign msg Tx", async () => {
         }
     });
 
-    const tcClient = new TcClient(Regtest)
+    const tcClient = new TcClient(Mainnet)
     setupConfig({
         storage,
         tcClient: tcClient,
-        netType: NetworkType.Regtest
+        netType: NetworkType.Mainnet
     })
     // @ts-ignore
     globalThis.storage = storage;
@@ -219,8 +219,8 @@ describe("Sign msg Tx", async () => {
         // const data = "0xf86e808502540be40082520894f91cee2de943733e338891ef602c962ef4d7eb81880de0b6b3a76400008082adaea04cc68e8614cc64510585da088c65f22ad0db499dfc70de4bd7d443782a2ee138a00bbf93851e4a98f92adcb72a4f77bad23275f8c9c4925a8272c357bcfe2e610a";
         const tcAddress = "0xF91cEe2DE943733e338891Ef602c962eF4D7Eb81";
 
-        setBTCNetwork(NetworkType.Regtest);
-        const tcClient = new TcClient(Regtest);
+        setBTCNetwork(NetworkType.Mainnet);
+        // const tcClient = new TcClient();
 
         // const res = await tcClient.getUnInscribedTransactionByAddress(tcAddress);
         // console.log("Uninscribe tx: ", res);
@@ -296,14 +296,22 @@ describe("Sign msg Tx", async () => {
 
 
         const tcTxDetails: any[] = [{
-            Nonce: 6,
-            Hash: "0x5e1ce37b564d57d599929a6ecf9ae205c0f44887dff9fb6609fc052ce927bfaf",
+            Nonce: 7,
+            Hash: "0x28f9ab1f2237d49441cb666e8104c6a27efeee5010b2584957e36c4b9638bb94",
+        },
+        {
+            Nonce: 8,
+            Hash: "0x1d3c3163a0deec5ec5a690e0fa2026e5f8adc16414cb2e8824a9079fdca3d50c",
+        },
+        {
+            Nonce: 9,
+            Hash: "0x610a03c57b004d85b83d4ccdf8ec55e1ee64489ca405c939cf50ca3a883e9bf0",
         },
         ];
 
         const resp = await createBatchInscribeTxs({
-            senderPrivateKey: privateKey2,
-            senderAddress: address2,
+            senderPrivateKey: privateKey1,
+            senderAddress: address1,
             tcTxDetails: tcTxDetails,
             utxos,
             inscriptions: {},

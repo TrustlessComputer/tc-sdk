@@ -987,6 +987,7 @@ declare class TcClient {
         incomingUTXOs: UTXO[];
     }>;
     getBalance: (tcAddress: string) => Promise<any>;
+    getCountTx: (tcAddress: string) => Promise<any>;
 }
 
 declare const increaseGasPrice: (wei: BigNumber) => BigNumber;

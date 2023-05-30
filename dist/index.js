@@ -5654,6 +5654,16 @@ class TcClient {
             }
             return resp;
         };
+        // getTCTxReceipt get TC tx receipt
+        this.getCountTx = async (tcAddress) => {
+            const payload = [tcAddress, "pending"];
+            const resp = await this.callRequest(payload, MethodPost, "eth_getTransactionCount");
+            console.log("Resp eth_getBalance: ", resp);
+            if (resp === "") {
+                throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
+            }
+            return resp;
+        };
         if (params.length === 0) {
             throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS);
         }
