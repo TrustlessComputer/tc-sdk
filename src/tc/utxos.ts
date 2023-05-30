@@ -22,12 +22,10 @@ const ServiceGetUTXOType = {
 const getUTXOs = async ({
     btcAddress,
     tcAddress,
-    tcClient,
     serviceType = ServiceGetUTXOType.BlockStream,
 }: {
     btcAddress: string,
     tcAddress: string,
-    tcClient: TcClient,
     serviceType?: number,
 }): Promise<{ availableUTXOs: UTXO[], incomingUTXOs: UTXO[], availableBalance: BigNumber, incomingBalance: BigNumber }> => {
     let availableUTXOs: UTXO[] = [];

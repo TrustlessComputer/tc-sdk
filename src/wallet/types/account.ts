@@ -14,11 +14,7 @@ interface IHDWallet {
     btcPrivateKey: string;
 }
 
-interface IMasterless {
-    name: string | undefined;
-    privateKey: string;
-    address: string;
-}
+type IMasterless = IDeriveKey;
 
 interface IDeriveReq {
     mnemonic: string,
@@ -26,9 +22,15 @@ interface IDeriveReq {
     name?: string
 }
 
+interface IDeriveMasterlessReq {
+    name: string,
+    privateKey: string
+}
+
 export {
     IDeriveKey,
     IHDWallet,
     IMasterless,
-    IDeriveReq
+    IDeriveReq,
+    IDeriveMasterlessReq
 };

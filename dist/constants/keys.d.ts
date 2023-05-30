@@ -1,5 +1,5 @@
 declare enum StorageKeys {
     HDWallet = "hd-wallet-cipher",
-    masterless = "masterless-cipher"
+    Masterless = "masterless-cipher"
 }
 export { StorageKeys };

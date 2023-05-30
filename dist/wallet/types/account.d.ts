@@ -11,14 +11,14 @@ interface IHDWallet {
     deletedIndexs: Array<number>;
     btcPrivateKey: string;
 }
-interface IMasterless {
-    name: string | undefined;
-    privateKey: string;
-    address: string;
-}
+type IMasterless = IDeriveKey;
 interface IDeriveReq {
     mnemonic: string;
     index: number;
     name?: string;
 }
-export { IDeriveKey, IHDWallet, IMasterless, IDeriveReq };
+interface IDeriveMasterlessReq {
+    name: string;
+    privateKey: string;
+}
+export { IDeriveKey, IHDWallet, IMasterless, IDeriveReq, IDeriveMasterlessReq };

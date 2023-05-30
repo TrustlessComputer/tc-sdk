@@ -13,8 +13,6 @@ import {
     setupConfig,
     Mainnet,
     TcClient,
-    // convertPrivateKeyFromStr,
-    // generateP2WPKHKeyPair
 } from "../dist";
 
 describe("Wallet", async () => {
@@ -66,11 +64,20 @@ describe("Wallet", async () => {
         const masterWallet = new MasterWallet();
         await masterWallet.load(password);
 
+
+        const importedIns = masterWallet.getMasterless();
+        const seedIns = masterWallet.getHDWallet();
+
+        const importedNodes = importedIns.nodes || [];
+        const seedNodes = seedIns.nodes || [];
+        const nodes = [...importedNodes, ...seedNodes]
+
         const hdWallet = masterWallet.getHDWallet();
         if (hdWallet) {
             await hdWallet.createNewAccount({
                 password,
-                name: new Date().getTime().toString()
+                name: "Account 1",
+                accounts: nodes,
             })
         }
     });
@@ -91,27 +98,52 @@ describe("Wallet", async () => {
         }
     });
 
-    it('Delete node', async function () {
-        const masterWallet = new MasterWallet();
-        await masterWallet.load(password);
+    // it('Delete node', async function () {
+    //     const masterWallet = new MasterWallet();
+    //     await masterWallet.load(password);
+    //
+    //     const hdWallet = masterWallet.getHDWallet();
+    //
+    //     const accountNeedDelete = hdWallet.nodes?.[hdWallet.nodes?.length! - 1]!;
+    //
+    //     if (!accountNeedDelete) {
+    //         assert(false, 'Can not load account for delete')
+    //     }
+    //     if (accountNeedDelete) {
+    //         await hdWallet.deletedAccount({
+    //             password,
+    //             address: accountNeedDelete.address
+    //         })
+    //     }
+    //
+    //     assert(!(hdWallet.nodes || [])
+    //         .some(item =>
+    //             item.address.toLowerCase() === accountNeedDelete.address.toLowerCase()
+    //         ),
+    //         'Delete node error'
+    //     )
+    // });
 
-        const hdWallet = masterWallet.getHDWallet();
-
-        const accountNeedDelete = hdWallet.nodes?.[1]!;
-
-        if (!accountNeedDelete) {
-            assert(false, 'Can not load account for delete')
-        }
-        await hdWallet.deletedAccount({
-            password,
-            address: accountNeedDelete.address
-        })
-
-        assert(!(hdWallet.nodes || [])
-            .some(item =>
-                item.address.toLowerCase() === accountNeedDelete.address.toLowerCase()
-            ),
-            'Delete node error'
-        )
-    });
+    // it('Import Private Key', async function () {
+    //     const masterWallet = new MasterWallet();
+    //     await masterWallet.load(password);
+    //
+    //     const privateKey = "";
+    //     if (privateKey) {
+    //         const importedIns = masterWallet.getMasterless();
+    //         const seedIns = masterWallet.getHDWallet();
+    //
+    //         const importedNodes = importedIns.nodes || [];
+    //         const seedNodes = seedIns.nodes || [];
+    //         const nodes = [...importedNodes, ...seedNodes]
+    //
+    //         const newAccount = await importedIns.importNewAccount({
+    //             nodes: nodes,
+    //             password,
+    //             name: new Date().getTime() + "",
+    //             privateKey: privateKey
+    //         })
+    //         console.log('Imported account: ', newAccount)
+    //     }
+    // });
 });

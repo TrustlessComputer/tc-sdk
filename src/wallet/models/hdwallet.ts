@@ -36,11 +36,24 @@ class HDWallet {
         await setStorageHDWallet(wallet, password);
     };
 
-    createNewAccount = async ({ password, name }: { password: string, name?: string }) => {
+    createNewAccount = async ({ password, name, accounts }: {
+        password: string,
+        name: string,
+        accounts: IDeriveKey[]
+    }) => {
         const wallet: IHDWallet | undefined = await getStorageHDWallet(password);
         validateHDWallet(wallet, "create-new-account");
         if (!wallet) return;
         const { mnemonic, nodes, deletedIndexs } = wallet;
+
+        const isExistedName = nodes.some(node =>
+            node.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (isExistedName) {
+            throw new Error("This name has been existed.");
+        }
+
         const latestNode = maxBy(nodes, item => Number(item.index));
         let newNodeIndex = (latestNode?.index || 0) + 1;
         for (const deletedIndex of deletedIndexs) {
@@ -48,14 +61,39 @@ class HDWallet {
                 newNodeIndex += 1;
             }
         }
-        const childNode = deriveHDNodeByIndex({
-            mnemonic,
-            index: newNodeIndex,
-            name
-        });
-        nodes.push(childNode);
-        await this.saveWallet(wallet, password);
-        return childNode;
+
+        const validateExistNode = (newNode: IDeriveKey, nodes: IDeriveKey[]) => {
+            const isExist = nodes.some(node =>
+                node.address.toLowerCase() === newNode.address.toLowerCase()
+            );
+            return !isExist;
+        };
+
+        let newNode: IDeriveKey | undefined = undefined;
+        let isBreak = false;
+        while (!isBreak) {
+            const childNode = deriveHDNodeByIndex({
+                mnemonic,
+                index: newNodeIndex,
+                name
+            });
+            const isValid = validateExistNode(childNode, accounts);
+            if (isValid) {
+                newNode = childNode;
+                isBreak = true;
+            } else {
+                isBreak = false;
+                ++newNodeIndex;
+            }
+        }
+
+        if (newNode) {
+            nodes.push(newNode);
+            await this.saveWallet(wallet, password);
+            return newNode;
+        }
+
+        throw new SDKError(ERROR_CODE.CANNOT_FIND_ACCOUNT);
     };
 
     deletedAccount = async ({ password, address }: { password: string, address: string }) => {
