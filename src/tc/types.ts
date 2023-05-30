@@ -29,7 +29,7 @@ interface GetTxByHashResp {
     blockNumber: string,
     transactionIndex: string,
     hash: string,
-    status: string
+    status: string,
 }
 
 interface GetPendingInscribeTxsResp {
