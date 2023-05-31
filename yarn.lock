@@ -1527,6 +1527,11 @@ bs58check@<3.0.0, bs58check@^2.1.2:
     create-hash "^1.1.0"
     safe-buffer "^5.1.2"
 
+bsv-wasm@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/bsv-wasm/-/bsv-wasm-2.0.1.tgz#cacca07dc4bd38c025de62b5a7b18c78006f4a56"
+  integrity sha512-+6omHGJxC4I72IdYByKClKPtf6sTSbkO4t2brkMOaE23P10E5SlviAlENp1EpLnq9eDxm+WUsmJDIlMmMAxQpg==
+
 buffer-from@^1.0.0, buffer-from@^1.1.0:
   version "1.1.2"
   resolved "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.2.tgz"

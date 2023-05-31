@@ -30,7 +30,8 @@ const config = [
             "varuint-bitcoin",
             "underscore",
             "bip39",
-            "lodash/maxBy"
+            "lodash/maxBy",
+            "bsv-wasm",
         ],
         plugins: [
             typescript(),

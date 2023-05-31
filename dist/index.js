@@ -2937,11 +2937,12 @@ function toFixedPoint(str, e, z) {
 var BigNumber = clone();
 
 // const BlockStreamURL = "https://blockstream.info/api";
-const MinSats = 1000;
+const MinSats = 1000; // TODO: update
 const DummyUTXOValue = 1000;
 const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
+const MinSats2 = 546;
 const DefaultSequence = 4294967295;
 const DefaultSequenceRBF = 4294967293;
 const WalletType = {
@@ -3810,7 +3811,7 @@ const NetworkType$1 = {
     Testnet: 2,
     Regtest: 3,
 };
-const setBTCNetwork = (netType) => {
+const setBTCNetwork$1 = (netType) => {
     switch (netType) {
         case NetworkType$1.Mainnet: {
             exports.Network = bitcoinjsLib.networks.bitcoin;
@@ -3829,6 +3830,7 @@ const setBTCNetwork = (netType) => {
         }
     }
 };
+setBTCNetwork$1(NetworkType$1.Regtest);
 
 const preparePayloadSignTx = ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT }) => {
     return {
@@ -4777,6 +4779,23 @@ const NetworkType = {
     Testnet: 2,
     Regtest: 3,
 };
+const setBTCNetwork = (netType) => {
+    switch (netType) {
+        case NetworkType.Mainnet: {
+            bitcoinjsLib.networks.bitcoin;
+            break;
+        }
+        case NetworkType.Testnet: {
+            bitcoinjsLib.networks.testnet;
+            break;
+        }
+        case NetworkType.Regtest: {
+            bitcoinjsLib.networks.regtest;
+            break;
+        }
+    }
+};
+setBTCNetwork(NetworkType.Regtest);
 
 var StorageKeys;
 (function (StorageKeys) {
@@ -4981,7 +5000,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
+const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -5026,7 +5045,7 @@ const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script
     console.log("revealTX: ", revealTX);
     return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
 };
-function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+function getRevealVirtualSize$1(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
         script: hash_lock_redeem.output,
@@ -5082,19 +5101,19 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+const createInscribeTx$1 = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxIDs, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
     getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     // const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript$1({
         // internalPubKey,
         tcTxIDs,
         tcClient
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -5123,7 +5142,7 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx({
+    const { revealTxHex, revealTxID } = createRawRevealTx$1({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5202,7 +5221,7 @@ const createBatchInscribeTxs = async ({ senderPrivateKey, senderAddress, utxos, 
     for (const batch of batchInscribeTxIDs) {
         console.log("[BatchInscribe] New UTXOs for creating new tx: ", newUTXOs);
         try {
-            const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx({
+            const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee, newUTXOs: newUTXOsTmp, selectedUTXOs } = await createInscribeTx$1({
                 senderPrivateKey,
                 senderAddress,
                 utxos: newUTXOs,
@@ -5264,14 +5283,14 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     // const internalPubKey = toXOnly(keyPair.publicKey);
     const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript$1({
         // internalPubKey: pubKey,
         tcTxIDs,
         tcClient,
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -5297,7 +5316,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     console.log("commitTX: ", commitTx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx({
+    const { revealTxHex, revealTxID } = createRawRevealTx$1({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5313,7 +5332,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
         totalFee: new BigNumber(totalFee),
     };
 };
-const createLockScript = async ({ 
+const createLockScript$1 = async ({ 
 // privateKey,
 // internalPubKey,
 tcTxIDs, tcClient, }) => {
@@ -5878,8 +5897,8 @@ const replaceByFeeInscribeTx = async ({ senderPrivateKey, utxos, inscriptions, r
     }
     const utxosForRBFTx = [...oldCommitUTXOs, ...extraUTXOs];
     console.log("utxosForRBFTx: ", utxosForRBFTx);
-    console.log("createInscribeTx: ", createInscribeTx);
-    const resp = await createInscribeTx({
+    console.log("createInscribeTx: ", createInscribeTx$1);
+    const resp = await createInscribeTx$1({
         senderPrivateKey,
         senderAddress: btcAddress,
         utxos: utxosForRBFTx,
@@ -6806,6 +6825,256 @@ const setStorageMasterless = async (wallet, password) => {
     await tcStorage.set(StorageKeys.Masterless, cipherText);
 };
 
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    const internalPubKey = toXOnly$1(keyPair.publicKey);
+    // create lock script for commit tx
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
+        internalPubKey,
+        data,
+    });
+    // estimate fee and select UTXOs
+    const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
+    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
+    // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
+    if (script_p2tr.address === undefined || script_p2tr.address === "") {
+        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
+    }
+    const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats2) }],
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs
+    });
+    const newUTXOs = [];
+    if (changeAmount.gt(BNZero)) {
+        newUTXOs.push({
+            tx_hash: commitTxID,
+            tx_output_n: 1,
+            value: changeAmount
+        });
+    }
+    console.log("commitTX: ", tx);
+    console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+    // create and sign reveal tx
+    const { revealTxHex, revealTxID } = createRawRevealTx({
+        commitTxID,
+        hashLockKeyPair,
+        hashLockRedeem,
+        script_p2tr,
+        revealTxFee: estRevealTxFee,
+        address: senderAddress,
+        sequence: 0,
+    });
+    console.log("commitTxHex: ", commitTxHex);
+    console.log("revealTxHex: ", revealTxHex);
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
+    // const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    // console.log("btcTxID: ", btcTxID);
+    return {
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee: new BigNumber(totalFee),
+        selectedUTXOs: selectedUTXOs,
+        newUTXOs: newUTXOs,
+    };
+};
+const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
+    const tapLeafScript = {
+        leafVersion: hashLockRedeem?.redeemVersion,
+        script: hashLockRedeem?.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1],
+    };
+    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    psbt.addInput({
+        hash: commitTxID,
+        index: 0,
+        witnessUtxo: { value: revealTxFee + MinSats2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ],
+        sequence,
+    });
+    // output has OP_RETURN zero value
+    // const data = Buffer.from("https://trustless.computer", "utf-8");
+    // const scriptEmbed = script.compile([
+    //     opcodes.OP_RETURN,
+    //     data,
+    // ]);
+    // psbt.addOutput({
+    //     value: 0,
+    //     script: scriptEmbed,
+    // });
+    psbt.addOutput({
+        value: MinSats2,
+        address: address,
+    });
+    // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
+    psbt.signInput(0, hashLockKeyPair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0, customFinalizer);
+    const revealTX = psbt.extractTransaction();
+    console.log("revealTX: ", revealTX);
+    return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
+};
+const createLockScript = ({ internalPubKey, data, }) => {
+    // Create a tap tree with two spend paths
+    // One path should allow spending using secret
+    // The other path should pay to another pubkey
+    // Make random key pair for hash_lock script
+    const hashLockKeyPair = ECPair$1.makeRandom({ network: exports.Network });
+    // TODO: comment
+    // const hashLockPrivKey = hashLockKeyPair.toWIF();
+    // console.log("hashLockPrivKey wif : ", hashLockPrivKey);
+    // Note: for debug and test
+    // const hashLockPrivKey = "";
+    // const hashLockKeyPair = ECPair.fromWIF(hashLockPrivKey);
+    // console.log("newKeyPair: ", hashLockKeyPair.privateKey);
+    const protocolID = "ord";
+    const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
+    // const protocolIDHex = toHex(protocolID);
+    // console.log("protocolIDHex: ", protocolIDHex);
+    const contentType = "text/plain;charset=utf-8";
+    const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
+    // const contentTypeHex = toHex(contentType);
+    // console.log("contentTypeHex0: ", contentTypeHex0);
+    // console.log("contentTypeHex: ", contentTypeHex);
+    // P    string`json:"p"`
+    // Op   string`json:"op"`
+    // Tick string`json:"tick"`
+    // Amt  string`json:"amt"`
+    const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
+    // const contentStrHex = toHex(data);
+    // console.log("contentStrHex: ", contentStrHex);
+    // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
+    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} ${op1} ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
+    // const hashLockScript = script.fromASM(hashScriptAsm);
+    const len = contentStrHex.length / 2;
+    const lenHex = len.toString(16);
+    console.log("lenHex: ", lenHex);
+    let hexStr = "20"; // 32 - len public key
+    hexStr += toXOnly$1(hashLockKeyPair.publicKey).toString("hex");
+    hexStr += "ac0063"; // OP_CHECKSIG OP_0 OP_IF
+    hexStr += "03"; // len protocol
+    hexStr += protocolIDHex;
+    hexStr += "0101";
+    hexStr += "18"; // len content type
+    hexStr += contentTypeHex;
+    hexStr += "00"; // op_0
+    hexStr += lenHex;
+    hexStr += contentStrHex;
+    hexStr += "68"; // OP_ENDIF
+    console.log("hexStr: ", hexStr);
+    // const hexStr = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
+    const hashLockScript = Buffer.from(hexStr, "hex");
+    console.log("hashLockScript: ", hashLockScript.toString("hex"));
+    // const asm2 = script.toASM(hashLockScript);
+    // console.log("asm2: ", asm2);
+    const hashLockRedeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+    const scriptTree = hashLockRedeem;
+    const script_p2tr = bitcoinjsLib.payments.p2tr({
+        internalPubkey: internalPubKey,
+        scriptTree,
+        redeem: hashLockRedeem,
+        network: exports.Network
+    });
+    console.log("InscribeOrd script_p2tr: ", script_p2tr.address);
+    return {
+        hashLockKeyPair,
+        hashScriptAsm: "",
+        hashLockScript,
+        hashLockRedeem,
+        script_p2tr
+    };
+};
+function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+    const tapLeafScript = {
+        leafVersion: hash_lock_redeem.redeemVersion,
+        script: hash_lock_redeem.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1]
+    };
+    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    psbt.addInput({
+        hash: "00".repeat(32),
+        index: 0,
+        witnessUtxo: { value: MinSats2 * 2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ]
+    });
+    // output has OP_RETURN zero value
+    // const data = Buffer.from("https://trustless.computer", "utf-8");
+    // const scriptEmbed = script.compile([
+    //     opcodes.OP_RETURN,
+    //     data,
+    // ]);
+    // psbt.addOutput({
+    //     value: 0,
+    //     script: scriptEmbed,
+    // });
+    psbt.addOutput({
+        value: MinSats2,
+        address: p2pktr_addr,
+    });
+    psbt.signInput(0, hash_lock_keypair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0, customFinalizer);
+    const tx = psbt.extractTransaction();
+    return tx.virtualSize();
+}
+
 exports.BNZero = BNZero;
 exports.BTCAddressType = BTCAddressType;
 exports.BTCSegwitDerivationPath = BTCSegwitDerivationPath;
@@ -6824,6 +7093,7 @@ exports.Mainnet = Mainnet;
 exports.MasterWallet = MasterWallet;
 exports.Masterless = Masterless;
 exports.MinSats = MinSats;
+exports.MinSats2 = MinSats2;
 exports.NetworkType = NetworkType$1;
 exports.OutputSize = OutputSize;
 exports.Regtest = Regtest;
@@ -6842,10 +7112,10 @@ exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey$1;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
 exports.createBatchInscribeTxs = createBatchInscribeTxs;
-exports.createInscribeTx = createInscribeTx;
+exports.createInscribeTx = createInscribeTx$1;
 exports.createInscribeTxFromAnyWallet = createInscribeTxFromAnyWallet;
-exports.createLockScript = createLockScript;
-exports.createRawRevealTx = createRawRevealTx;
+exports.createLockScript = createLockScript$1;
+exports.createRawRevealTx = createRawRevealTx$1;
 exports.createRawTx = createRawTx;
 exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createTx = createTx;
@@ -6892,6 +7162,7 @@ exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;
 exports.isRBFable = isRBFable;
+exports.ordCreateInscribeTx = createInscribeTx;
 exports.randomMnemonic = randomMnemonic;
 exports.replaceByFeeInscribeTx = replaceByFeeInscribeTx;
 exports.requestAccountResponse = requestAccountResponse;
@@ -6900,7 +7171,7 @@ exports.selectInscriptionUTXO = selectInscriptionUTXO;
 exports.selectTheSmallestUTXO = selectTheSmallestUTXO;
 exports.selectUTXOs = selectUTXOs;
 exports.selectUTXOsToCreateBuyTx = selectUTXOsToCreateBuyTx;
-exports.setBTCNetwork = setBTCNetwork;
+exports.setBTCNetwork = setBTCNetwork$1;
 exports.setStorageHDWallet = setStorageHDWallet;
 exports.setStorageMasterless = setStorageMasterless;
 exports.setupConfig = setupConfig;
