@@ -39,7 +39,7 @@ let address1 = process.env.ADDRESS_1 || "";
 
 let privateKeyWIF2 = process.env.PRIV_KEY_2 || "";
 let address2 = process.env.ADDRESS_2 || "";
-let address2Taproot = process.env.ADDRESS_2_REGTEST || "";
+// let address2 = process.env.ADDRESS_2_REGTEST || "";
 let privateKey2 = convertPrivateKeyFromStr(privateKeyWIF2);
 
 
@@ -86,22 +86,32 @@ describe("Sign msg Tx", async () => {
                 value: new BigNumber(1000)
             },
             {
-                tx_hash: "5f620e35593eeb93b2998e831cb05d75f227d5d5309552b27efdc7725169cbb6",
+                tx_hash: "a7c5986ba1d1c89ecb6227076f0c2868e2a80baf77db7ed85e4fa12f43f432cf",
                 tx_output_n: 1,
-                value: new BigNumber(962724)
+                value: new BigNumber(858874)
             },
 
         ];
+
+
+        // let utxos: UTXO[] = [
+        //     {
+        //         tx_hash: "9f517150115559940f78d15eb28c8ff333455969747d0ea242ecb70a1377a77d",
+        //         tx_output_n: 1,
+        //         value: new BigNumber(100000000)
+        //     },
+
+        // ]
         // prepare data
 
-        // const content = {
-        //     p: "brc-20",
-        //     op: "transfer",
-        //     tick: ticker,
-        //     amt: amt,
-        // };
+        const content = {
+            p: "brc-20",
+            op: "transfer",
+            tick: "henie",
+            amt: "9999",
+        };
 
-        // const contentStr = JSON.stringify(content);
+        const contentStr = JSON.stringify(content);
 
 
         const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await ordCreateInscribeTx({
@@ -109,9 +119,35 @@ describe("Sign msg Tx", async () => {
             senderAddress: address2,
             utxos: utxos,
             inscriptions: {},
-            feeRatePerByte: 18,
-            data: "Hello World!",
+            feeRatePerByte: 20,
+            data: contentStr,
         });
+
+        console.log("commitTxHex: ", commitTxHex);
+        console.log("commitTxID: ", commitTxID);
+        console.log("revealTxHex: ", revealTxHex);
+        console.log("revealTxID: ", revealTxID);
+        console.log("totalFee: ", totalFee);
+
+
+
+        // send  btc
+        // const { txID, txHex, fee: feeRes } = createTxSendBTC({
+        //     senderPrivateKey: privateKey2,
+        //     senderAddress: address2,
+        //     utxos,
+        //     inscriptions: {},
+        //     paymentInfos: [
+        //         // { address: receiverAddress, amount: new BigNumber(10000000) },
+        //         { address: "bc1qapk2kv9jxs3ut30xdfcemqaqdlrwv3sndd0f7c", amount: new BigNumber(100000) },
+        //     ],
+        //     feeRatePerByte: 25,
+        //     sequence: DefaultSequenceRBF,
+        // });
+
+        // const finalTXID = await broadcastTx(txHex);
+        // console.log("finalTXID: ", finalTXID);
+        // console.log(txID, txHex, feeRes);
         // console.log("commitTxB64: ", commitTxB64);
         // console.log("hashLockRedeemScriptHex: ", hashLockRedeemScriptHex);
         // console.log("revealVByte: ", revealVByte);
@@ -120,18 +156,22 @@ describe("Sign msg Tx", async () => {
 
         // console.log(dataBuff.length);
 
-        console.log("commitTxHex: ", commitTxHex);
-        console.log("commitTxID: ", commitTxID);
-        console.log("revealTxHex: ", revealTxHex);
-        console.log("revealTxID: ", revealTxID);
-        console.log("totalFee: ", totalFee);
+
     });
 
-    // it("parse asm tx: ", () => {
-    //     const hex = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
-    //     const buff = Buffer.from(hex, "hex");
-    //     const asm = script.toASM(buff);
-    //     console.log("asm: ", asm);
+    it("parse asm tx: ", () => {
+        const hex = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
+        const buff = Buffer.from(hex, "hex");
+        const asm = script.toASM(buff);
+        console.log("asm: ", asm);
 
-    // })
+
+
+
+        // const asm2 = "7022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038 OP_CHECKSIG OP_0 OP_IF 6f7264 OP_1 746578742f706c61696e3b636861727365743d7574662d38 OP_0 7b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d OP_ENDIF"
+        const buff2 = script.fromASM(asm);
+        const hex2 = buff2.toString("hex");
+        console.log("hex2: ", hex2);
+
+    })
 });

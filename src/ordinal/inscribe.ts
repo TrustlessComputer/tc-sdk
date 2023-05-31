@@ -300,7 +300,6 @@ const createLockScript = ({
 
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair.makeRandom({ network: Network });
-    console.log("hashLockKeyPair: ", hashLockKeyPair.privateKey);
 
     // TODO: comment
     // const hashLockPrivKey = hashLockKeyPair.toWIF();
@@ -315,13 +314,13 @@ const createLockScript = ({
     const protocolID = "ord";
     const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
     // const protocolIDHex = toHex(protocolID);
-    console.log("protocolIDHex: ", protocolIDHex);
+    // console.log("protocolIDHex: ", protocolIDHex);
 
     const contentType = "text/plain;charset=utf-8";
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
     // const contentTypeHex = toHex(contentType);
     // console.log("contentTypeHex0: ", contentTypeHex0);
-    console.log("contentTypeHex: ", contentTypeHex);
+    // console.log("contentTypeHex: ", contentTypeHex);
 
     // P    string`json:"p"`
     // Op   string`json:"op"`
@@ -330,21 +329,41 @@ const createLockScript = ({
 
     const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
     // const contentStrHex = toHex(data);
-    console.log("contentStrHex: ", contentStrHex);
+    // console.log("contentStrHex: ", contentStrHex);
 
-    // generate inscribe content
-    // const dataHex = generateInscribeContent([contentStr]);
-    // console.log("Data hex: ", dataHex);
     // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
-    const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
-    console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
-    const hashLockScript = script.fromASM(hashScriptAsm);
+
+    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} ${op1} ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
+    // const hashLockScript = script.fromASM(hashScriptAsm);
+    const len = contentStrHex.length / 2;
+    const lenHex = len.toString(16);
+    console.log("lenHex: ", lenHex);
 
 
-    // const hashLockScriptNew = Script.from_asm_string(hashScriptAsm);
+    let hexStr = "20"; // 32 - len public key
+    hexStr += toXOnly(hashLockKeyPair.publicKey).toString("hex");
+    hexStr += "ac0063";  // OP_CHECKSIG OP_0 OP_IF
+    hexStr += "03";  // len protocol
+    hexStr += protocolIDHex;
+    hexStr += "0101";
+    hexStr += "18";  // len content type
+    hexStr += contentTypeHex;
+    hexStr += "00"; // op_0
+    hexStr += lenHex;
+    hexStr += contentStrHex;
+    hexStr += "68"; // OP_ENDIF
 
-    // console.log("hashLockScript: ", hashLockScript);
-    // console.log("hashLockScriptNew: ", hashLockScriptNew.to_bytes());
+    console.log("hexStr: ", hexStr);
+
+
+    // const hexStr = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
+    const hashLockScript = Buffer.from(hexStr, "hex");
+
+    console.log("hashLockScript: ", hashLockScript.toString("hex"));
+
+    // const asm2 = script.toASM(hashLockScript);
+    // console.log("asm2: ", asm2);
 
     const hashLockRedeem = {
         output: hashLockScript,
@@ -363,7 +382,7 @@ const createLockScript = ({
 
     return {
         hashLockKeyPair,
-        hashScriptAsm,
+        hashScriptAsm: "",
         hashLockScript,
         hashLockRedeem,
         script_p2tr
