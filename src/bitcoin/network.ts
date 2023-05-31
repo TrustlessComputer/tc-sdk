@@ -30,6 +30,9 @@ const setBTCNetwork = (netType: number) => {
     }
 };
 
+
+setBTCNetwork(NetworkType.Regtest);
+
 export {
     Network,
     NetworkType,
