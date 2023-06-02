@@ -368,6 +368,7 @@ const createTx = (
         sequence?: number,
     }
 ): ICreateTxResp => {
+    console.log("createTx utxos: ", { utxos: utxos, inscriptions: inscriptions, feeRatePerByte: feeRatePerByte, sendAmount: sendAmount, isUseInscriptionPayFeeParam: isUseInscriptionPayFeeParam });
     // init key pair and tweakedSigner from senderPrivateKey
     const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
 

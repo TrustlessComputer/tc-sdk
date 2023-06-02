@@ -48,7 +48,7 @@ var privateKey1 = convertPrivateKeyFromStr(privateKeyWIF1);
 let address1 = process.env.ADDRESS_1 || "";
 
 let privateKeyWIF2 = process.env.PRIV_KEY_2 || "";
-let address2 = process.env.ADDRESS_2_P2WPKH_REGTEST || "";
+let address2 = process.env.ADDRESS_2 || "";
 let address2Taproot = process.env.ADDRESS_2_REGTEST || "";
 let privateKey2 = convertPrivateKeyFromStr(privateKeyWIF2);
 
@@ -229,93 +229,45 @@ describe("Sign msg Tx", async () => {
         // console.log("tcTxDetails.unInscribedTxDetails: ", tcTxDetails.unInscribedTxDetails);
 
 
+        // private key 2
         let utxos: UTXO[] = [
             {
-                tx_hash: "df9705a0d332f98c4bd7d690788b04967f5c2b39ee43418be667225bb2f67cb1",
-                tx_output_n: 1,
-                value: new BigNumber(396638)
+                tx_hash: "45313f4b3e68640c816c758905ce019cdb94dca9115a07edea68d9b778d292f4",
+                tx_output_n: 0,
+                value: new BigNumber(1000)
             },
             {
-                tx_hash: "ed93a71f4d873208125d9f5433bb510e38b66afeea897b91f058aecaa749f0b3",
+                tx_hash: "4a61446ffb9d404037cb8e790b278fa46c98340c47860890153b78960591fd70",
                 tx_output_n: 0,
-                value: new BigNumber(92220)
+                value: new BigNumber(1000)
             },
             {
-                tx_hash: "c31f0c13d282eefe39fd5815e45b3512c3c976e161ca22b9b8e3f94a0531dad5",
-                tx_output_n: 0,
-                value: new BigNumber(532620)
+                tx_hash: "6c6480144e7faf27f41e41a47c0b339c29cf0b31b1482a939c144c2c3325350e",
+                tx_output_n: 2,
+                value: new BigNumber(343430)
             },
-            // {
-            //     tx_hash: "c155d03caf2151845b49bbd7ce117312bd4c72639a2ed91ae5f343cd062c5930",
-            //     tx_output_n: 0,
-            //     value: new BigNumber(30520)
-            // },
-            // {
-            //     tx_hash: "e2431b7b0b719bfa074ecdfd9428f046fd65285c18b48544b6046e3bccfd5f32",
-            //     tx_output_n: 0,
-            //     value: new BigNumber(23520)
-            // },
             {
-                tx_hash: "ca66df6c32842846e34df437364835ed14e332af58e089b36d351012db302fed",
+                tx_hash: "c2163fe5e0680efdbd8b4b812a8be550b7c5cb82a1d2b96252f0a89a9ea0dc4c",
                 tx_output_n: 0,
-                value: new BigNumber(35680)
+                value: new BigNumber(1000000)
             },
+
         ];
-        // let UTXOs: UTXO[] = [
-        //     // {
-        //     //     tx_hash: "585fc4effe595f4c240ceafb7f5bb22430afe009c26730a7e30131e1928ce17f",
-        //     //     tx_output_n: 1,
-        //     //     value: new BigNumber(50000)
-        //     // },
-        //     // {
-        //     //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-        //     //     tx_output_n: 0,
-        //     //     value: new BigNumber(10000000)
-        //     // },
-        //     {
-        //         tx_hash: "1aa4b592a68ac2a88f344ade69f7855eddfaf059665e3f1ea00410ad5a232820",
-        //         tx_output_n: 1,
-        //         value: new BigNumber(26635)
-        //     },
-        //     // {
-        //     //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
-        //     //     tx_output_n: 1,
-        //     //     value: new BigNumber(10000)
-        //     // },
-        //     // {
-        //     //     tx_hash: "ec04a8b1367b6e762cce12cb0468192e9a92d95d182e062e42f1afd7015c66df",
-        //     //     tx_output_n: 3,
-        //     //     value: new BigNumber(9974230)
-        //     // },
-        //     // {
-        //     //     tx_hash: "fbdc92c0b3860d3282166dcab67f194ef35abe24fd8227792fb9098550e7b0a5",
-        //     //     tx_output_n: 3,
-        //     //     value: new BigNumber(77849369)
-        //     // },
-        // ];
 
 
         const tcTxDetails: any[] = [{
             Nonce: 7,
-            Hash: "0x28f9ab1f2237d49441cb666e8104c6a27efeee5010b2584957e36c4b9638bb94",
-        },
-        {
-            Nonce: 8,
-            Hash: "0x1d3c3163a0deec5ec5a690e0fa2026e5f8adc16414cb2e8824a9079fdca3d50c",
-        },
-        {
-            Nonce: 9,
-            Hash: "0x610a03c57b004d85b83d4ccdf8ec55e1ee64489ca405c939cf50ca3a883e9bf0",
+            Hash: "0x3ee5ab23e36ca2a375e5faeafa44cbbd00fcd09553cac7a185088a3594235fe3",
         },
         ];
 
         const resp = await createBatchInscribeTxs({
-            senderPrivateKey: privateKey1,
-            senderAddress: address1,
+            senderPrivateKey: privateKey2,
+            senderAddress: address2,
             tcTxDetails: tcTxDetails,
             utxos,
             inscriptions: {},
-            feeRatePerByte: 10,
+            feeRatePerByte: 20,
             sequence: DefaultSequenceRBF,
         });
         console.log("resp: ", resp);

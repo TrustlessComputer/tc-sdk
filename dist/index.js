@@ -3236,6 +3236,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
     let totalInputAmount = BNZero;
     // convert feeRate to interger
     feeRatePerByte = Math.round(feeRatePerByte);
+    console.log("selectUTXOs utxos: ", { utxos: utxos, inscriptions: inscriptions, feeRatePerByte: feeRatePerByte, sendAmount: sendAmount, isUseInscriptionPayFeeParam: isUseInscriptionPayFee });
     // isSelectUTXOs is able is false only when sendInscriptionID is empty
     if (sendInscriptionID !== "") {
         isSelectUTXOs = true;
@@ -3250,6 +3251,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
         // estimate fee
         const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
         const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
+        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
         // when BTC amount need to send is greater than 0, 
         // we should use normal BTC to pay fee
         if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
@@ -3284,6 +3286,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
         if (!isUseInscriptionPayFee) {
             totalSendAmount = totalSendAmount.plus(estFee);
         }
+        console.log("selectUTXOs totalSendAmount: ", totalSendAmount);
         if (totalSendAmount.gt(BNZero)) {
             const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalSendAmount);
             resultUTXOs.push(...selectedUTXOs);
@@ -4162,6 +4165,7 @@ const signPSBT2 = ({ senderPrivateKey, psbtB64, indicesToSign, sigHashType = bit
 */
 const createTx = ({ senderPrivateKey, senderAddress, utxos, inscriptions, sendInscriptionID = "", receiverInsAddress, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam = true, // default is true
 sequence = DefaultSequenceRBF, }) => {
+    console.log("createTx utxos: ", { utxos: utxos, inscriptions: inscriptions, feeRatePerByte: feeRatePerByte, sendAmount: sendAmount, isUseInscriptionPayFeeParam: isUseInscriptionPayFeeParam });
     // init key pair and tweakedSigner from senderPrivateKey
     const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
     const { base64Psbt, fee, changeAmount, selectedUTXOs, indicesToSign } = createRawTx({
