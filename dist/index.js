@@ -3830,7 +3830,6 @@ const setBTCNetwork$1 = (netType) => {
         }
     }
 };
-setBTCNetwork$1(NetworkType$1.Regtest);
 
 const preparePayloadSignTx = ({ base64Psbt, indicesToSign, address, sigHashType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT }) => {
     return {
@@ -4795,7 +4794,6 @@ const setBTCNetwork = (netType) => {
         }
     }
 };
-setBTCNetwork(NetworkType.Regtest);
 
 var StorageKeys;
 (function (StorageKeys) {
@@ -4962,15 +4960,20 @@ const setupConfig = ({ storage, tcClient, netType }) => {
         }
     }
     const _global = global || globalThis;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    _global.tcStorage = storage;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    _global.tcClient = tcClient;
+    if (storage) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        _global.tcStorage = storage;
+    }
+    if (tcClient) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        _global.tcClient = tcClient;
+    }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     _global.tcBTCNetwork = network;
+    setBTCNetwork(netType);
 };
 
 /**

@@ -1,5 +1,5 @@
-import { TcClient } from "@/tc";
 import { StorageService } from "@/utils/storage";
+import { TcClient } from "@/tc";
 interface ISetupPayload {
     storage: StorageService;
     tcClient: TcClient;

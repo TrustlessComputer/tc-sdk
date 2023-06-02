@@ -1,7 +1,8 @@
-import { TcClient } from "@/tc";
+import { NetworkType, setBTCNetwork } from '@/bitcoin';
+
 import { StorageService } from "@/utils/storage";
+import { TcClient } from "@/tc";
 import { networks } from "bitcoinjs-lib";
-import { NetworkType } from "@/bitcoin";
 
 interface ISetupPayload {
     storage: StorageService,
@@ -28,16 +29,23 @@ const setupConfig = ({ storage, tcClient, netType }: ISetupPayload) => {
 
     const _global = global || globalThis;
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    _global.tcStorage = storage;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    _global.tcClient = tcClient;
+
+    if (storage) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        _global.tcStorage = storage;
+    }
+    if (tcClient) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        _global.tcClient = tcClient;
+    }
+
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     _global.tcBTCNetwork = network;
+    setBTCNetwork(netType);
 };
 
 export {
