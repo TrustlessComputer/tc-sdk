@@ -2945,6 +2945,7 @@ const BNZero = new BigNumber(0);
 const MinSats2 = 546;
 const DefaultSequence = 4294967295;
 const DefaultSequenceRBF = 4294967293;
+const MaxTxSize = 357376; // 349 KB
 const WalletType = {
     Xverse: 1,
     Hiro: 2,
@@ -2988,6 +2989,8 @@ const ERROR_CODE$1 = {
     SEGWIT_FROM_MNEMONIC: "-39",
     RESTORE_MASTERLESS_WALLET: "-40",
     CANNOT_CREATE_ACCOUNT: "-41",
+    HEX_TX_IS_EMPTY: "-42",
+    EXCEED_TX_SIZE: "-43",
 };
 const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.INVALID_CODE]: {
@@ -3133,6 +3136,14 @@ const ERROR_MESSAGE$1 = {
     [ERROR_CODE$1.CANNOT_CREATE_ACCOUNT]: {
         message: "Create account error.",
         desc: "Create account error.",
+    },
+    [ERROR_CODE$1.HEX_TX_IS_EMPTY]: {
+        message: "TC transaction hex is empty.",
+        desc: "Create account error.",
+    },
+    [ERROR_CODE$1.EXCEED_TX_SIZE]: {
+        message: "TC transaction size is exceed.",
+        desc: "TC transaction size is exceed.",
     },
 };
 class SDKError$1 extends Error {
@@ -4576,6 +4587,8 @@ const ERROR_CODE = {
     SEGWIT_FROM_MNEMONIC: "-39",
     RESTORE_MASTERLESS_WALLET: "-40",
     CANNOT_CREATE_ACCOUNT: "-41",
+    HEX_TX_IS_EMPTY: "-42",
+    EXCEED_TX_SIZE: "-43",
 };
 const ERROR_MESSAGE = {
     [ERROR_CODE.INVALID_CODE]: {
@@ -4721,6 +4734,14 @@ const ERROR_MESSAGE = {
     [ERROR_CODE.CANNOT_CREATE_ACCOUNT]: {
         message: "Create account error.",
         desc: "Create account error.",
+    },
+    [ERROR_CODE.HEX_TX_IS_EMPTY]: {
+        message: "TC transaction hex is empty.",
+        desc: "Create account error.",
+    },
+    [ERROR_CODE.EXCEED_TX_SIZE]: {
+        message: "TC transaction size is exceed.",
+        desc: "TC transaction size is exceed.",
     },
 };
 class SDKError extends Error {
@@ -5173,7 +5194,7 @@ const createInscribeTx$1 = async ({ senderPrivateKey, senderAddress, utxos, insc
         newUTXOs: newUTXOs,
     };
 };
-const splitBatchInscribeTx = ({ tcTxDetails }) => {
+const splitBatchInscribeTx = async ({ tcTxDetails }) => {
     // sort tc tx by inscreasing nonce
     tcTxDetails = tcTxDetails.sort((a, b) => {
         if (a.Nonce > b.Nonce) {
@@ -5204,8 +5225,33 @@ const splitBatchInscribeTx = ({ tcTxDetails }) => {
         prevNonce = tcTxDetails[i].Nonce;
     }
     batchInscribeTxIDs.push([...inscribeableTxIDs]);
-    console.log("batchInscribeTxIDs: ", batchInscribeTxIDs);
-    return batchInscribeTxIDs;
+    // split batch by tx size
+    const result = [];
+    for (const batch of batchInscribeTxIDs) {
+        let batchSizeByte = 0;
+        let splitBatch = [];
+        for (let i = 0; i < batch.length; i++) {
+            const txID = batch[i];
+            const resp = await tcClient.getTCTxByHash(txID);
+            if (resp.Hex === "") {
+                throw new SDKError$1(ERROR_CODE$1.HEX_TX_IS_EMPTY);
+            }
+            if (resp.Hex.length / 2 > MaxTxSize) {
+                throw new SDKError$1(ERROR_CODE$1.EXCEED_TX_SIZE);
+            }
+            batchSizeByte = batchSizeByte + resp.Hex.length / 2;
+            if (batchSizeByte > MaxTxSize) {
+                result.push([...splitBatch]);
+                splitBatch = [];
+                batchSizeByte = resp.Hex.length / 2;
+            }
+            splitBatch.push(txID);
+            if (i == batch.length - 1) {
+                result.push([...splitBatch]);
+            }
+        }
+    }
+    return result;
 };
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
@@ -5222,7 +5268,7 @@ const splitBatchInscribeTx = ({ tcTxDetails }) => {
 * @returns the total network fee
 */
 const createBatchInscribeTxs = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, tcTxDetails, feeRatePerByte, sequence = DefaultSequenceRBF, }) => {
-    const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
+    const batchInscribeTxIDs = await splitBatchInscribeTx({ tcTxDetails });
     const result = [];
     const newUTXOs = [...utxos];
     for (const batch of batchInscribeTxIDs) {
@@ -5484,20 +5530,20 @@ class TcClient {
                 method: method,
                 params: payload,
             };
-            console.log("Data req: ", dataReq);
+            // console.log("Data req: ", dataReq);
             const response = await client.post("", JSON.stringify(dataReq), {
                 headers: {
                     "Content-Type": "application/json",
                 },
             });
             const { status, data } = response;
-            console.log("data from response: ", data);
+            // console.log("data from response: ", data);
             if (status !== 200) {
                 console.log("status from response: ", status);
                 throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
             }
             const dataResp = JSON.parse(data);
-            console.log("Data resp: ", dataResp);
+            // console.log("Data resp: ", dataResp);
             if (dataResp.error || !dataResp.result) {
                 throw new SDKError$1(ERROR_CODE$1.RPC_ERROR, typeof dataResp.error === "string" ? dataResp.error : dataResp?.error?.message);
             }
@@ -5557,7 +5603,6 @@ class TcClient {
                 throw new SDKError$1(ERROR_CODE$1.RPC_GET_TAPSCRIPT_INFO, "response is empty");
             }
             const txDetails = [];
-            console.log("resp: ", resp);
             for (const tx of resp) {
                 txDetails.push({
                     Nonce: tx.Nonce,
@@ -7099,6 +7144,7 @@ exports.InputSize = InputSize;
 exports.Mainnet = Mainnet;
 exports.MasterWallet = MasterWallet;
 exports.Masterless = Masterless;
+exports.MaxTxSize = MaxTxSize;
 exports.MinSats = MinSats;
 exports.MinSats2 = MinSats2;
 exports.NetworkType = NetworkType$1;

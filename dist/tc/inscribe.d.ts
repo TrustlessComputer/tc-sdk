@@ -50,7 +50,7 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
 }>;
 declare const splitBatchInscribeTx: ({ tcTxDetails }: {
     tcTxDetails: TCTxDetail[];
-}) => string[][];
+}) => Promise<string[][]>;
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
 * NOTE: Currently, the function only supports sending from Taproot address.

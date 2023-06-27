@@ -36,6 +36,8 @@ export const ERROR_CODE = {
     SEGWIT_FROM_MNEMONIC: "-39",
     RESTORE_MASTERLESS_WALLET: "-40",
     CANNOT_CREATE_ACCOUNT: "-41",
+    HEX_TX_IS_EMPTY: "-42",
+    EXCEED_TX_SIZE: "-43",
 };
 
 export const ERROR_MESSAGE = {
@@ -183,6 +185,16 @@ export const ERROR_MESSAGE = {
         message: "Create account error.",
         desc: "Create account error.",
     },
+    [ERROR_CODE.HEX_TX_IS_EMPTY]: {
+        message: "TC transaction hex is empty.",
+        desc: "Create account error.",
+    },
+    [ERROR_CODE.EXCEED_TX_SIZE]: {
+        message: "TC transaction size is exceed.",
+        desc: "TC transaction size is exceed.",
+    },
+
+
 };
 
 class SDKError extends Error {

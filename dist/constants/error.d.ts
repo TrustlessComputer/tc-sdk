@@ -36,6 +36,8 @@ export declare const ERROR_CODE: {
     SEGWIT_FROM_MNEMONIC: string;
     RESTORE_MASTERLESS_WALLET: string;
     CANNOT_CREATE_ACCOUNT: string;
+    HEX_TX_IS_EMPTY: string;
+    EXCEED_TX_SIZE: string;
 };
 export declare const ERROR_MESSAGE: {
     [x: string]: {

@@ -76,7 +76,7 @@ class TcClient {
             params: payload,
         };
 
-        console.log("Data req: ", dataReq);
+        // console.log("Data req: ", dataReq);
 
         const response: AxiosResponse = await client.post("",
             JSON.stringify(dataReq),
@@ -87,14 +87,14 @@ class TcClient {
             });
 
         const { status, data } = response;
-        console.log("data from response: ", data);
+        // console.log("data from response: ", data);
         if (status !== 200) {
             console.log("status from response: ", status);
             throw new SDKError(ERROR_CODE.RPC_ERROR, typeof data.error === "string" ? data.error : data?.error?.message);
         }
 
         const dataResp = JSON.parse(data);
-        console.log("Data resp: ", dataResp);
+        // console.log("Data resp: ", dataResp);
 
         if (dataResp.error || !dataResp.result) {
             throw new SDKError(ERROR_CODE.RPC_ERROR, typeof dataResp.error === "string" ? dataResp.error : dataResp?.error?.message);
@@ -174,8 +174,6 @@ class TcClient {
             throw new SDKError(ERROR_CODE.RPC_GET_TAPSCRIPT_INFO, "response is empty");
         }
         const txDetails: TCTxDetail[] = [];
-
-        console.log("resp: ", resp);
 
         for (const tx of resp) {
             txDetails.push({

@@ -120,20 +120,23 @@ describe("TC client", async () => {
     // @ts-ignore
     globalThis.storage = storage;
     it("get inscribeable info", async () => {
-        const tcAddress = "0xBc95a631A9a26aD469918832EeF9848F4Dd2af83";
+        const tcAddress = "0xe9444D6a7b28D2022977bf3f67ab510030361d11";
         const resp = await tcClient.getUnInscribedTransactionDetailByAddress(tcAddress);
         console.log("Final resp: ", resp);
 
-        const resp2 = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+        const resp2 = await tcClient.getTCTxByHash("0xff9afc68e86bbf2f354b2687688c44144e087861a6d62bd566fa62acb0e002b2")
         console.log("Final resp2: ", resp2);
+
+        // const resp2 = await tcClient.getPendingInscribeTxsDetail(tcAddress);
+        // console.log("Final resp2: ", resp2);
 
         // const resp3 = await tcClient.getTCTxByHash("0xf7327d257455b96a2d97a9b458f6661488a3c35d871e0b2e2fb7e5339c26b8c3");
         // const resp4 = await tcClient.getTCTxByHash("0x7a0cf5f3a1c6bcb75a66534757f327dcdbe911139043350c3b76b763a4e8cc3a");
         // console.log("Final resp3: ", resp3);
         // console.log("Final resp4: ", resp4);
 
-        const txCount = await tcClient.getCountTx(tcAddress);
-        console.log("txCount: ", txCount);
+        // const txCount = await tcClient.getCountTx(tcAddress);
+        // console.log("txCount: ", txCount);
 
 
         // const privateKey = "L2XMEktYChY9HMtvBrc444jvn8e9XxTaKBp8dXjfYXuNCWeXkigu";

@@ -11,6 +11,8 @@ const MinSats2 = 546;
 const DefaultSequence = 4294967295;
 const DefaultSequenceRBF = 4294967293;
 
+const MaxTxSize = 357376; // 349 KB
+
 
 const WalletType = {
     Xverse: 1,
@@ -28,4 +30,5 @@ export {
     WalletType,
     DefaultSequence,
     DefaultSequenceRBF,
+    MaxTxSize
 };

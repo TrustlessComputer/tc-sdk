@@ -1,4 +1,4 @@
-import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, OutputSize } from "../bitcoin/constants";
+import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MaxTxSize, MinSats, OutputSize } from "../bitcoin/constants";
 import {
     BatchInscribeTxResp,
     IKeyPairInfo,
@@ -309,11 +309,11 @@ const createInscribeTx = async ({
     };
 };
 
-const splitBatchInscribeTx = ({
+const splitBatchInscribeTx = async ({
     tcTxDetails
 }: {
     tcTxDetails: TCTxDetail[]
-}): string[][] => {
+}): Promise<string[][]> => {
     // sort tc tx by inscreasing nonce
     tcTxDetails = tcTxDetails.sort(
         (a: TCTxDetail, b: TCTxDetail): number => {
@@ -348,8 +348,37 @@ const splitBatchInscribeTx = ({
         prevNonce = tcTxDetails[i].Nonce;
     }
     batchInscribeTxIDs.push([...inscribeableTxIDs]);
-    console.log("batchInscribeTxIDs: ", batchInscribeTxIDs);
-    return batchInscribeTxIDs;
+
+    // split batch by tx size
+    const result: string[][] = [];
+    for (const batch of batchInscribeTxIDs) {
+        let batchSizeByte = 0;
+        let splitBatch: string[] = [];
+
+        for (let i = 0; i < batch.length; i++) {
+            const txID = batch[i];
+            const resp = await tcClient.getTCTxByHash(txID);
+            if (resp.Hex === "") {
+                throw new SDKError(ERROR_CODE.HEX_TX_IS_EMPTY);
+            }
+            if (resp.Hex.length / 2 > MaxTxSize) {
+                throw new SDKError(ERROR_CODE.EXCEED_TX_SIZE);
+            }
+            batchSizeByte = batchSizeByte + resp.Hex.length / 2;
+            if (batchSizeByte > MaxTxSize) {
+                result.push([...splitBatch]);
+                splitBatch = [];
+                batchSizeByte = resp.Hex.length / 2;
+            }
+
+            splitBatch.push(txID);
+            if (i == batch.length - 1) {
+                result.push([...splitBatch]);
+            }
+        }
+    }
+
+    return result;
 };
 
 /**
@@ -384,7 +413,7 @@ const createBatchInscribeTxs = async ({
     sequence?: number,
 }): Promise<BatchInscribeTxResp[]> => {
 
-    const batchInscribeTxIDs = splitBatchInscribeTx({ tcTxDetails });
+    const batchInscribeTxIDs = await splitBatchInscribeTx({ tcTxDetails });
 
     const result: BatchInscribeTxResp[] = [];
 

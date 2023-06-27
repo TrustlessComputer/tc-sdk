@@ -30,6 +30,7 @@ interface GetTxByHashResp {
     transactionIndex: string,
     hash: string,
     status: string,
+    Hex: string,
 }
 
 interface GetPendingInscribeTxsResp {
