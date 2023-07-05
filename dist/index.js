@@ -4232,8 +4232,8 @@ const createRawTx = ({ keyPairInfo, utxos, inscriptions, sendInscriptionID = "",
 sequence = DefaultSequenceRBF, }) => {
     const { keyPair, payment, address: senderAddress, addressType } = keyPairInfo;
     // validation
-    if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats)) {
-        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+    if (sendAmount.gt(BNZero) && sendAmount.lt(MinSats2)) {
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
     }
     // select UTXOs
     const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
@@ -4258,7 +4258,7 @@ sequence = DefaultSequenceRBF, }) => {
     }
     // add change output
     if (changeAmount.gt(BNZero)) {
-        if (changeAmount.gte(MinSats)) {
+        if (changeAmount.gte(MinSats2)) {
             psbt.addOutput({
                 address: senderAddress,
                 value: changeAmount.toNumber(),
@@ -4341,8 +4341,8 @@ const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions,
     // validation
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
-        if (info.amount.gt(BNZero) && info.amount.lt(MinSats)) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
         }
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
@@ -4368,7 +4368,7 @@ const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions,
     }
     // add change output
     if (changeAmount.gt(BNZero)) {
-        if (changeAmount.gte(MinSats)) {
+        if (changeAmount.gte(MinSats2)) {
             psbt.addOutput({
                 address: senderAddress,
                 value: changeAmount.toNumber(),
@@ -4408,8 +4408,8 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
     // validation
     let totalPaymentAmount = BNZero;
     for (const info of paymentInfos) {
-        if (info.amount.gt(BNZero) && info.amount.lt(MinSats)) {
-            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats) + " BTC.");
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
         }
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
@@ -4438,7 +4438,7 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
     }
     // add change output
     if (changeAmountRes.gt(BNZero)) {
-        if (changeAmountRes.gte(MinSats)) {
+        if (changeAmountRes.gte(MinSats2)) {
             psbt.addOutput({
                 address: senderAddress,
                 value: changeAmountRes.toNumber(),
