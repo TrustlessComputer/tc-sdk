@@ -46,14 +46,6 @@ let address1 = process.env.ADDRESS_1 || "";
 // let address2 = process.env.ADDRESS_2 || "";
 // let privateKey2 = convertPrivateKeyFromStr(privateKeyWIF2);
 
-let privateKeyWIF2 = "KwYP4RiENTb4K1kwbrVKFrFqX57c4uBEZYmpuwFAYcsG4pjCGuQz";
-let address2 = "bc1pgvzr6m0cxv488prlzxcr7myk22pfewzq0vtyryx7uvna9mgnh9hsecq0lx";
-let privateKey2 = convertPrivateKeyFromStr(privateKeyWIF2);
-
-
-
-
-
 
 describe("Create tx with multiple UTXOs Tests", () => {
     const password = '1234';
