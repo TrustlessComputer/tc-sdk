@@ -86,6 +86,10 @@ interface PaymentInfo {
     address: string;
     amount: BigNumber;
 }
+interface InscPaymentInfo {
+    address: string;
+    inscID: string;
+}
 interface Wallet {
     privKey: string;
 }
@@ -128,6 +132,28 @@ declare const selectUTXOs: (utxos: UTXO[], inscriptions: {
     selectedUTXOs: UTXO[];
     isUseInscriptionPayFee: boolean;
     valueOutInscription: BigNumber;
+    changeAmount: BigNumber;
+    fee: BigNumber;
+};
+/**
+* selectUTXOs selects the most reasonable UTXOs to create the transaction.
+* if sending inscription, the first selected UTXO is always the UTXO contain inscription.
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionInfos list of inscription IDs and receiver addresses
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the list of selected UTXOs
+* @returns the actual flag using inscription coin to pay fee
+* @returns the value of inscription outputs, and the change amount (if any)
+* @returns the network fee
+*/
+declare const selectUTXOsV2: (utxos: UTXO[], inscriptions: {
+    [key: string]: Inscription[];
+}, sendInscriptionInfos: InscPaymentInfo[], sendBTCInfos: PaymentInfo[], feeRatePerByte: number) => {
+    selectedUTXOs: UTXO[];
+    selectedInscUTXOs: UTXO[];
     changeAmount: BigNumber;
     fee: BigNumber;
 };
@@ -301,6 +327,14 @@ declare const createTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions,
     isUseInscriptionPayFeeParam?: boolean | undefined;
     sequence?: number | undefined;
 }) => ICreateTxResp;
+declare const addInputs: ({ psbt, addressType, inputs, payment, sequence, keyPair, }: {
+    psbt: Psbt;
+    addressType: number;
+    inputs: UTXO[];
+    payment: payments.Payment;
+    sequence: number;
+    keyPair: ECPairInterface;
+}) => Psbt;
 /**
 * createRawTx creates the raw Bitcoin transaction (including sending inscriptions), but don't sign tx.
 * NOTE: Currently, the function only supports sending from Taproot address.
@@ -430,6 +464,31 @@ declare const createTxWithSpecificUTXOs: (senderPrivateKey: Buffer, utxos: UTXO[
     txHex: string;
     fee: BigNumber;
 };
+/**
+* createTxSendMultiReceivers creates the Bitcoin transaction that can both BTC and inscriptions to multiple receiver addresses.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param inscPaymentInfos list of inscription IDs and receiver addresses
+* @param paymentInfos list of btc amount and receiver addresses
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
+declare const createTxSendMultiReceivers: ({ senderPrivateKey, senderAddress, utxos, inscriptions, inscPaymentInfos, paymentInfos, feeRatePerByte, sequence, }: {
+    senderPrivateKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    inscPaymentInfos: InscPaymentInfo[];
+    paymentInfos: PaymentInfo[];
+    feeRatePerByte: number;
+    sequence?: number | undefined;
+}) => ICreateTxResp;
 declare const broadcastTx: (txHex: string) => Promise<string>;
 
 /**
@@ -1053,6 +1112,17 @@ declare const getUTXOs: ({ btcAddress, tcAddress, serviceType, }: {
     incomingBalance: BigNumber;
 }>;
 
+/**
+* getUTXOsFromBlockStream get UTXOs from Blockstream service.
+* the result was filtered spending UTXOs in Bitcoin mempool.
+* @param btcAddress bitcoin address
+* @param isConfirmed filter UTXOs by confirmed or not
+* @returns list of UTXOs
+*/
+declare const getUTXOsFromBlockStream: (btcAddress: string, isConfirmed: boolean) => Promise<UTXO[]>;
+declare const getTxFromBlockStream: (txID: string) => Promise<any>;
+declare const getOutputCoinValue: (txID: string, voutIndex: number) => Promise<BigNumber>;
+
 type Target = "_blank" | "_parent" | "_self" | "_top";
 declare enum RequestFunction {
     sign = "sign",
@@ -1225,4 +1295,4 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
     newUTXOs: UTXO[];
 }>;
 
-export { BNZero, BTCAddressType, BTCSegwitDerivationPath, BTCTaprootDerivationPath, BTCVinVout, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DefaultEndpointTCNodeMainnet, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ETHDerivationPath, GetPendingInscribeTxsResp, GetTxByHashResp, HDWallet, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, IDeriveKey, IDeriveMasterlessReq, IDeriveReq, IHDWallet, IKeyPairInfo, IMasterless, ISignPSBTResp, InputSize, Inscription, Mainnet, MasterWallet, Masterless, MaxTxSize, MinSats, MinSats2, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, ScriptPubKeyResult, ServiceGetUTXOType, StorageKeys, StorageService, TCTxDetail, Target, TcClient, Testnet, URL_MAINNET, URL_REGTEST, UTXO, UTXOFromBlockStream, UTXOStatusFromBlockStream, Validator, Vin, Vout, Wallet, WalletType, actionRequest, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeTx$1 as createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createRawRevealTx, createRawTx, createRawTxSendBTC, createTx, createTxFromAnyWallet, createTxSendBTC, createTxWithSpecificUTXOs, decryptAES, decryptWallet, deriveETHWallet, deriveHDNodeByIndex, deriveMasterless, derivePasswordWallet, deriveSegwitWallet, encryptAES, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, estimateTxSize, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateHDWalletFromMnemonic, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, generateSegwitHDNodeFromMnemonic, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootHDNodeFromMnemonic, generateTaprootKeyPair, getAddressType, getBTCBalance, getBitcoinKeySignContent, getKeyPairInfo, getStorageHDWallet, getStorageHDWalletCipherText, getStorageMasterless, getStorageMasterlessCipherText, getUTXOs, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, isRBFable, createInscribeTx as ordCreateInscribeTx, randomMnemonic, replaceByFeeInscribeTx, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, setBTCNetwork, setStorageHDWallet, setStorageMasterless, setupConfig, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner, validateHDWallet, validateMasterless, validateMnemonicBTC };
+export { BNZero, BTCAddressType, BTCSegwitDerivationPath, BTCTaprootDerivationPath, BTCVinVout, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DefaultEndpointTCNodeMainnet, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ETHDerivationPath, GetPendingInscribeTxsResp, GetTxByHashResp, HDWallet, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, IDeriveKey, IDeriveMasterlessReq, IDeriveReq, IHDWallet, IKeyPairInfo, IMasterless, ISignPSBTResp, InputSize, InscPaymentInfo, Inscription, Mainnet, MasterWallet, Masterless, MaxTxSize, MinSats, MinSats2, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, ScriptPubKeyResult, ServiceGetUTXOType, StorageKeys, StorageService, TCTxDetail, Target, TcClient, Testnet, URL_MAINNET, URL_REGTEST, UTXO, UTXOFromBlockStream, UTXOStatusFromBlockStream, Validator, Vin, Vout, Wallet, WalletType, actionRequest, addInputs, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeTx$1 as createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createRawRevealTx, createRawTx, createRawTxSendBTC, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSendMultiReceivers, createTxWithSpecificUTXOs, decryptAES, decryptWallet, deriveETHWallet, deriveHDNodeByIndex, deriveMasterless, derivePasswordWallet, deriveSegwitWallet, encryptAES, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, estimateTxSize, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateHDWalletFromMnemonic, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, generateSegwitHDNodeFromMnemonic, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootHDNodeFromMnemonic, generateTaprootKeyPair, getAddressType, getBTCBalance, getBitcoinKeySignContent, getKeyPairInfo, getOutputCoinValue, getStorageHDWallet, getStorageHDWalletCipherText, getStorageMasterless, getStorageMasterlessCipherText, getTxFromBlockStream, getUTXOs, getUTXOsFromBlockStream, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, isRBFable, createInscribeTx as ordCreateInscribeTx, randomMnemonic, replaceByFeeInscribeTx, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, selectUTXOsV2, setBTCNetwork, setStorageHDWallet, setStorageMasterless, setupConfig, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner, validateHDWallet, validateMasterless, validateMnemonicBTC };

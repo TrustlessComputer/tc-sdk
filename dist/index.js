@@ -3345,6 +3345,82 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
 * if sending inscription, the first selected UTXO is always the UTXO contain inscription.
 * @param utxos list of utxos (include non-inscription and inscription utxos)
 * @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionInfos list of inscription IDs and receiver addresses
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the list of selected UTXOs
+* @returns the actual flag using inscription coin to pay fee
+* @returns the value of inscription outputs, and the change amount (if any)
+* @returns the network fee
+*/
+const selectUTXOsV2 = (utxos, inscriptions, sendInscriptionInfos, sendBTCInfos, feeRatePerByte) => {
+    let resultUTXOs = [];
+    let normalUTXOs = [];
+    let changeAmount = BNZero;
+    let totalInputAmount = BNZero;
+    // convert feeRate to interger
+    feeRatePerByte = Math.round(feeRatePerByte);
+    console.log("selectUTXOs utxos: ", { utxos: utxos, inscriptions: inscriptions, feeRatePerByte: feeRatePerByte });
+    // estimate fee
+    const numIns = sendInscriptionInfos.length + 1;
+    const numOuts = sendInscriptionInfos.length + sendBTCInfos.length + 1;
+    const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
+    console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
+    // filter normal UTXO and inscription UTXO to send
+    const { cardinalUTXOs, inscriptionUTXOs } = filterAndSortCardinalUTXOs(utxos, inscriptions);
+    normalUTXOs = cardinalUTXOs;
+    // select inscription utxos
+    const selectedInscUTXOs = [];
+    for (const info of sendInscriptionInfos) {
+        const res = selectInscriptionUTXO(inscriptionUTXOs, inscriptions, info.inscID);
+        // NOTE: don't use inscription to pay network fee
+        // // maxAmountInsTransfer = (inscriptionUTXO.value - inscriptionInfo.offset - 1) - MinSats;
+        // maxAmountInsTransfer = inscriptionUTXO.value.
+        //     minus(inscriptionInfo.offset).
+        //     minus(1).minus(MinSats);
+        // console.log("maxAmountInsTransfer: ", maxAmountInsTransfer.toNumber());
+        selectedInscUTXOs.push(res.inscriptionUTXO);
+    }
+    resultUTXOs.push(...selectedInscUTXOs);
+    // calculate total btc amount
+    let totalSendAmount = new BigNumber(0);
+    for (const info of sendBTCInfos) {
+        totalSendAmount = totalSendAmount.plus(info.amount);
+    }
+    let totalPaymentAmount = totalSendAmount.plus(estFee);
+    console.log("selectUTXOs totalPaymentAmount (include estimated fee): ", totalPaymentAmount);
+    let feeRes = estFee;
+    // select normal UTXOs
+    if (totalPaymentAmount.gt(BNZero)) {
+        const { selectedUTXOs, remainUTXOs, totalInputAmount: amt } = selectCardinalUTXOs(normalUTXOs, {}, totalPaymentAmount);
+        resultUTXOs.push(...selectedUTXOs);
+        totalInputAmount = amt;
+        console.log("selectedUTXOs: ", selectedUTXOs);
+        console.log("totalInputAmount: ", totalInputAmount.toNumber());
+        // re-estimate fee with exact number of inputs and outputs
+        feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, numOuts, feeRatePerByte));
+        console.log("feeRes: ", feeRes);
+        if (totalSendAmount.plus(feeRes).gt(totalInputAmount)) {
+            // need to select extra UTXOs
+            const { selectedUTXOs: extraUTXOs, totalInputAmount: extraAmt } = selectCardinalUTXOs(remainUTXOs, {}, totalSendAmount.plus(feeRes).minus(totalInputAmount));
+            resultUTXOs.push(...extraUTXOs);
+            console.log("extraUTXOs: ", extraUTXOs);
+            totalInputAmount = totalInputAmount.plus(extraAmt);
+        }
+    }
+    // calculate output amount
+    if (totalInputAmount.lt(totalSendAmount.plus(feeRes))) {
+        feeRes = totalInputAmount.minus(totalSendAmount);
+    }
+    changeAmount = totalInputAmount.minus(totalSendAmount).minus(feeRes);
+    return { selectedUTXOs: resultUTXOs, selectedInscUTXOs, changeAmount: changeAmount, fee: feeRes };
+};
+/**
+* selectUTXOs selects the most reasonable UTXOs to create the transaction.
+* if sending inscription, the first selected UTXO is always the UTXO contain inscription.
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
 * @param sendInscriptionID id of inscription to send
 * @returns the ordinal UTXO
 * @returns the actual flag using inscription coin to pay fee
@@ -4528,6 +4604,83 @@ const createTxWithSpecificUTXOs = (senderPrivateKey, utxos, sendInscriptionID = 
     console.log("Transaction : ", tx);
     const txHex = tx.toHex();
     return { txID: tx.getId(), txHex, fee };
+};
+/**
+* createTxSendMultiReceivers creates the Bitcoin transaction that can both BTC and inscriptions to multiple receiver addresses.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param inscPaymentInfos list of inscription IDs and receiver addresses
+* @param paymentInfos list of btc amount and receiver addresses
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
+const createTxSendMultiReceivers = ({ senderPrivateKey, senderAddress, utxos, inscriptions, inscPaymentInfos = [], paymentInfos, feeRatePerByte, sequence = DefaultSequenceRBF, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // validation
+    let totalPaymentAmount = BNZero;
+    for (const info of paymentInfos) {
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
+        }
+        totalPaymentAmount = totalPaymentAmount.plus(info.amount);
+    }
+    // select UTXOs (include both inscriptions and btc)
+    const { selectedUTXOs, selectedInscUTXOs, changeAmount, fee } = selectUTXOsV2(utxos, inscriptions, inscPaymentInfos, paymentInfos, feeRatePerByte);
+    let feeRes = fee;
+    if (selectedInscUTXOs.length != inscPaymentInfos.length) {
+        throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "length of selected inscription UTXOS is different from length of payment infos");
+    }
+    let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    // add inputs
+    psbt = addInputs({
+        psbt,
+        addressType: addressType,
+        inputs: selectedUTXOs,
+        payment: payment,
+        sequence,
+        keyPair: keyPair,
+    });
+    // TODO: add output inscriptions
+    for (let i = 0; i < inscPaymentInfos.length; i++) {
+        psbt.addOutput({
+            address: inscPaymentInfos[i].address,
+            value: selectedInscUTXOs[i].value.toNumber(),
+        });
+    }
+    // add outputs send BTC
+    for (const info of paymentInfos) {
+        psbt.addOutput({
+            address: info.address,
+            value: info.amount.toNumber(),
+        });
+    }
+    // add change output
+    if (changeAmount.gt(BNZero)) {
+        if (changeAmount.gte(MinSats2)) {
+            psbt.addOutput({
+                address: senderAddress,
+                value: changeAmount.toNumber(),
+            });
+        }
+        else {
+            feeRes = feeRes.plus(changeAmount);
+        }
+    }
+    // sign tx
+    for (let i = 0; i < selectedUTXOs.length; i++) {
+        psbt.signInput(i, signer, [sigHashTypeDefault]);
+    }
+    psbt.finalizeAllInputs();
+    // get tx hex
+    const tx = psbt.extractTransaction();
+    console.log("Transaction : ", tx);
+    const txHex = tx.toHex();
+    return { txID: tx.getId(), txHex, fee: feeRes, selectedUTXOs, changeAmount, tx };
 };
 const broadcastTx = async (txHex) => {
     const blockstream = new axios__default["default"].Axios({
@@ -7160,6 +7313,7 @@ exports.URL_REGTEST = URL_REGTEST;
 exports.Validator = Validator$1;
 exports.WalletType = WalletType;
 exports.actionRequest = actionRequest;
+exports.addInputs = addInputs;
 exports.aggregateUTXOs = aggregateUTXOs;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey$1;
@@ -7174,6 +7328,7 @@ exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createTx = createTx;
 exports.createTxFromAnyWallet = createTxFromAnyWallet;
 exports.createTxSendBTC = createTxSendBTC;
+exports.createTxSendMultiReceivers = createTxSendMultiReceivers;
 exports.createTxWithSpecificUTXOs = createTxWithSpecificUTXOs;
 exports.decryptAES = decryptAES$1;
 exports.decryptWallet = decryptWallet;
@@ -7206,11 +7361,14 @@ exports.getAddressType = getAddressType;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
 exports.getKeyPairInfo = getKeyPairInfo;
+exports.getOutputCoinValue = getOutputCoinValue;
 exports.getStorageHDWallet = getStorageHDWallet;
 exports.getStorageHDWalletCipherText = getStorageHDWalletCipherText;
 exports.getStorageMasterless = getStorageMasterless;
 exports.getStorageMasterlessCipherText = getStorageMasterlessCipherText;
+exports.getTxFromBlockStream = getTxFromBlockStream;
 exports.getUTXOs = getUTXOs;
+exports.getUTXOsFromBlockStream = getUTXOsFromBlockStream;
 exports.handleSignPsbtWithSpecificWallet = handleSignPsbtWithSpecificWallet;
 exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;
@@ -7224,6 +7382,7 @@ exports.selectInscriptionUTXO = selectInscriptionUTXO;
 exports.selectTheSmallestUTXO = selectTheSmallestUTXO;
 exports.selectUTXOs = selectUTXOs;
 exports.selectUTXOsToCreateBuyTx = selectUTXOsToCreateBuyTx;
+exports.selectUTXOsV2 = selectUTXOsV2;
 exports.setBTCNetwork = setBTCNetwork$1;
 exports.setStorageHDWallet = setStorageHDWallet;
 exports.setStorageMasterless = setStorageMasterless;

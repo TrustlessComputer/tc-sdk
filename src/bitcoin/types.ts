@@ -76,6 +76,11 @@ interface PaymentInfo {
     amount: BigNumber
 }
 
+interface InscPaymentInfo {
+    address: string,
+    inscID: string,
+}
+
 interface Wallet {
     privKey: string,
 }
@@ -112,6 +117,7 @@ export {
     ICreateTxSellResp,
     BuyReqInfo,
     PaymentInfo,
+    InscPaymentInfo,
     BuyReqFullInfo,
     Wallet,
     ISignPSBTResp,

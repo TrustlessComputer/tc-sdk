@@ -63,6 +63,10 @@ interface PaymentInfo {
     address: string;
     amount: BigNumber;
 }
+interface InscPaymentInfo {
+    address: string;
+    inscID: string;
+}
 interface Wallet {
     privKey: string;
 }
@@ -84,4 +88,4 @@ interface IKeyPairInfo {
     signer: any;
     sigHashTypeDefault: number;
 }
-export { UTXO, Inscription, ICreateTxResp, ICreateRawTxResp, ICreateTxSplitInscriptionResp, ICreateTxBuyResp, ICreateTxSellResp, BuyReqInfo, PaymentInfo, BuyReqFullInfo, Wallet, ISignPSBTResp, NeedPaymentUTXO, IKeyPairInfo, };
+export { UTXO, Inscription, ICreateTxResp, ICreateRawTxResp, ICreateTxSplitInscriptionResp, ICreateTxBuyResp, ICreateTxSellResp, BuyReqInfo, PaymentInfo, InscPaymentInfo, BuyReqFullInfo, Wallet, ISignPSBTResp, NeedPaymentUTXO, IKeyPairInfo, };

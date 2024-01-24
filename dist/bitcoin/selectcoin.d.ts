@@ -1,4 +1,4 @@
-import { Inscription, UTXO } from "./types";
+import { InscPaymentInfo, Inscription, PaymentInfo, UTXO } from "./types";
 import BigNumber from "bignumber.js";
 import { Psbt } from "bitcoinjs-lib";
 /**
@@ -21,6 +21,28 @@ declare const selectUTXOs: (utxos: UTXO[], inscriptions: {
     selectedUTXOs: UTXO[];
     isUseInscriptionPayFee: boolean;
     valueOutInscription: BigNumber;
+    changeAmount: BigNumber;
+    fee: BigNumber;
+};
+/**
+* selectUTXOs selects the most reasonable UTXOs to create the transaction.
+* if sending inscription, the first selected UTXO is always the UTXO contain inscription.
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionInfos list of inscription IDs and receiver addresses
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the list of selected UTXOs
+* @returns the actual flag using inscription coin to pay fee
+* @returns the value of inscription outputs, and the change amount (if any)
+* @returns the network fee
+*/
+declare const selectUTXOsV2: (utxos: UTXO[], inscriptions: {
+    [key: string]: Inscription[];
+}, sendInscriptionInfos: InscPaymentInfo[], sendBTCInfos: PaymentInfo[], feeRatePerByte: number) => {
+    selectedUTXOs: UTXO[];
+    selectedInscUTXOs: UTXO[];
     changeAmount: BigNumber;
     fee: BigNumber;
 };
@@ -107,4 +129,4 @@ declare const filterAndSortCardinalUTXOs: (utxos: UTXO[], inscriptions: {
 declare const findExactValueUTXO: (cardinalUTXOs: UTXO[], value: BigNumber) => {
     utxo: UTXO;
 };
-export { selectUTXOs, selectInscriptionUTXO, selectCardinalUTXOs, selectTheSmallestUTXO, selectUTXOsToCreateBuyTx, findExactValueUTXO, filterAndSortCardinalUTXOs, };
+export { selectUTXOs, selectInscriptionUTXO, selectCardinalUTXOs, selectTheSmallestUTXO, selectUTXOsToCreateBuyTx, findExactValueUTXO, filterAndSortCardinalUTXOs, selectUTXOsV2, };

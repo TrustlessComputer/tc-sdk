@@ -1,12 +1,12 @@
 import { BNZero, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, MinSats, MinSats2 } from "./constants";
 import { BTCAddressType, ECPair, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getAddressType, getKeyPairInfo, toXOnly, tweakSigner } from "./wallet";
 import { BlockStreamURL, Network } from "./network";
-import { BuyReqFullInfo, ICreateRawTxResp, ICreateTxResp, ICreateTxSplitInscriptionResp, IKeyPairInfo, ISignPSBTResp, Inscription, NeedPaymentUTXO, PaymentInfo, UTXO } from "./types";
+import { BuyReqFullInfo, ICreateRawTxResp, ICreateTxResp, ICreateTxSplitInscriptionResp, IKeyPairInfo, ISignPSBTResp, Inscription, NeedPaymentUTXO, PaymentInfo, UTXO, InscPaymentInfo } from "./types";
 import { Psbt, Transaction, address, payments } from 'bitcoinjs-lib';
 import SDKError, { ERROR_CODE } from "../constants/error";
 import axios, { AxiosResponse } from "axios";
 import { estimateTxFee, fromSat } from "./utils";
-import { filterAndSortCardinalUTXOs, findExactValueUTXO, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs } from "./selectcoin";
+import { filterAndSortCardinalUTXOs, findExactValueUTXO, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsV2 } from "./selectcoin";
 
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
@@ -871,6 +871,113 @@ const createTxWithSpecificUTXOs = (
 };
 
 
+/**
+* createTxSendMultiReceivers creates the Bitcoin transaction that can both BTC and inscriptions to multiple receiver addresses. 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param inscPaymentInfos list of inscription IDs and receiver addresses 
+* @param paymentInfos list of btc amount and receiver addresses
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
+const createTxSendMultiReceivers = (
+    {
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        inscPaymentInfos = [],
+        paymentInfos,
+        feeRatePerByte,
+        sequence = DefaultSequenceRBF,
+    }: {
+        senderPrivateKey: Buffer,
+        senderAddress: string,
+        utxos: UTXO[],
+        inscriptions: { [key: string]: Inscription[] },
+        inscPaymentInfos: InscPaymentInfo[],
+        paymentInfos: PaymentInfo[],  // for btc
+        feeRatePerByte: number, // for inscriptions
+        sequence?: number,
+    }
+): ICreateTxResp => {
+    const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+
+    // validation
+    let totalPaymentAmount = BNZero;
+    for (const info of paymentInfos) {
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
+        }
+        totalPaymentAmount = totalPaymentAmount.plus(info.amount);
+    }
+
+    // select UTXOs (include both inscriptions and btc)
+    const { selectedUTXOs, selectedInscUTXOs, changeAmount, fee } = selectUTXOsV2(utxos, inscriptions, inscPaymentInfos, paymentInfos, feeRatePerByte);
+    let feeRes = fee;
+
+    if (selectedInscUTXOs.length != inscPaymentInfos.length) {
+        throw new SDKError(ERROR_CODE.INVALID_PARAMS, "length of selected inscription UTXOS is different from length of payment infos");
+    }
+
+    let psbt = new Psbt({ network: tcBTCNetwork });
+    // add inputs
+    psbt = addInputs({
+        psbt,
+        addressType: addressType,
+        inputs: selectedUTXOs,
+        payment: payment,
+        sequence,
+        keyPair: keyPair,
+    });
+
+    // TODO: add output inscriptions
+    for (let i = 0; i < inscPaymentInfos.length; i++) {
+        psbt.addOutput({
+            address: inscPaymentInfos[i].address,
+            value: selectedInscUTXOs[i].value.toNumber(),
+        });
+    }
+
+    // add outputs send BTC
+    for (const info of paymentInfos) {
+        psbt.addOutput({
+            address: info.address,
+            value: info.amount.toNumber(),
+        });
+    }
+
+    // add change output
+    if (changeAmount.gt(BNZero)) {
+        if (changeAmount.gte(MinSats2)) {
+            psbt.addOutput({
+                address: senderAddress,
+                value: changeAmount.toNumber(),
+            });
+        } else {
+            feeRes = feeRes.plus(changeAmount);
+        }
+    }
+
+    // sign tx
+    for (let i = 0; i < selectedUTXOs.length; i++) {
+        psbt.signInput(i, signer, [sigHashTypeDefault]);
+    }
+
+    psbt.finalizeAllInputs();
+
+    // get tx hex
+    const tx = psbt.extractTransaction();
+    console.log("Transaction : ", tx);
+    const txHex = tx.toHex();
+    return { txID: tx.getId(), txHex, fee: feeRes, selectedUTXOs, changeAmount, tx };
+};
+
 const broadcastTx = async (txHex: string): Promise<string> => {
     const blockstream = new axios.Axios({
         baseURL: BlockStreamURL
@@ -894,4 +1001,6 @@ export {
     createRawTxSendBTC,
     signPSBT,
     signPSBT2,
+    addInputs,
+    createTxSendMultiReceivers,
 };
