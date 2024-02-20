@@ -7381,16 +7381,19 @@ const createTransferSRC20Script = ({ secretKey, data, }) => {
             7374616d703a: `stamp:` in lowercase
             remain: SRC-20 JSON data
     */
-    const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
+    const str = "stamp:" + data;
+    const len = str.length; //NOTE: len include `stamp:`
+    const contentStrHex = Buffer.from(str, "utf-8").toString("hex");
+    // const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
     // get length of decode data in hex
-    let len = contentStrHex.length / 2;
-    len += 6; //NOTE: len include `stamp:`
+    // let len = contentStrHex.length / 2;
+    // len += 6 //NOTE: len include `stamp:`
     let lenHex = len.toString(16);
     console.log("lenHex: ", lenHex);
     if (lenHex.length === 2) {
         lenHex = "00" + lenHex;
     }
-    const rawDataHex = lenHex + "7374616d703a" + contentStrHex;
+    const rawDataHex = lenHex + contentStrHex;
     // add zero trailing (if then)
     const rawDataHexWithTrail = addZeroTrail(rawDataHex);
     // arc4 encode rawDataHexWithTrail
@@ -7420,6 +7423,9 @@ const createTransferSRC20Script = ({ secretKey, data, }) => {
         script = script + "21" + pubkeys[2]; // OP_PUSHBYTES_33 + pubkey[2]
         script = script + "53ae"; // OP_PUSHNUM_3 OP_CHECKMULTISIG
         const scriptBytes = Buffer.from(script, "hex");
+        // const scriptAsm = `OP_PUSHNUM_1 OP_PUSHBYTES_33 ${pubkeys[0]} OP_PUSHBYTES_33 ${pubkeys[1]} OP_PUSHBYTES_33 ${pubkeys[2]} OP_PUSHNUM_3 OP_CHECKMULTISIG`;
+        // console.log("InscribeOrd hashScriptAsm: ", scriptAsm);
+        // const scriptBytes = script.fromASM(scriptAsm);
         scripts.push(scriptBytes);
     }
     console.log({ scripts });
