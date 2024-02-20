@@ -8,6 +8,8 @@ const OutputSize = 43;
 const BNZero = new BigNumber(0);
 const MinSats2 = 546;
 
+// const MinSats2 = 333;
+
 const DefaultSequence = 4294967295;
 const DefaultSequenceRBF = 4294967293;
 

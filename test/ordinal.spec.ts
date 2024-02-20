@@ -77,9 +77,9 @@ describe("Sign msg Tx", async () => {
     it("ORD create inscribe tx", async () => {
         let utxos: UTXO[] = [
             {
-                tx_hash: "d05fd86a243f0048c69b3f4f44f02d09f3944d4e5a748ad876665e9035c67cc5",
+                tx_hash: "a857b34ad15ba3806073d4557b321567fceec5d0f9c4335553d9cad2dc32f2dc",
                 tx_output_n: 1,
-                value: new BigNumber(485610)
+                value: new BigNumber(65034)
             }
 
         ];
@@ -132,9 +132,16 @@ describe("Sign msg Tx", async () => {
         const content = {
             "p": "brc-20",
             "op": "mint",
-            "tick": "axby",
-            "amt": "100000000",
+            "tick": "RCAD",
+            "amt": "1000000000",
         }
+
+        // const content = {
+        //     "p": "brc-20",
+        //     "op": "mint",
+        //     "tick": "RCAD",
+        //     "amt": "1000000000",
+        // }
 
 
 
@@ -148,7 +155,7 @@ describe("Sign msg Tx", async () => {
             senderAddress: address2,
             utxos: utxos,
             inscriptions: {},
-            feeRatePerByte: 35,
+            feeRatePerByte: 30,
             data: contentStr,
         });
 
@@ -157,6 +164,11 @@ describe("Sign msg Tx", async () => {
         console.log("revealTxHex: ", revealTxHex);
         console.log("revealTxID: ", revealTxID);
         console.log("totalFee: ", totalFee);
+
+
+        await broadcastTx(commitTxHex);
+        await sleep(6000);
+        await broadcastTx(revealTxHex);
 
 
         // createInscribeTx({

@@ -1,7 +1,7 @@
 import { BNZero, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, MinSats, MinSats2 } from "./constants";
 import { BTCAddressType, ECPair, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getAddressType, getKeyPairInfo, toXOnly, tweakSigner } from "./wallet";
 import { BlockStreamURL, Network } from "./network";
-import { BuyReqFullInfo, ICreateRawTxResp, ICreateTxResp, ICreateTxSplitInscriptionResp, IKeyPairInfo, ISignPSBTResp, Inscription, NeedPaymentUTXO, PaymentInfo, UTXO, InscPaymentInfo } from "./types";
+import { BuyReqFullInfo, ICreateRawTxResp, ICreateTxResp, ICreateTxSplitInscriptionResp, IKeyPairInfo, ISignPSBTResp, Inscription, NeedPaymentUTXO, PaymentInfo, UTXO, InscPaymentInfo, PaymentScript } from "./types";
 import { Psbt, Transaction, address, payments } from 'bitcoinjs-lib';
 import SDKError, { ERROR_CODE } from "../constants/error";
 import axios, { AxiosResponse } from "axios";
@@ -611,6 +611,7 @@ const createTxSendBTC = (
         utxos,
         inscriptions,
         paymentInfos,
+        paymentScripts = [],
         feeRatePerByte,
         sequence = DefaultSequenceRBF,
         isSelectUTXOs = true,
@@ -620,6 +621,7 @@ const createTxSendBTC = (
         utxos: UTXO[],
         inscriptions: { [key: string]: Inscription[] },
         paymentInfos: PaymentInfo[],
+        paymentScripts?: PaymentScript[],
         feeRatePerByte: number,
         sequence?: number,
         isSelectUTXOs?: boolean,
@@ -658,6 +660,16 @@ const createTxSendBTC = (
     for (const info of paymentInfos) {
         psbt.addOutput({
             address: info.address,
+            value: info.amount.toNumber(),
+        });
+
+
+    }
+
+    // add output script
+    for (const info of paymentScripts) {
+        psbt.addOutput({
+            script: info.script,
             value: info.amount.toNumber(),
         });
     }

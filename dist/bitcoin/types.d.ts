@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Psbt, Transaction, payments } from "bitcoinjs-lib";
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
@@ -63,6 +64,10 @@ interface PaymentInfo {
     address: string;
     amount: BigNumber;
 }
+interface PaymentScript {
+    script: Buffer;
+    amount: BigNumber;
+}
 interface InscPaymentInfo {
     address: string;
     inscID: string;
@@ -88,4 +93,4 @@ interface IKeyPairInfo {
     signer: any;
     sigHashTypeDefault: number;
 }
-export { UTXO, Inscription, ICreateTxResp, ICreateRawTxResp, ICreateTxSplitInscriptionResp, ICreateTxBuyResp, ICreateTxSellResp, BuyReqInfo, PaymentInfo, InscPaymentInfo, BuyReqFullInfo, Wallet, ISignPSBTResp, NeedPaymentUTXO, IKeyPairInfo, };
+export { UTXO, Inscription, ICreateTxResp, ICreateRawTxResp, ICreateTxSplitInscriptionResp, ICreateTxBuyResp, ICreateTxSellResp, BuyReqInfo, PaymentInfo, PaymentScript, InscPaymentInfo, BuyReqFullInfo, Wallet, ISignPSBTResp, NeedPaymentUTXO, IKeyPairInfo, };

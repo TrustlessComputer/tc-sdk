@@ -76,6 +76,11 @@ interface PaymentInfo {
     amount: BigNumber
 }
 
+interface PaymentScript {
+    script: Buffer,
+    amount: BigNumber
+}
+
 interface InscPaymentInfo {
     address: string,
     inscID: string,
@@ -117,6 +122,7 @@ export {
     ICreateTxSellResp,
     BuyReqInfo,
     PaymentInfo,
+    PaymentScript,
     InscPaymentInfo,
     BuyReqFullInfo,
     Wallet,

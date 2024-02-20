@@ -1,4 +1,4 @@
-import { ICreateRawTxResp, ICreateTxResp, IKeyPairInfo, ISignPSBTResp, Inscription, PaymentInfo, UTXO, InscPaymentInfo } from "./types";
+import { ICreateRawTxResp, ICreateTxResp, IKeyPairInfo, ISignPSBTResp, Inscription, PaymentInfo, UTXO, InscPaymentInfo, PaymentScript } from "./types";
 import { Psbt, payments } from 'bitcoinjs-lib';
 import { selectUTXOs } from "./selectcoin";
 import BigNumber from "bignumber.js";
@@ -169,7 +169,7 @@ declare const createTxFromAnyWallet: ({ keyPairInfo, utxos, inscriptions, sendIn
 * @returns the hex signed transaction
 * @returns the network fee
 */
-declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence, isSelectUTXOs, }: {
+declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts, feeRatePerByte, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -177,6 +177,7 @@ declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscri
         [key: string]: Inscription[];
     };
     paymentInfos: PaymentInfo[];
+    paymentScripts?: PaymentScript[] | undefined;
     feeRatePerByte: number;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;

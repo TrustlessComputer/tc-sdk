@@ -178,9 +178,87 @@ describe("Create tx with multiple UTXOs Tests", () => {
     // });
 
 
-    it("send multiple inscriptions", async () => {
+    // it("send multiple inscriptions", async () => {
 
-        let utxos: UTXO[] = await getUTXOsFromBlockStream(address2, true);
+    //     let utxos: UTXO[] = await getUTXOsFromBlockStream(address2, true);
+
+    //     let insciptions: {
+    //         [key: string]: Inscription[];
+    //     } =
+    //     {
+
+    //     };
+
+    //     // let insciptions = {
+    //     //     "07904d4b7306995871a0ed238bff1f3bcd9f050374e81671252cb89b7db6b781:0": [
+    //     //         {
+    //     //             id: "07904d4b7306995871a0ed238bff1f3bcd9f050374e81671252cb89b7db6b781i0",
+    //     //             offset: new BigNumber(0),
+    //     //             sat: 1277661004849427
+    //     //         }
+    //     //     ],
+    //     // }
+
+    //     let numInscToSend = 3;
+
+    //     let inscPaymentInfos: InscPaymentInfo[] = [];
+
+    //     let receiverAddress = [
+    //         "bc1pcnz30qlng8s4kuc0p949rp3uc6hu8jqy7sqd3pszn8h0juhd8hgqupnutq",
+    //         "bc1p65j57tzjufnjmt4fgx5xexfry6f3f87sggl02gl7fcxuky4x34fsz4wsau",
+    //         "bc1pd9swmqhw2zn0y6x0wxjjdpqsjphdwfq92en68m7qzq7w9tnrhm7q3l9r7p",
+    //         "bc1ppswwdq6crzrktla4y0urfmcqe8n7wttsvxdx39k4ruvd008x8rvqmnwpk9",
+    //         "bc1qn74ftxrvh862jcre972ulnvmve9ek50ewngwyx",
+    //     ]
+
+
+    //     for (let i = 0; i < utxos.length; i++) {
+    //         let u = utxos[i];
+    //         if (utxos[i].value.toNumber() === 546) {
+    //             let key = u.tx_hash + ":" + u.tx_output_n;
+    //             let id = u.tx_hash + "i" + u.tx_output_n;
+    //             insciptions[key] = [
+    //                 {
+    //                     id: id,
+    //                     offset: new BigNumber(0),
+    //                 }
+    //             ]
+
+    //             if (inscPaymentInfos.length < numInscToSend) {
+    //                 inscPaymentInfos.push({
+    //                     address: receiverAddress[inscPaymentInfos.length],
+    //                     inscID: id,
+    //                 })
+    //             }
+    //         }
+    //     }
+
+    //     console.log("inscPaymentInfos: ", inscPaymentInfos);
+
+    //     let paymentInfos: PaymentInfo[] = [];
+
+    //     const { txID, txHex, fee: feeRes } = createTxSendMultiReceivers({
+    //         senderPrivateKey: privateKey2,
+    //         senderAddress: address2,
+    //         utxos: utxos,
+    //         inscriptions: insciptions,
+    //         inscPaymentInfos,
+    //         paymentInfos,
+    //         feeRatePerByte: 27,
+    //         sequence: DefaultSequenceRBF,
+    //     });
+
+    //     console.log({ txID, txHex, feeRes });
+    // });
+
+
+    it("send BTC multiple receivers", async () => {
+
+        let utxos: UTXO[] = [{
+            tx_hash: "61a7ad10f8be16a8e914a1dd02be117e6125ca13acbc76741e5d2692ce9ba27d",
+            tx_output_n: 2,
+            value: new BigNumber(4830842),
+        }]
 
         let insciptions: {
             [key: string]: Inscription[];
@@ -189,53 +267,20 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
         };
 
-        // let insciptions = {
-        //     "07904d4b7306995871a0ed238bff1f3bcd9f050374e81671252cb89b7db6b781:0": [
-        //         {
-        //             id: "07904d4b7306995871a0ed238bff1f3bcd9f050374e81671252cb89b7db6b781i0",
-        //             offset: new BigNumber(0),
-        //             sat: 1277661004849427
-        //         }
-        //     ],
-        // }
-
-        let numInscToSend = 3;
-
         let inscPaymentInfos: InscPaymentInfo[] = [];
-
-        let receiverAddress = [
-            "bc1pcnz30qlng8s4kuc0p949rp3uc6hu8jqy7sqd3pszn8h0juhd8hgqupnutq",
-            "bc1p65j57tzjufnjmt4fgx5xexfry6f3f87sggl02gl7fcxuky4x34fsz4wsau",
-            "bc1pd9swmqhw2zn0y6x0wxjjdpqsjphdwfq92en68m7qzq7w9tnrhm7q3l9r7p",
-            "bc1ppswwdq6crzrktla4y0urfmcqe8n7wttsvxdx39k4ruvd008x8rvqmnwpk9",
-            "bc1qn74ftxrvh862jcre972ulnvmve9ek50ewngwyx",
-        ]
-
-
-        for (let i = 0; i < utxos.length; i++) {
-            let u = utxos[i];
-            if (utxos[i].value.toNumber() === 546) {
-                let key = u.tx_hash + ":" + u.tx_output_n;
-                let id = u.tx_hash + "i" + u.tx_output_n;
-                insciptions[key] = [
-                    {
-                        id: id,
-                        offset: new BigNumber(0),
-                    }
-                ]
-
-                if (inscPaymentInfos.length < numInscToSend) {
-                    inscPaymentInfos.push({
-                        address: receiverAddress[inscPaymentInfos.length],
-                        inscID: id,
-                    })
-                }
-            }
-        }
 
         console.log("inscPaymentInfos: ", inscPaymentInfos);
 
-        let paymentInfos: PaymentInfo[] = [];
+        let paymentInfos: PaymentInfo[] = [
+            {
+                address: "bc1ptgde8yd5sjfdsz5xlvqhlmxuy90y4k593pjhp496csyjlesrxx9qh5wjut",
+                amount: new BigNumber(16172),
+            },
+            {
+                address: "bc1pa29e0wnh5q8mgq8p8c7ndf4wmgdl09edf42mhz840wh8k2np57rqldl7jg",
+                amount: new BigNumber(16172),
+            }
+        ];
 
         const { txID, txHex, fee: feeRes } = createTxSendMultiReceivers({
             senderPrivateKey: privateKey2,
@@ -244,8 +289,8 @@ describe("Create tx with multiple UTXOs Tests", () => {
             inscriptions: insciptions,
             inscPaymentInfos,
             paymentInfos,
-            feeRatePerByte: 27,
-            sequence: DefaultSequenceRBF,
+            feeRatePerByte: 24,
+            sequence: DefaultSequenceRBF + 1,
         });
 
         console.log({ txID, txHex, feeRes });

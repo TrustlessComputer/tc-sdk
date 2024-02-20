@@ -2943,6 +2943,7 @@ const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
 const MinSats2 = 546;
+// const MinSats2 = 333;
 const DefaultSequence = 4294967295;
 const DefaultSequenceRBF = 4294967293;
 const MaxTxSize = 357376; // 349 KB
@@ -4410,7 +4411,7 @@ walletType = bitcoinjsLib.Transaction.SIGHASH_DEFAULT, cancelFn, }) => {
 * @returns the hex signed transaction
 * @returns the network fee
 */
-const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts = [], feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
     const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
     const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
     console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
@@ -4439,6 +4440,13 @@ const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions,
     for (const info of paymentInfos) {
         psbt.addOutput({
             address: info.address,
+            value: info.amount.toNumber(),
+        });
+    }
+    // add output script
+    for (const info of paymentScripts) {
+        psbt.addOutput({
+            script: info.script,
             value: info.amount.toNumber(),
         });
     }
@@ -7280,6 +7288,158 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
     return tx.virtualSize();
 }
 
+/**
+* createTransferSRC20Tx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createTransferSRC20Tx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, receiverAddress, data, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    /* NOTE:
+    TX structure:
+        Input: cardinal utxos for network fee
+        Output:
+            0: destination address
+            1: multisig address : ScriptPubKeys : 1 encodedJsonData encodedJsonData burnPubkey 3 OP_CHECKMULTISIG
+            2: additional multisig address for remain data (if then)
+            3: change utxo
+    */
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    toXOnly$1(keyPair.publicKey);
+    // estimate fee and select UTXOs
+    const estTxFee = estimateTxFee(1, 4, feeRatePerByte);
+    // TODO: adjust amount
+    const totalBTC = 333 + 801 * 2 + estTxFee;
+    const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, new BigNumber(totalBTC));
+    // create multisig scripts for  tx
+    const scripts = await createTransferSRC20Script({
+        secretKey: selectedUTXOs[0].tx_hash,
+        data: data,
+    });
+    // only btc
+    const paymentInfos = [];
+    paymentInfos.push({
+        address: receiverAddress,
+        amount: new BigNumber(333)
+    });
+    // multisigs
+    const paymentScripts = [];
+    for (const m of scripts) {
+        paymentScripts.push({
+            script: m,
+            amount: new BigNumber(801)
+        });
+    }
+    const { txHex, txID, fee, changeAmount, tx } = createTxSendBTC({
+        senderPrivateKey,
+        senderAddress,
+        utxos: selectedUTXOs,
+        inscriptions: {},
+        paymentInfos: paymentInfos,
+        paymentScripts: paymentScripts,
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs: false
+    });
+    console.log("createTransferSRC20Tx tx : ", { txHex, txID, fee, changeAmount, tx });
+    return {
+        txHex, txID, totalFee: fee, changeAmount, selectedUTXOs
+    };
+};
+// make sure length of multiple of 124 = 62 * 2 (31*2 * 2)
+const addZeroTrail = (hexStr) => {
+    const lenStr = hexStr.length;
+    const r = lenStr % 124;
+    console.log({ lenStr });
+    let addStr = "";
+    if (r > 0) {
+        const numAdd = (Math.floor(lenStr / 124) + 1) * 124 - lenStr;
+        addStr = addStr.padEnd(numAdd, "0");
+        console.log({ numAdd, addStr });
+    }
+    return hexStr + addStr;
+};
+/**
+* createTransferSRC20Script creates multisig for transfer src20.
+* @param secretKey tx ID of vin[0]
+* @returns scripts
+*/
+const createTransferSRC20Script = ({ secretKey, data, }) => {
+    /*
+        Script structure:
+            2 bytes: length of decoded data in hex
+            7374616d703a: `stamp:` in lowercase
+            remain: SRC-20 JSON data
+    */
+    const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
+    // get length of decode data in hex
+    let len = contentStrHex.length / 2;
+    len += 6; //NOTE: len include `stamp:`
+    let lenHex = len.toString(16);
+    console.log("lenHex: ", lenHex);
+    if (lenHex.length === 2) {
+        lenHex = "00" + lenHex;
+    }
+    const rawDataHex = lenHex + "7374616d703a" + contentStrHex;
+    // add zero trailing (if then)
+    const rawDataHexWithTrail = addZeroTrail(rawDataHex);
+    // arc4 encode rawDataHexWithTrail
+    const cipherParams = ARC4Encrypt(secretKey, rawDataHexWithTrail);
+    const cipherTextHex = cipherParams.toString(CryptoJS__namespace.format.Hex);
+    console.log({ cipherTextHex, len: cipherTextHex.length });
+    // split batch 31-byte (62 chars) into script pubkey, append the sign and nonce byte for each batch
+    const pubkeyHex = [];
+    for (let i = 0; i <= cipherTextHex.length - 62;) {
+        const str = cipherTextHex.slice(i, i + 62);
+        pubkeyHex.push(str);
+        i = i + 62;
+    }
+    console.log({ pubkeyHex });
+    const sign = "02";
+    const nonce = "dd";
+    let scripts = [];
+    for (let i = 0; i <= pubkeyHex.length - 2; i = i + 2) {
+        const pubkeys = [
+            sign + pubkeyHex[i] + nonce,
+            sign + pubkeyHex[i + 1] + nonce,
+            '020202020202020202020202020202020202020202020202020202020202020202',
+        ];
+        let script = "51"; // OP_PUSHNUM_1
+        script = script + "21" + pubkeys[0]; // OP_PUSHBYTES_33 + pubkey[0]
+        script = script + "21" + pubkeys[1]; // OP_PUSHBYTES_33 + pubkey[1]
+        script = script + "21" + pubkeys[2]; // OP_PUSHBYTES_33 + pubkey[2]
+        script = script + "53ae"; // OP_PUSHNUM_3 OP_CHECKMULTISIG
+        const scriptBytes = Buffer.from(script, "hex");
+        scripts.push(scriptBytes);
+    }
+    console.log({ scripts });
+    return scripts;
+};
+
+const ARC4Encrypt = (secretKey, msg) => {
+    const msgBuff = CryptoJS__namespace.enc.Hex.parse(msg);
+    const secretKeyBuff = CryptoJS__namespace.enc.Hex.parse(secretKey);
+    const res = CryptoJS__namespace.RC4.encrypt(msgBuff, secretKeyBuff);
+    return res;
+};
+const ARC4Decrypt = (secretKey, ciphertext) => {
+    const secretKeyBuff = CryptoJS__namespace.enc.Hex.parse(secretKey);
+    const res = CryptoJS__namespace.RC4.decrypt(ciphertext, secretKeyBuff);
+    return res.toString(CryptoJS__namespace.enc.Hex);
+};
+
+exports.ARC4Decrypt = ARC4Decrypt;
+exports.ARC4Encrypt = ARC4Encrypt;
 exports.BNZero = BNZero;
 exports.BTCAddressType = BTCAddressType;
 exports.BTCSegwitDerivationPath = BTCSegwitDerivationPath;
@@ -7314,6 +7474,7 @@ exports.Validator = Validator$1;
 exports.WalletType = WalletType;
 exports.actionRequest = actionRequest;
 exports.addInputs = addInputs;
+exports.addZeroTrail = addZeroTrail;
 exports.aggregateUTXOs = aggregateUTXOs;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey$1;
@@ -7325,6 +7486,8 @@ exports.createLockScript = createLockScript$1;
 exports.createRawRevealTx = createRawRevealTx$1;
 exports.createRawTx = createRawTx;
 exports.createRawTxSendBTC = createRawTxSendBTC;
+exports.createTransferSRC20Script = createTransferSRC20Script;
+exports.createTransferSRC20Tx = createTransferSRC20Tx;
 exports.createTx = createTx;
 exports.createTxFromAnyWallet = createTxFromAnyWallet;
 exports.createTxSendBTC = createTxSendBTC;
