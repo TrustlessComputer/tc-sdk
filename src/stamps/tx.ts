@@ -2,6 +2,8 @@ import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, MinSat
 import {
     ARC4Encrypt,
     BatchInscribeTxResp,
+    ERROR_CODE,
+    ICreateTxResp,
     IKeyPairInfo,
     Inscription,
     PaymentInfo,
@@ -14,8 +16,12 @@ import {
     createTxSendBTC,
     createTxWithSpecificUTXOs,
     estimateTxFee,
+    fromSat,
     selectCardinalUTXOs,
+    selectUTXOs,
     toSat,
+    createRawTxSendBTCFromMultisig,
+    ICreateRawTxResp,
 } from "../";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getKeyPairInfo, toXOnly } from "../bitcoin/wallet";
 
@@ -23,6 +29,102 @@ import BigNumber from "bignumber.js";
 
 import * as CryptoJS from "crypto-js";
 import { script } from "bitcoinjs-lib";
+
+
+/**
+* createTransferSRC20RawTx creates raw tx to transfer src20 (don't include signing)
+* sender address is P2WSH
+* @param senderPubKey buffer public key of the inscriber 
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the raw transaction
+* @returns the total network fee
+*/
+const createTransferSRC20RawTx = async ({
+    senderPubKey,
+    senderAddress,
+    utxos,
+    inscriptions,
+    feeRatePerByte,
+    receiverAddress,
+    data,
+    sequence = DefaultSequenceRBF,
+}: {
+    senderPubKey: Buffer,
+    senderAddress: string,
+    utxos: UTXO[],
+    inscriptions: { [key: string]: Inscription[] },
+    feeRatePerByte: number,
+    receiverAddress: string,
+    data: string,
+    sequence?: number;
+}): Promise<ICreateRawTxResp> => {
+
+    /* NOTE: 
+    TX structure: 
+        Input: cardinal utxos for network fee
+        Output: 
+            0: destination address
+            1: multisig address : ScriptPubKeys : 1 encodedJsonData encodedJsonData burnPubkey 3 OP_CHECKMULTISIG
+            2: additional multisig address for remain data (if then)
+            3: change utxo
+    */
+
+
+    // const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    // const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    // const internalPubKey = toXOnly(senderPubKey);
+
+    // estimate fee and select UTXOs
+    const estTxFee = estimateTxFee(1, 4, feeRatePerByte);
+    // TODO: adjust amount
+    const totalBTC = 333 + 801 * 2 + estTxFee;
+
+    const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, new BigNumber(totalBTC));
+
+    // create multisig scripts for  tx
+    const scripts = await createTransferSRC20Script({
+        secretKey: selectedUTXOs[0].tx_hash,
+        data: data,
+    });
+
+    // only btc
+    const paymentInfos: PaymentInfo[] = [];
+    paymentInfos.push({
+        address: receiverAddress,
+        amount: new BigNumber(333)
+
+    });
+
+    // multisigs
+    const paymentScripts: PaymentScript[] = [];
+    for (const m of scripts) {
+        paymentScripts.push({
+            script: m,
+            amount: new BigNumber(801)
+        });
+    }
+
+    const res: ICreateRawTxResp = createRawTxSendBTCFromMultisig({
+        senderPublicKey: senderPubKey,
+        senderAddress,
+        utxos: selectedUTXOs,
+        inscriptions: {},
+        paymentInfos: paymentInfos,
+        paymentScripts: paymentScripts,
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs: false
+    });
+
+    console.log("createTransferSRC20Tx tx : ", { res });
+
+    return res;
+};
+
 
 /**
 * createTransferSRC20Tx creates commit and reveal tx to inscribe data on Bitcoin netword. 
@@ -124,7 +226,6 @@ const createTransferSRC20Tx = async ({
         sequence,
         isSelectUTXOs: false
     });
-
 
     console.log("createTransferSRC20Tx tx : ", { txHex, txID, fee, changeAmount, tx });
 
@@ -244,4 +345,5 @@ export {
     createTransferSRC20Tx,
     createTransferSRC20Script,
     addZeroTrail,
+    createTransferSRC20RawTx,
 };

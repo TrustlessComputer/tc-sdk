@@ -1,5 +1,27 @@
-import { Inscription, UTXO } from "../";
+import { Inscription, UTXO, ICreateRawTxResp } from "../";
 import BigNumber from "bignumber.js";
+/**
+* createTransferSRC20RawTx creates raw tx to transfer src20 (don't include signing)
+* sender address is P2WSH
+* @param senderPubKey buffer public key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the raw transaction
+* @returns the total network fee
+*/
+declare const createTransferSRC20RawTx: ({ senderPubKey, senderAddress, utxos, inscriptions, feeRatePerByte, receiverAddress, data, sequence, }: {
+    senderPubKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    feeRatePerByte: number;
+    receiverAddress: string;
+    data: string;
+    sequence?: number | undefined;
+}) => Promise<ICreateRawTxResp>;
 /**
 * createTransferSRC20Tx creates commit and reveal tx to inscribe data on Bitcoin netword.
 * NOTE: Currently, the function only supports sending from Taproot address.
@@ -43,4 +65,4 @@ declare const createTransferSRC20Script: ({ secretKey, data, }: {
     secretKey: string;
     data: string;
 }) => Buffer[];
-export { createTransferSRC20Tx, createTransferSRC20Script, addZeroTrail, };
+export { createTransferSRC20Tx, createTransferSRC20Script, addZeroTrail, createTransferSRC20RawTx, };

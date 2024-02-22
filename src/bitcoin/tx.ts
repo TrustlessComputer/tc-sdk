@@ -604,6 +604,135 @@ const createTxFromAnyWallet = async ({
 * @returns the hex signed transaction
 * @returns the network fee
 */
+const createRawTxSendBTCFromMultisig = (
+    {
+        senderPublicKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        paymentInfos,
+        paymentScripts = [],
+        feeRatePerByte,
+        sequence = DefaultSequenceRBF,
+        isSelectUTXOs = true,
+    }: {
+        senderPublicKey: Buffer,
+        senderAddress: string,
+        utxos: UTXO[],
+        inscriptions: { [key: string]: Inscription[] },
+        paymentInfos: PaymentInfo[],
+        paymentScripts?: PaymentScript[],
+        feeRatePerByte: number,
+        sequence?: number,
+        isSelectUTXOs?: boolean,
+    }
+): ICreateRawTxResp => {
+    // const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    // const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+
+    console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
+    // validation
+    let totalPaymentAmount = BNZero;
+
+    for (const info of paymentInfos) {
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
+        }
+        totalPaymentAmount = totalPaymentAmount.plus(info.amount);
+    }
+
+    // select UTXOs
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
+    let feeRes = fee;
+
+    let psbt = new Psbt({ network: tcBTCNetwork });
+
+    // TODO:  2525
+
+    for (const input of selectedUTXOs) {
+        psbt.addInput({
+            hash: input.tx_hash,
+            index: input.tx_output_n,
+            sequence: sequence,
+            // witnessUtxo: { value: input.value.toNumber(), script: p2pktr.output as Buffer },
+            // tapInternalKey: pubKey,
+        });
+    }
+    // // add inputs
+    // psbt = addInputs({
+    //     psbt,
+    //     addressType: addressType,
+    //     inputs: selectedUTXOs,
+    //     payment: payment,
+    //     sequence,
+    //     keyPair: keyPair,
+    // });
+
+    // add outputs send BTC
+    for (const info of paymentInfos) {
+        psbt.addOutput({
+            address: info.address,
+            value: info.amount.toNumber(),
+        });
+    }
+
+    // add output script
+    for (const info of paymentScripts) {
+        psbt.addOutput({
+            script: info.script,
+            value: info.amount.toNumber(),
+        });
+    }
+
+    // add change output
+    let changeAmountRes = changeAmount;
+    if (changeAmount.gt(BNZero)) {
+        if (changeAmount.gte(MinSats2)) {
+            psbt.addOutput({
+                address: senderAddress,
+                value: changeAmount.toNumber(),
+            });
+        } else {
+            feeRes = feeRes.plus(changeAmount);
+            changeAmountRes = BNZero;
+        }
+    }
+
+    // sign tx
+    // for (let i = 0; i < selectedUTXOs.length; i++) {
+    //     psbt.signInput(i, signer, [sigHashTypeDefault]);
+    // }
+
+    // psbt.finalizeAllInputs();
+
+    // get tx hex
+    // const tx = psbt.extractTransaction();
+    // console.log("Transaction : ", tx);
+    // const txHex = tx.toHex();
+
+    const indicesToSign: number[] = [];
+    for (let i = 0; i < psbt.txInputs.length; i++) {
+        indicesToSign.push(i);
+    }
+
+    return { base64Psbt: psbt.toBase64(), fee: feeRes, changeAmount: changeAmountRes, selectedUTXOs, indicesToSign };
+};
+
+/**
+* createTx creates the Bitcoin transaction (including sending inscriptions). 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionID id of inscription to send
+* @param receiverInsAddress the address of the inscription receiver
+* @param sendAmount satoshi amount need to send 
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee 
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
 const createTxSendBTC = (
     {
         senderPrivateKey,
@@ -1015,4 +1144,5 @@ export {
     signPSBT2,
     addInputs,
     createTxSendMultiReceivers,
+    createRawTxSendBTCFromMultisig,
 };
