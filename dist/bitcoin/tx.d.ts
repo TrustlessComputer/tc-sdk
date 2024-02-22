@@ -1,4 +1,4 @@
-import { ICreateRawTxResp, ICreateTxResp, IKeyPairInfo, ISignPSBTResp, Inscription, PaymentInfo, UTXO, InscPaymentInfo } from "./types";
+import { ICreateRawTxResp, ICreateTxResp, IKeyPairInfo, ISignPSBTResp, Inscription, PaymentInfo, UTXO, InscPaymentInfo, PaymentScript } from "./types";
 import { Psbt, payments } from 'bitcoinjs-lib';
 import { selectUTXOs } from "./selectcoin";
 import BigNumber from "bignumber.js";
@@ -169,7 +169,35 @@ declare const createTxFromAnyWallet: ({ keyPairInfo, utxos, inscriptions, sendIn
 * @returns the hex signed transaction
 * @returns the network fee
 */
-declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, feeRatePerByte, sequence, isSelectUTXOs, }: {
+declare const createRawTxSendBTCFromMultisig: ({ senderPublicKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts, feeRatePerByte, sequence, isSelectUTXOs, }: {
+    senderPublicKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    paymentInfos: PaymentInfo[];
+    paymentScripts?: PaymentScript[] | undefined;
+    feeRatePerByte: number;
+    sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
+}) => ICreateRawTxResp;
+/**
+* createTx creates the Bitcoin transaction (including sending inscriptions).
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionID id of inscription to send
+* @param receiverInsAddress the address of the inscription receiver
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
+declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts, feeRatePerByte, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -177,6 +205,7 @@ declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscri
         [key: string]: Inscription[];
     };
     paymentInfos: PaymentInfo[];
+    paymentScripts?: PaymentScript[] | undefined;
     feeRatePerByte: number;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
@@ -252,4 +281,4 @@ declare const createTxSendMultiReceivers: ({ senderPrivateKey, senderAddress, ut
     sequence?: number | undefined;
 }) => ICreateTxResp;
 declare const broadcastTx: (txHex: string) => Promise<string>;
-export { selectUTXOs, createTx, createRawTx, createTxFromAnyWallet, broadcastTx, createTxWithSpecificUTXOs, createTxSendBTC, createRawTxSendBTC, signPSBT, signPSBT2, addInputs, createTxSendMultiReceivers, };
+export { selectUTXOs, createTx, createRawTx, createTxFromAnyWallet, broadcastTx, createTxWithSpecificUTXOs, createTxSendBTC, createRawTxSendBTC, signPSBT, signPSBT2, addInputs, createTxSendMultiReceivers, createRawTxSendBTCFromMultisig, };
