@@ -40,9 +40,9 @@ import BigNumber from "bignumber.js";
 
 require("dotenv").config({ path: __dirname + "/.env" });
 
-var privateKeyWIF1 = process.env.PRIV_KEY_1 || "";
-var privateKey1 = convertPrivateKeyFromStr(privateKeyWIF1);
-let address1 = process.env.ADDRESS_1 || "";
+// var privateKeyWIF1 = process.env.PRIV_KEY_1 || "";
+// var privateKey1 = convertPrivateKeyFromStr(privateKeyWIF1);
+// let address1 = process.env.ADDRESS_1 || "";
 
 let privateKeyWIF2 = process.env.PRIV_KEY_2 || "";
 // // let address2 = process.env.ADDRESS_2_P2WPKH_REGTEST || "";
@@ -254,11 +254,13 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
     it("send BTC multiple receivers", async () => {
 
-        let utxos: UTXO[] = [{
-            tx_hash: "61a7ad10f8be16a8e914a1dd02be117e6125ca13acbc76741e5d2692ce9ba27d",
-            tx_output_n: 2,
-            value: new BigNumber(4830842),
-        }]
+        let utxos: UTXO[] = [
+            {
+                tx_hash: "c2e47221072ee49605aef801ac13f361c9d11f4ef02310a795c7677e6e2e97f1",
+                tx_output_n: 8,
+                value: new BigNumber(389940),
+            },
+        ]
 
         let insciptions: {
             [key: string]: Inscription[];
@@ -273,13 +275,70 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
         let paymentInfos: PaymentInfo[] = [
             {
-                address: "bc1ptgde8yd5sjfdsz5xlvqhlmxuy90y4k593pjhp496csyjlesrxx9qh5wjut",
-                amount: new BigNumber(16172),
+                address: "bc1p8u2xkzew6ts4h8y6j7wpmmphr7ffcncvuqehuedd7x28qlwumrsshgyw5w",
+                amount: new BigNumber(11196),
             },
             {
-                address: "bc1pa29e0wnh5q8mgq8p8c7ndf4wmgdl09edf42mhz840wh8k2np57rqldl7jg",
-                amount: new BigNumber(16172),
-            }
+                address: "bc1pyf4mgv6hacflaq3m62qjn4cx0d8g6j5va8ylam8t53vwksr8f88qqzmsul",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1p36nryqzvlpz8pufh3jsm3m6mnjnj35cshpjj7cm6ecy4pw92s6eqpy48hy",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pju8ztkwd4ulgwhkzznzd6t77shthjarmrf3enhpcxmfga877dtfqwhr9qn",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1p3uc9nxd7ghu259hf3pjy9ux0l7j5ef6xdsd2kh6gwzdlqe0z8uvql3dpdp",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1py02qh9v2gzc57q2gmdtfzwhn76v6sp3gtdwpd8r6k7032g0hrtusj7crqt",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pj08tlagxkypmfg8lpxvzmzjztcpgzzwtgqmycyflmyeewk2lqlsq679vs6",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pptecyxer3ltf50xmhykf54vu4n05rvd6ytzrahwav0hl2cunm3gq6a3mst",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pn97632fey0cjcxht50mn5rjwqualaq6nf3y9nv0rp5vlpqa988msjnp3z3",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1ps26tz3x8lcp9zgjglvk43a287l5kg8s2cr0f9u6k5ajcp7vkg3kqkkkuhx",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1ptgde8yd5sjfdsz5xlvqhlmxuy90y4k593pjhp496csyjlesrxx9qh5wjut",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pyf4mgv6hacflaq3m62qjn4cx0d8g6j5va8ylam8t53vwksr8f88qqzmsul",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1p7d8cztqxkf0qatdn6fkw6j8552ld42qgpkapevua7rkdqcxek70qaw6j55",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1p8gvpz87rjneqa9wjmkhh78tldptxp4pusg3w5fscu544qnpwqncq7gwqqk",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pj3jm7ujxz39epmu5ssx59thx3jh0fpfn6nxhnpugnx75j5nhy7gsgzr4dv",
+                amount: new BigNumber(11196),
+            },
+            {
+                address: "bc1pcv5rug4jws9sc04eq26vsh8d7qkgd35rs6rm3ww5usvman3ng5eqskj59x",
+                amount: new BigNumber(11196),
+            },
+
         ];
 
         const { txID, txHex, fee: feeRes } = createTxSendMultiReceivers({
@@ -289,10 +348,12 @@ describe("Create tx with multiple UTXOs Tests", () => {
             inscriptions: insciptions,
             inscPaymentInfos,
             paymentInfos,
-            feeRatePerByte: 24,
-            sequence: DefaultSequenceRBF + 1,
+            feeRatePerByte: 30,
+            sequence: DefaultSequenceRBF,
         });
 
         console.log({ txID, txHex, feeRes });
+
+        // await broadcastTx(txHex)
     });
 });

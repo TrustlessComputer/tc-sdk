@@ -18,15 +18,17 @@ import {
     createTxSendBTC,
     createTxWithSpecificUTXOs,
     ordCreateInscribeTx,
+    createInscribeImgTx,
     selectUTXOs,
     setBTCNetwork,
     setupConfig,
 } from "../dist";
-import { Transaction, script } from 'bitcoinjs-lib';
 
 import BigNumber from 'bignumber.js';
 import { assert } from 'chai';
 import { ethers } from "ethers";
+
+const fs = require('fs');
 
 require("dotenv").config({ path: __dirname + "/.env" });
 console.log(__dirname + "../test/.env");
@@ -74,88 +76,169 @@ describe("Sign msg Tx", async () => {
     // @ts-ignore
     globalThis.storage = storage;
 
-    it("ORD create inscribe tx", async () => {
+    // it("ORD create inscribe tx", async () => {
+    //     let utxos: UTXO[] = [
+    //         {
+    //             tx_hash: "a857b34ad15ba3806073d4557b321567fceec5d0f9c4335553d9cad2dc32f2dc",
+    //             tx_output_n: 1,
+    //             value: new BigNumber(65034)
+    //         }
+
+    //     ];
+
+
+
+    //     // private key 2
+    //     // let utxos: UTXO[] = [
+    //     //     {
+    //     //         tx_hash: "4ecb19d9a6fbe8580f53708e4c0d81378c31059db070414497a9cb6289233686",
+    //     //         tx_output_n: 1,
+    //     //         value: new BigNumber(23340)
+    //     //     },
+    //     //     {
+    //     //         tx_hash: "9f8f6ce4a2e935b6955a664eba337d9cad2df6a6a81b35d8df2fae21ec9dfc86",
+    //     //         tx_output_n: 1,
+    //     //         value: new BigNumber(877)
+    //     //     }
+
+    //     // ];
+
+    //     // 64
+    //     const content = {
+    //         p: "brc-20",
+    //         op: "transfer",
+    //         tick: "BVMN",
+    //         amt: "15024236490",
+    //     };
+
+    //     // 78
+    //     // const content = {
+    //     //     "p": "brc-20",
+    //     //     "op": "deploy",
+    //     //     "tick": "axby",
+    //     //     "max": "100000000",
+    //     //     "lim": "100000000",
+    //     // }
+
+    //     // const content2 = {
+    //     //     "p": "brc-20", 
+    //     //     "op": "deploy", 
+    //     //     "tick": "axby",
+    //     //     "max": "100000000", 
+    //     //     "lim": "100000000"
+    //     // }
+
+
+    //     // const content = {
+    //     //     "p": "brc-20",
+    //     //     "op": "mint",
+    //     //     "tick": "RCAD",
+    //     //     "amt": "1000000000",
+    //     // }
+
+    //     // const content = {
+    //     //     "p": "brc-20",
+    //     //     "op": "mint",
+    //     //     "tick": "RCAD",
+    //     //     "amt": "1000000000",
+    //     // }
+
+
+
+    //     const contentStr = JSON.stringify(content);
+
+    //     console.log("contentStr: ", contentStr, contentStr.length);
+
+
+    //     const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await ordCreateInscribeTx({
+    //         senderPrivateKey: privateKey2,
+    //         senderAddress: address2,
+    //         utxos: utxos,
+    //         inscriptions: {},
+    //         feeRatePerByte: 30,
+    //         data: contentStr,
+    //     });
+
+    //     console.log("commitTxHex: ", commitTxHex);
+    //     console.log("commitTxID: ", commitTxID);
+    //     console.log("revealTxHex: ", revealTxHex);
+    //     console.log("revealTxID: ", revealTxID);
+    //     console.log("totalFee: ", totalFee);
+
+
+    //     await broadcastTx(commitTxHex);
+    //     await sleep(10000);
+    //     await broadcastTx(revealTxHex);
+
+
+    //     // createInscribeTx({
+
+    //     // })
+
+
+
+    //     // send  btc
+    //     // const { txID, txHex, fee: feeRes } = createTxSendBTC({
+    //     //     senderPrivateKey: privateKey2,
+    //     //     senderAddress: address2,
+    //     //     utxos,
+    //     //     inscriptions: {},
+    //     //     paymentInfos: [
+    //     //         // { address: receiverAddress, amount: new BigNumber(10000000) },
+    //     //         { address: "bc1qapk2kv9jxs3ut30xdfcemqaqdlrwv3sndd0f7c", amount: new BigNumber(100000) },
+    //     //     ],
+    //     //     feeRatePerByte: 25,
+    //     //     sequence: DefaultSequenceRBF,
+    //     // });
+
+    //     // const finalTXID = await broadcastTx(txHex);
+    //     // console.log("finalTXID: ", finalTXID);
+    //     // console.log(txID, txHex, feeRes);
+    //     // console.log("commitTxB64: ", commitTxB64);
+    //     // console.log("hashLockRedeemScriptHex: ", hashLockRedeemScriptHex);
+    //     // console.log("revealVByte: ", revealVByte);
+    //     // console.log("hashLockPriKey: ", hashLockPriKey);
+    //     // const dataBuff = Buffer.from("f8698080825208949b9add2b5b572ccc43ef2660d8b81cfd0701435b8898a7d9b8314c000080823696a0ee3795a786dd6c4f028517f2f5dd7333f066b83d03ca7404d73b8b212454e123a0488ddfdb48101b5ac0647e1b823f98e05ba7310c3046810e3327d1d2ccc51434", "hex");
+
+    //     // console.log(dataBuff.length);
+
+
+    // });
+
+
+    it("ORD create inscribe img tx", async () => {
         let utxos: UTXO[] = [
             {
-                tx_hash: "a857b34ad15ba3806073d4557b321567fceec5d0f9c4335553d9cad2dc32f2dc",
-                tx_output_n: 1,
-                value: new BigNumber(65034)
+                tx_hash: "f32bb9c12201d606be882dd87d6838e969b7062ec7c0b8954e804cced7cf90fb",
+                tx_output_n: 0,
+                value: new BigNumber(10000)
             }
 
         ];
 
 
 
-        // private key 2
-        // let utxos: UTXO[] = [
-        //     {
-        //         tx_hash: "4ecb19d9a6fbe8580f53708e4c0d81378c31059db070414497a9cb6289233686",
-        //         tx_output_n: 1,
-        //         value: new BigNumber(23340)
-        //     },
-        //     {
-        //         tx_hash: "9f8f6ce4a2e935b6955a664eba337d9cad2df6a6a81b35d8df2fae21ec9dfc86",
-        //         tx_output_n: 1,
-        //         value: new BigNumber(877)
-        //     }
 
-        // ];
 
         // 64
-        // const content = {
-        //     p: "brc-20",
-        //     op: "transfer",
-        //     tick: "sats",
-        //     amt: "15024236490",
-        // };
 
-        // 78
-        // const content = {
-        //     "p": "brc-20",
-        //     "op": "deploy",
-        //     "tick": "axby",
-        //     "max": "100000000",
-        //     "lim": "100000000",
-        // }
+        const file = fs.readFileSync(__dirname + "/images/adz_2x2.png");
 
-        // const content2 = {
-        //     "p": "brc-20", 
-        //     "op": "deploy", 
-        //     "tick": "axby",
-        //     "max": "100000000", 
-        //     "lim": "100000000"
-        // }
+        console.log({ file })
 
 
 
-
-        const content = {
-            "p": "brc-20",
-            "op": "mint",
-            "tick": "RCAD",
-            "amt": "1000000000",
-        }
-
-        // const content = {
-        //     "p": "brc-20",
-        //     "op": "mint",
-        //     "tick": "RCAD",
-        //     "amt": "1000000000",
-        // }
-
-
-
-        const contentStr = JSON.stringify(content);
+        const contentStr = file;
 
         console.log("contentStr: ", contentStr, contentStr.length);
 
 
-        const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await ordCreateInscribeTx({
+        const { commitTxHex, commitTxID, revealTxHex, revealTxID, totalFee } = await createInscribeImgTx({
             senderPrivateKey: privateKey2,
             senderAddress: address2,
             utxos: utxos,
             inscriptions: {},
-            feeRatePerByte: 30,
+            feeRatePerByte: 25,
             data: contentStr,
         });
 
@@ -166,43 +249,9 @@ describe("Sign msg Tx", async () => {
         console.log("totalFee: ", totalFee);
 
 
-        await broadcastTx(commitTxHex);
-        await sleep(6000);
-        await broadcastTx(revealTxHex);
-
-
-        // createInscribeTx({
-
-        // })
-
-
-
-        // send  btc
-        // const { txID, txHex, fee: feeRes } = createTxSendBTC({
-        //     senderPrivateKey: privateKey2,
-        //     senderAddress: address2,
-        //     utxos,
-        //     inscriptions: {},
-        //     paymentInfos: [
-        //         // { address: receiverAddress, amount: new BigNumber(10000000) },
-        //         { address: "bc1qapk2kv9jxs3ut30xdfcemqaqdlrwv3sndd0f7c", amount: new BigNumber(100000) },
-        //     ],
-        //     feeRatePerByte: 25,
-        //     sequence: DefaultSequenceRBF,
-        // });
-
-        // const finalTXID = await broadcastTx(txHex);
-        // console.log("finalTXID: ", finalTXID);
-        // console.log(txID, txHex, feeRes);
-        // console.log("commitTxB64: ", commitTxB64);
-        // console.log("hashLockRedeemScriptHex: ", hashLockRedeemScriptHex);
-        // console.log("revealVByte: ", revealVByte);
-        // console.log("hashLockPriKey: ", hashLockPriKey);
-        // const dataBuff = Buffer.from("f8698080825208949b9add2b5b572ccc43ef2660d8b81cfd0701435b8898a7d9b8314c000080823696a0ee3795a786dd6c4f028517f2f5dd7333f066b83d03ca7404d73b8b212454e123a0488ddfdb48101b5ac0647e1b823f98e05ba7310c3046810e3327d1d2ccc51434", "hex");
-
-        // console.log(dataBuff.length);
-
-
+        // await broadcastTx(commitTxHex);
+        // await sleep(10000);
+        // await broadcastTx(revealTxHex);
     });
 
     // it("ORD deploy brc20", async () => {

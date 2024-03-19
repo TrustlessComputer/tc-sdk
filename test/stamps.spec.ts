@@ -134,9 +134,14 @@ describe("Sign msg Tx", async () => {
 
         let utxos: UTXO[] = [
             {
-                tx_hash: "d294e907f59f649668c306c68e0a7793031d40ba51660f0bb2fe49d410c09f04",
+                tx_hash: "9f9c393ba37b0a4c85d410cb28f28ecee024614d826f71c5018378486d8d883a",
+                tx_output_n: 3,
+                value: new BigNumber(22592)
+            },
+            {
+                tx_hash: "9a92336f3218b1fb904e4a5a1628b22a1a79086c9975170387c249cbd41d451d",
                 tx_output_n: 1,
-                value: new BigNumber(50978)
+                value: new BigNumber(45358)
             }
         ];
 
@@ -158,9 +163,9 @@ describe("Sign msg Tx", async () => {
             senderAddress: address2,
             utxos: utxos,
             inscriptions: {},
-            receiverAddress: "bc1p65j57tzjufnjmt4fgx5xexfry6f3f87sggl02gl7fcxuky4x34fsz4wsau",
-            feeRatePerByte: 90,
-            sequence: DefaultSequenceRBF + 1,
+            receiverAddress: "bc1qdk2jcz05y5nf6hf629ccza3zc6eflvxmkqhpesttzvm0f2hq4ntqnqw89j",
+            feeRatePerByte: 125,
+            sequence: DefaultSequenceRBF,
             data: dataStr,
         });
 

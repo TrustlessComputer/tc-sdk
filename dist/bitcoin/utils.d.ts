@@ -9,6 +9,14 @@ import { Psbt } from "bitcoinjs-lib";
 */
 declare const estimateTxFee: (numIns: number, numOuts: number, feeRatePerByte: number) => number;
 /**
+* estimateTxFee estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction, only normal outputs
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns returns the estimated transaction fee in satoshi
+*/
+declare const estimateTxTransferSRC20Fee: (numIns: number, numOuts: number, feeRatePerByte: number) => number;
+/**
 * estimateTxSize estimates the transaction fee
 * @param numIns number of inputs in the transaction
 * @param numOuts number of outputs in the transaction
@@ -39,4 +47,4 @@ declare const estimateNumInOutputsForBuyInscription: (estNumInputsFromBuyer: num
 };
 declare const fromSat: (sat: number) => number;
 declare const toSat: (value: number) => number;
-export { estimateTxFee, estimateTxSize, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, fromSat, toSat, };
+export { estimateTxFee, estimateTxSize, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, fromSat, toSat, estimateTxTransferSRC20Fee, };

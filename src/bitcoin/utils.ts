@@ -15,6 +15,18 @@ const estimateTxFee = (numIns: number, numOuts: number, feeRatePerByte: number):
 };
 
 /**
+* estimateTxFee estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction, only normal outputs
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns returns the estimated transaction fee in satoshi
+*/
+const estimateTxTransferSRC20Fee = (numIns: number, numOuts: number, feeRatePerByte: number): number => {
+    const fee = (68 * numIns + 43 * numOuts + 2 * (33 * 3)) * feeRatePerByte;
+    return fee;
+};
+
+/**
 * estimateTxSize estimates the transaction fee
 * @param numIns number of inputs in the transaction
 * @param numOuts number of outputs in the transaction
@@ -82,4 +94,5 @@ export {
     estimateNumInOutputsForBuyInscription,
     fromSat,
     toSat,
+    estimateTxTransferSRC20Fee,
 };

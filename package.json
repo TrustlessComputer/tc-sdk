@@ -31,9 +31,9 @@
     "test-tc": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tc.spec.ts'",
     "test-tc-client": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/tcclient.spec.ts'",
     "test-hd-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/hdwallet.spec.ts'",
-    "test-tx": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tx.spec.ts'",
-    "test-ord": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/ordinal.spec.ts'",
-    "test-stamps": "yarn build && env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/stamps.spec.ts'"
+    "test-tx": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tx.spec.ts'",
+    "test-ord": "yarn build &&  env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/ordinal.spec.ts'",
+    "test-stamps": " env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/stamps.spec.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",
