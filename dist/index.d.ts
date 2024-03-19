@@ -1352,7 +1352,7 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, sequence, isSelectUTXOs, }: {
+declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, receiverAddress, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -1362,6 +1362,7 @@ declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, in
     feeRatePerByte: number;
     data: Buffer;
     contentType: string;
+    receiverAddress: string;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
 }) => Promise<{

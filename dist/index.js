@@ -7407,7 +7407,7 @@ function getRevealVirtualSize$1(hash_lock_redeem, script_p2tr, p2pktr_addr, hash
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, receiverAddress, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
     const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
     const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
@@ -7455,7 +7455,7 @@ const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, ins
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
-        address: senderAddress,
+        address: receiverAddress,
         sequence: 0,
     });
     console.log("commitTxHex: ", commitTxHex);
@@ -7523,6 +7523,40 @@ const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script
     console.log("revealTX: ", revealTX);
     return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
 };
+// chunkSlice splits input slice into slices
+const chunkSlice = (version, slice) => {
+    // console.log({ "Len:": slice.length });
+    let chunkSize = 520;
+    if (slice.length % 520 == 0) {
+        chunkSize = 519;
+    }
+    const chunks = [];
+    for (let i = 0; i < slice.length; i += chunkSize) {
+        let end = i + chunkSize;
+        let sliceCopy = [...slice];
+        // necessary check to avoid slicing beyond
+        // slice capacity
+        if (end > slice.length) {
+            end = slice.length;
+        }
+        let tmp = sliceCopy.slice(i, end);
+        // console.log({ i, end, tmp: tmp.length, chunks, "Slice copy leng: ": sliceCopy.length }, sliceCopy);
+        if (version >= 3) {
+            if (i == slice.length - tmp.length) {
+                let newSlice = [];
+                newSlice.push(...tmp);
+                newSlice.push(0);
+                // let originSlice  tmp;
+                // let newSlice = Buffer.concat(originSlice. , [0]);
+                // originSlice.
+                chunks.push(Buffer.from(newSlice));
+                break;
+            }
+        }
+        chunks.push(Buffer.from(tmp));
+    }
+    return chunks;
+};
 const createLockScriptForImageInsc = ({ internalPubKey, data, contentType, }) => {
     // Create a tap tree with two spend paths
     // One path should allow spending using secret
@@ -7550,11 +7584,19 @@ const createLockScriptForImageInsc = ({ internalPubKey, data, contentType, }) =>
     // Op   string`json:"op"`
     // Tick string`json:"tick"`
     // Amt  string`json:"amt"`
-    const contentStrHex = data.toString("hex");
+    data.toString("hex");
     // const contentStrHex = toHex(data);
     // console.log("contentStrHex: ", contentStrHex);
     // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
-    const hashScriptAsm = `${toXOnly$1(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    const dataChunks = chunkSlice(0, data);
+    console.log({ dataChunks });
+    // let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    let hashScriptAsm = `${toXOnly$1(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
+    for (const chunk of dataChunks) {
+        const chunkHex = chunk.toString("hex");
+        hashScriptAsm += ` ${chunkHex}`;
+    }
+    hashScriptAsm += ` OP_ENDIF`;
     console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
     const hashLockScript = bitcoinjsLib.script.fromASM(hashScriptAsm);
     console.log({ hashLockScript });
@@ -7576,8 +7618,8 @@ const createLockScriptForImageInsc = ({ internalPubKey, data, contentType, }) =>
     // console.log("hexStr: ", hexStr);
     // const hashLockScript = Buffer.from(hexStr, "hex");
     console.log("hashLockScript: ", hashLockScript.toString("hex"));
-    const asm2 = bitcoinjsLib.script.toASM(hashLockScript);
-    console.log("script asm2 form : ", asm2);
+    // const asm2 = script.toASM(hashLockScript);
+    // console.log("script asm2 form : ", asm2);
     const hashLockRedeem = {
         output: hashLockScript,
         redeemVersion: 192,

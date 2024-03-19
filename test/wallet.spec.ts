@@ -2,11 +2,37 @@ import { ECPair, Mainnet, Network, NetworkType, TcClient, Wallet, convertPrivate
 import { Transaction, networks } from 'bitcoinjs-lib';
 
 import { assert } from "chai";
+import { Regtest, StorageService, setupConfig } from "../dist";
 
-const network = networks.bitcoin;  // mainnet
+const network = networks.regtest;  // mainnet
 require("dotenv").config({ path: __dirname + "/.env" });
 
 describe("Import Wallet", async () => {
+
+    const LocalStorage = require('node-localstorage').LocalStorage
+    const localStorage = new LocalStorage('./scratch');
+    const storage = new StorageService()
+    storage.implement({
+        namespace: undefined,
+        getMethod(key: string): Promise<any> {
+            return localStorage.getItem(key);
+        },
+        removeMethod(key: string): Promise<any> {
+            return localStorage.removeItem(key);
+        },
+        setMethod(key: string, data: string): Promise<any> {
+            return localStorage.setItem(key, data);
+        }
+    });
+
+
+    const tcClient = new TcClient(Regtest)
+    setupConfig({
+        storage: storage,
+        tcClient: tcClient,
+        netType: NetworkType.Regtest
+    })
+    setBTCNetwork(NetworkType.Regtest);
     // it("Import BTC private key - encrypt and decrypt wallet", async () => {
     //     // TODO: enter the private key
     //     const privKeyStr = process.env.PRIV_KEY_1 || "";
@@ -126,11 +152,13 @@ describe("Import Wallet", async () => {
         // console.log("msgtx: ", msgtx);
         // console.log("msgtx: ", msgtx.ins[0].witness, msgtx.ins[0].witness.length)
 
+        setBTCNetwork(NetworkType.Regtest);
 
-        const privateKey = "L2XMEktYChY9HMtvBrc444jvn8e9XxTaKBp8dXjfYXuNCWeXkigu";
+
+        const privateKey = "KzEe3Q35Cxg2Vj7tm6ASV81kvr46wPkbkqtVbemppLoBmrjrSbde";
         const privateKeyBuffer = convertPrivateKeyFromStr(privateKey
         );
-        const { address } = generateP2WPKHKeyPair(privateKeyBuffer);
+        const address = generateTaprootAddress(privateKeyBuffer);
         console.log(
             address
         );
