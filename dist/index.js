@@ -2943,6 +2943,7 @@ const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
 const MinSats2 = 546;
+const MinSats3 = 796;
 // const MinSats2 = 333;
 const DefaultSequence = 4294967295;
 const DefaultSequenceRBF = 4294967293;
@@ -3169,6 +3170,17 @@ class SDKError$1 extends Error {
 */
 const estimateTxFee = (numIns, numOuts, feeRatePerByte) => {
     const fee = (68 * numIns + 43 * numOuts) * feeRatePerByte;
+    return fee;
+};
+/**
+* estimateTxFee estimates the transaction fee
+* @param numIns number of inputs in the transaction
+* @param numOuts number of outputs in the transaction, only normal outputs
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns returns the estimated transaction fee in satoshi
+*/
+const estimateTxTransferSRC20Fee = (numIns, numOuts, feeRatePerByte) => {
+    const fee = (68 * numIns + 43 * numOuts + 2 * (33 * 3)) * feeRatePerByte;
     return fee;
 };
 /**
@@ -5282,7 +5294,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
+const createRawRevealTx$2 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -5327,7 +5339,7 @@ const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, scri
     console.log("revealTX: ", revealTX);
     return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
 };
-function getRevealVirtualSize$1(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+function getRevealVirtualSize$2(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
         script: hash_lock_redeem.output,
@@ -5395,7 +5407,7 @@ const createInscribeTx$1 = async ({ senderPrivateKey, senderAddress, utxos, insc
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$2(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -5424,7 +5436,7 @@ const createInscribeTx$1 = async ({ senderPrivateKey, senderAddress, utxos, insc
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx$1({
+    const { revealTxHex, revealTxID } = createRawRevealTx$2({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5597,7 +5609,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$2(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -5623,7 +5635,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     console.log("commitTX: ", commitTx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx$1({
+    const { revealTxHex, revealTxID } = createRawRevealTx$2({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -7157,7 +7169,7 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -7186,7 +7198,7 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx({
+    const { revealTxHex, revealTxID } = createRawRevealTx$1({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -7211,7 +7223,7 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
         newUTXOs: newUTXOs,
     };
 };
-const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
+const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -7334,6 +7346,258 @@ const createLockScript = ({ internalPubKey, data, }) => {
         script_p2tr
     };
 };
+function getRevealVirtualSize$1(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+    const tapLeafScript = {
+        leafVersion: hash_lock_redeem.redeemVersion,
+        script: hash_lock_redeem.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1]
+    };
+    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    psbt.addInput({
+        hash: "00".repeat(32),
+        index: 0,
+        witnessUtxo: { value: MinSats2 * 2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ]
+    });
+    // output has OP_RETURN zero value
+    // const data = Buffer.from("https://trustless.computer", "utf-8");
+    // const scriptEmbed = script.compile([
+    //     opcodes.OP_RETURN,
+    //     data,
+    // ]);
+    // psbt.addOutput({
+    //     value: 0,
+    //     script: scriptEmbed,
+    // });
+    psbt.addOutput({
+        value: MinSats2,
+        address: p2pktr_addr,
+    });
+    psbt.signInput(0, hash_lock_keypair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0, customFinalizer);
+    const tx = psbt.extractTransaction();
+    return tx.virtualSize();
+}
+
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    const internalPubKey = toXOnly$1(keyPair.publicKey);
+    // create lock script for commit tx
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScriptForImageInsc({
+        internalPubKey,
+        data,
+        contentType,
+    });
+    // estimate fee and select UTXOs
+    const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
+    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
+    // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
+    if (script_p2tr.address === undefined || script_p2tr.address === "") {
+        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
+    }
+    const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats2) }],
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs
+    });
+    const newUTXOs = [];
+    if (changeAmount.gt(BNZero)) {
+        newUTXOs.push({
+            tx_hash: commitTxID,
+            tx_output_n: 1,
+            value: changeAmount
+        });
+    }
+    console.log("commitTX: ", tx);
+    console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+    // create and sign reveal tx
+    const { revealTxHex, revealTxID } = createRawRevealTx({
+        commitTxID,
+        hashLockKeyPair,
+        hashLockRedeem,
+        script_p2tr,
+        revealTxFee: estRevealTxFee,
+        address: senderAddress,
+        sequence: 0,
+    });
+    console.log("commitTxHex: ", commitTxHex);
+    console.log("revealTxHex: ", revealTxHex);
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
+    // const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    // console.log("btcTxID: ", btcTxID);
+    return {
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee: new BigNumber(totalFee),
+        selectedUTXOs: selectedUTXOs,
+        newUTXOs: newUTXOs,
+    };
+};
+const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
+    const tapLeafScript = {
+        leafVersion: hashLockRedeem?.redeemVersion,
+        script: hashLockRedeem?.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1],
+    };
+    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    psbt.addInput({
+        hash: commitTxID,
+        index: 0,
+        witnessUtxo: { value: revealTxFee + MinSats2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ],
+        sequence,
+    });
+    // output has OP_RETURN zero value
+    // const data = Buffer.from("https://trustless.computer", "utf-8");
+    // const scriptEmbed = script.compile([
+    //     opcodes.OP_RETURN,
+    //     data,
+    // ]);
+    // psbt.addOutput({
+    //     value: 0,
+    //     script: scriptEmbed,
+    // });
+    psbt.addOutput({
+        value: MinSats2,
+        address: address,
+    });
+    // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
+    psbt.signInput(0, hashLockKeyPair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0, customFinalizer);
+    const revealTX = psbt.extractTransaction();
+    console.log("revealTX: ", revealTX);
+    return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
+};
+const createLockScriptForImageInsc = ({ internalPubKey, data, contentType, }) => {
+    // Create a tap tree with two spend paths
+    // One path should allow spending using secret
+    // The other path should pay to another pubkey
+    // Make random key pair for hash_lock script
+    const hashLockKeyPair = ECPair$1.makeRandom({ network: exports.Network });
+    // TODO: comment
+    // const hashLockPrivKey = hashLockKeyPair.toWIF();
+    // console.log("hashLockPrivKey wif : ", hashLockPrivKey);
+    // Note: for debug and test
+    // const hashLockPrivKey = "";
+    // const hashLockKeyPair = ECPair.fromWIF(hashLockPrivKey);
+    // console.log("newKeyPair: ", hashLockKeyPair.privateKey);
+    const protocolID = "ord";
+    const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
+    // const protocolIDHex = toHex(protocolID);
+    // console.log("protocolIDHex: ", protocolIDHex);
+    // const contentType = "image/png";  // TODO: update to image
+    const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
+    contentType.length.toString(16);
+    // const contentTypeHex = toHex(contentType);
+    // console.log("contentTypeHex0: ", contentTypeHex0);
+    // console.log("contentTypeHex: ", contentTypeHex);
+    // P    string`json:"p"`
+    // Op   string`json:"op"`
+    // Tick string`json:"tick"`
+    // Amt  string`json:"amt"`
+    const contentStrHex = data.toString("hex");
+    // const contentStrHex = toHex(data);
+    // console.log("contentStrHex: ", contentStrHex);
+    // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
+    const hashScriptAsm = `${toXOnly$1(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
+    const hashLockScript = bitcoinjsLib.script.fromASM(hashScriptAsm);
+    console.log({ hashLockScript });
+    // const len = contentStrHex.length / 2;
+    // const lenHex = len.toString(16);
+    // console.log("lenHex: ", lenHex);
+    // let hexStr = "20"; // 32 - len public key
+    // hexStr += toXOnly(hashLockKeyPair.publicKey).toString("hex");
+    // hexStr += "ac0063";  // OP_CHECKSIG OP_0 OP_IF
+    // hexStr += "03";  // len protocol
+    // hexStr += protocolIDHex;
+    // hexStr += "0101";
+    // hexStr += contentTypeLenHex;  // len content type = 9
+    // hexStr += contentTypeHex;
+    // hexStr += "00"; // op_0
+    // hexStr += lenHex;
+    // hexStr += contentStrHex;
+    // hexStr += "68"; // OP_ENDIF
+    // console.log("hexStr: ", hexStr);
+    // const hashLockScript = Buffer.from(hexStr, "hex");
+    console.log("hashLockScript: ", hashLockScript.toString("hex"));
+    const asm2 = bitcoinjsLib.script.toASM(hashLockScript);
+    console.log("script asm2 form : ", asm2);
+    const hashLockRedeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+    const scriptTree = hashLockRedeem;
+    const script_p2tr = bitcoinjsLib.payments.p2tr({
+        internalPubkey: internalPubKey,
+        scriptTree,
+        redeem: hashLockRedeem,
+        network: exports.Network
+    });
+    console.log("InscribeOrd script_p2tr: ", script_p2tr.address);
+    return {
+        hashLockKeyPair,
+        hashScriptAsm: "",
+        hashLockScript,
+        hashLockRedeem,
+        script_p2tr
+    };
+};
 function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
@@ -7349,6 +7613,8 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
             tapLeafScript
         ]
     });
+    const decompliledPubKey = bitcoinjsLib.script.decompile(hash_lock_redeem.output);
+    console.log({ script: hash_lock_redeem.output, decompliledPubKey });
     // output has OP_RETURN zero value
     // const data = Buffer.from("https://trustless.computer", "utf-8");
     // const scriptEmbed = script.compile([
@@ -7408,7 +7674,7 @@ const createTransferSRC20RawTx = async ({ senderPubKey, senderAddress, utxos, in
     // estimate fee and select UTXOs
     const estTxFee = estimateTxFee(1, 4, feeRatePerByte);
     // TODO: adjust amount
-    const totalBTC = 333 + 801 * 2 + estTxFee;
+    const totalBTC = 333 + MinSats3 * 2 + estTxFee;
     const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, new BigNumber(totalBTC));
     // create multisig scripts for  tx
     const scripts = await createTransferSRC20Script({
@@ -7426,7 +7692,7 @@ const createTransferSRC20RawTx = async ({ senderPubKey, senderAddress, utxos, in
     for (const m of scripts) {
         paymentScripts.push({
             script: m,
-            amount: new BigNumber(801)
+            amount: new BigNumber(MinSats3)
         });
     }
     const res = createRawTxSendBTCFromMultisig({
@@ -7472,9 +7738,10 @@ const createTransferSRC20Tx = async ({ senderPrivateKey, senderAddress, utxos, i
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     toXOnly$1(keyPair.publicKey);
     // estimate fee and select UTXOs
-    const estTxFee = estimateTxFee(1, 4, feeRatePerByte);
+    const estTxFee = estimateTxTransferSRC20Fee(1, 2, feeRatePerByte);
+    console.log({ estTxFee, feeRatePerByte });
     // TODO: adjust amount
-    const totalBTC = 333 + 801 * 2 + estTxFee;
+    const totalBTC = 333 + MinSats3 * 2 + estTxFee;
     const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, new BigNumber(totalBTC));
     // create multisig scripts for  tx
     const scripts = await createTransferSRC20Script({
@@ -7492,7 +7759,7 @@ const createTransferSRC20Tx = async ({ senderPrivateKey, senderAddress, utxos, i
     for (const m of scripts) {
         paymentScripts.push({
             script: m,
-            amount: new BigNumber(801)
+            amount: new BigNumber(MinSats3)
         });
     }
     const { txHex, txID, fee, changeAmount, tx } = createTxSendBTC({
@@ -7621,6 +7888,7 @@ exports.Masterless = Masterless;
 exports.MaxTxSize = MaxTxSize;
 exports.MinSats = MinSats;
 exports.MinSats2 = MinSats2;
+exports.MinSats3 = MinSats3;
 exports.NetworkType = NetworkType$1;
 exports.OutputSize = OutputSize;
 exports.Regtest = Regtest;
@@ -7641,10 +7909,11 @@ exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey$1;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
 exports.createBatchInscribeTxs = createBatchInscribeTxs;
+exports.createInscribeImgTx = createInscribeImgTx;
 exports.createInscribeTx = createInscribeTx$1;
 exports.createInscribeTxFromAnyWallet = createInscribeTxFromAnyWallet;
 exports.createLockScript = createLockScript$1;
-exports.createRawRevealTx = createRawRevealTx$1;
+exports.createRawRevealTx = createRawRevealTx$2;
 exports.createRawTx = createRawTx;
 exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createRawTxSendBTCFromMultisig = createRawTxSendBTCFromMultisig;
@@ -7670,6 +7939,7 @@ exports.estimateNumInOutputs = estimateNumInOutputs;
 exports.estimateNumInOutputsForBuyInscription = estimateNumInOutputsForBuyInscription;
 exports.estimateTxFee = estimateTxFee;
 exports.estimateTxSize = estimateTxSize;
+exports.estimateTxTransferSRC20Fee = estimateTxTransferSRC20Fee;
 exports.filterAndSortCardinalUTXOs = filterAndSortCardinalUTXOs;
 exports.findExactValueUTXO = findExactValueUTXO;
 exports.fromSat = fromSat;

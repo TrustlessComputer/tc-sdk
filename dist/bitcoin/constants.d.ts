@@ -5,6 +5,7 @@ declare const InputSize = 68;
 declare const OutputSize = 43;
 declare const BNZero: BigNumber;
 declare const MinSats2 = 546;
+declare const MinSats3 = 796;
 declare const DefaultSequence = 4294967295;
 declare const DefaultSequenceRBF = 4294967293;
 declare const MaxTxSize = 357376;
@@ -12,4 +13,4 @@ declare const WalletType: {
     Xverse: number;
     Hiro: number;
 };
-export { MinSats, MinSats2, DummyUTXOValue, InputSize, OutputSize, BNZero, WalletType, DefaultSequence, DefaultSequenceRBF, MaxTxSize };
+export { MinSats, MinSats2, MinSats3, DummyUTXOValue, InputSize, OutputSize, BNZero, WalletType, DefaultSequence, DefaultSequenceRBF, MaxTxSize };

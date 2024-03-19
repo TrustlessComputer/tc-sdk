@@ -1,4 +1,4 @@
-import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, MinSats2, OutputSize } from "../bitcoin/constants";
+import { BNZero, DefaultSequence, DefaultSequenceRBF, InputSize, MinSats, MinSats3, OutputSize } from "../bitcoin/constants";
 import {
     ARC4Encrypt,
     BatchInscribeTxResp,
@@ -22,6 +22,7 @@ import {
     toSat,
     createRawTxSendBTCFromMultisig,
     ICreateRawTxResp,
+    estimateTxTransferSRC20Fee,
 } from "../";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getKeyPairInfo, toXOnly } from "../bitcoin/wallet";
 
@@ -81,7 +82,7 @@ const createTransferSRC20RawTx = async ({
     // estimate fee and select UTXOs
     const estTxFee = estimateTxFee(1, 4, feeRatePerByte);
     // TODO: adjust amount
-    const totalBTC = 333 + 801 * 2 + estTxFee;
+    const totalBTC = 333 + MinSats3 * 2 + estTxFee;
 
     const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, new BigNumber(totalBTC));
 
@@ -104,7 +105,7 @@ const createTransferSRC20RawTx = async ({
     for (const m of scripts) {
         paymentScripts.push({
             script: m,
-            amount: new BigNumber(801)
+            amount: new BigNumber(MinSats3)
         });
     }
 
@@ -186,9 +187,10 @@ const createTransferSRC20Tx = async ({
     const internalPubKey = toXOnly(keyPair.publicKey);
 
     // estimate fee and select UTXOs
-    const estTxFee = estimateTxFee(1, 4, feeRatePerByte);
+    const estTxFee = estimateTxTransferSRC20Fee(1, 2, feeRatePerByte);
+    console.log({ estTxFee, feeRatePerByte });
     // TODO: adjust amount
-    const totalBTC = 333 + 801 * 2 + estTxFee;
+    const totalBTC = 333 + MinSats3 * 2 + estTxFee;
 
     const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, new BigNumber(totalBTC));
 
@@ -211,7 +213,7 @@ const createTransferSRC20Tx = async ({
     for (const m of scripts) {
         paymentScripts.push({
             script: m,
-            amount: new BigNumber(801)
+            amount: new BigNumber(MinSats3)
         });
     }
 
@@ -249,7 +251,6 @@ const addZeroTrail = (hexStr: string) => {
         console.log({ numAdd, addStr })
     }
     return hexStr + addStr;
-
 }
 
 
@@ -276,7 +277,6 @@ const createTransferSRC20Script = ({
     const str = "stamp:" + data;
     const len = str.length; //NOTE: len include `stamp:`
     const contentStrHex = Buffer.from(str, "utf-8").toString("hex");
-
 
     // const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
     // get length of decode data in hex

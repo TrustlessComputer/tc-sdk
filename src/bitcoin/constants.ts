@@ -7,6 +7,7 @@ const InputSize = 68;
 const OutputSize = 43;
 const BNZero = new BigNumber(0);
 const MinSats2 = 546;
+const MinSats3 = 796;
 
 // const MinSats2 = 333;
 
@@ -25,6 +26,7 @@ export {
     // BlockStreamURL,
     MinSats,
     MinSats2,
+    MinSats3,
     DummyUTXOValue,
     InputSize,
     OutputSize,
