@@ -36,6 +36,7 @@ import { witnessStackToScriptWitness } from "../tc/witness_stack_to_script_witne
 * @returns the reveal transaction id
 * @returns the total network fee
 */
+
 const createInscribeImgTx = async ({
     senderPrivateKey,
     senderAddress,
@@ -44,6 +45,7 @@ const createInscribeImgTx = async ({
     feeRatePerByte,
     data,
     contentType,
+    receiverAddress,
     sequence = DefaultSequenceRBF,
     isSelectUTXOs = true,
 }: {
@@ -54,6 +56,7 @@ const createInscribeImgTx = async ({
     feeRatePerByte: number,
     data: Buffer,
     contentType: string,   // image/png; image/jpeg
+    receiverAddress: string,
     sequence?: number;
     isSelectUTXOs?: boolean,
 }): Promise<{
@@ -124,7 +127,7 @@ const createInscribeImgTx = async ({
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
-        address: senderAddress,
+        address: receiverAddress,
         sequence: 0,
     });
 
@@ -231,6 +234,54 @@ const remove0x = (data: string): string => {
     return data;
 };
 
+
+// chunkSlice splits input slice into slices
+const chunkSlice = (version: number, slice: Buffer): Buffer[] => {
+
+    // console.log({ "Len:": slice.length });
+    let chunkSize = 520;
+    if (slice.length % 520 == 0) {
+        chunkSize = 519
+    }
+
+    const chunks: Buffer[] = [];
+
+    for (let i = 0; i < slice.length; i += chunkSize) {
+
+        let end = i + chunkSize;
+        let sliceCopy = [...slice];
+
+        // necessary check to avoid slicing beyond
+        // slice capacity
+        if (end > slice.length) {
+            end = slice.length
+        }
+
+        let tmp = sliceCopy.slice(i, end);
+
+        // console.log({ i, end, tmp: tmp.length, chunks, "Slice copy leng: ": sliceCopy.length }, sliceCopy);
+        if (version >= 3) {
+            if (i == slice.length - tmp.length) {
+
+                let newSlice = [];
+                newSlice.push(...tmp);
+                newSlice.push(0)
+                // let originSlice  tmp;
+                // let newSlice = Buffer.concat(originSlice. , [0]);
+
+                // originSlice.
+                chunks.push(Buffer.from(newSlice));
+                break
+            }
+        }
+
+        chunks.push(Buffer.from(tmp));
+    }
+
+    return chunks
+
+}
+
 function generateInscribeContent(datas: string[]): string {
     // let content = Buffer.from(protocolID);
     // reimbursementAddr = remove0x(reimbursementAddr);
@@ -327,7 +378,19 @@ const createLockScriptForImageInsc = ({
 
     // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
 
-    const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+
+    const dataChunks = chunkSlice(0, data);
+    console.log({ dataChunks });
+
+    // let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+
+    let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
+    for (const chunk of dataChunks) {
+        const chunkHex = chunk.toString("hex");
+        hashScriptAsm += ` ${chunkHex}`;
+    }
+    hashScriptAsm += ` OP_ENDIF`;
+
     console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
     const hashLockScript = script.fromASM(hashScriptAsm);
     console.log({ hashLockScript });
@@ -356,8 +419,8 @@ const createLockScriptForImageInsc = ({
 
     console.log("hashLockScript: ", hashLockScript.toString("hex"));
 
-    const asm2 = script.toASM(hashLockScript);
-    console.log("script asm2 form : ", asm2);
+    // const asm2 = script.toASM(hashLockScript);
+    // console.log("script asm2 form : ", asm2);
 
     const hashLockRedeem = {
         output: hashLockScript,

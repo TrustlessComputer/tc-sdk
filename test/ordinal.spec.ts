@@ -22,6 +22,7 @@ import {
     selectUTXOs,
     setBTCNetwork,
     setupConfig,
+    generateTaprootAddress,
 } from "../dist";
 
 import BigNumber from 'bignumber.js';
@@ -209,20 +210,23 @@ describe("Sign msg Tx", async () => {
     it("ORD create inscribe img tx", async () => {
         let utxos: UTXO[] = [
             {
-                tx_hash: "f32bb9c12201d606be882dd87d6838e969b7062ec7c0b8954e804cced7cf90fb",
-                tx_output_n: 0,
-                value: new BigNumber(10000)
+                tx_hash: "432aee889a826323171695c76423e46c761fbe8446c96f60b281282010828c0b",
+                tx_output_n: 1,
+                value: new BigNumber(86012)
             }
 
         ];
 
+        const address = generateTaprootAddress(privateKey2);
+        console.log({ address });
 
+        const receiverAddress = "bc1pd9swmqhw2zn0y6x0wxjjdpqsjphdwfq92en68m7qzq7w9tnrhm7q3l9r7p";
 
 
 
         // 64
 
-        const file = fs.readFileSync(__dirname + "/images/adz_2x2.png");
+        const file = fs.readFileSync(__dirname + "/images/test_small.jpeg");
 
         console.log({ file })
 
@@ -238,8 +242,10 @@ describe("Sign msg Tx", async () => {
             senderAddress: address2,
             utxos: utxos,
             inscriptions: {},
-            feeRatePerByte: 25,
+            feeRatePerByte: 23,
             data: contentStr,
+            contentType: "image/jpeg",
+            receiverAddress: receiverAddress,
         });
 
         console.log("commitTxHex: ", commitTxHex);
