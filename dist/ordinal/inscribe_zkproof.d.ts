@@ -14,7 +14,7 @@ import BigNumber from "bignumber.js";
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, receiverAddress, sequence, isSelectUTXOs, }: {
+declare const createInscribeZKProofTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence, isSelectUTXOs, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -23,8 +23,6 @@ declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, in
     };
     feeRatePerByte: number;
     data: Buffer;
-    contentType: string;
-    receiverAddress: string;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
 }) => Promise<{
@@ -36,5 +34,4 @@ declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, in
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-export declare const chunkSlice: (version: number, slice: Buffer) => Buffer[];
-export { createInscribeImgTx };
+export { createInscribeZKProofTx };

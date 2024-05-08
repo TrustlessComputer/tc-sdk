@@ -11,6 +11,7 @@ import {
     createTxSendBTC,
     estimateTxFee,
     toSat,
+    chunkSlice,
 } from "..";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getKeyPairInfo, toXOnly } from "../bitcoin/wallet";
 import { Psbt, address, opcodes, payments, script } from "bitcoinjs-lib";
@@ -36,16 +37,13 @@ import { witnessStackToScriptWitness } from "../tc/witness_stack_to_script_witne
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-
-const createInscribeImgTx = async ({
+const createInscribeZKProofTx = async ({
     senderPrivateKey,
     senderAddress,
     utxos,
     inscriptions,
     feeRatePerByte,
     data,
-    contentType,
-    receiverAddress,
     sequence = DefaultSequenceRBF,
     isSelectUTXOs = true,
 }: {
@@ -55,8 +53,6 @@ const createInscribeImgTx = async ({
     inscriptions: { [key: string]: Inscription[] },
     feeRatePerByte: number,
     data: Buffer,
-    contentType: string,   // image/png; image/jpeg
-    receiverAddress: string,
     sequence?: number;
     isSelectUTXOs?: boolean,
 }): Promise<{
@@ -76,10 +72,9 @@ const createInscribeImgTx = async ({
     const internalPubKey = toXOnly(keyPair.publicKey);
 
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScriptForImageInsc({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScriptForZKProof({
         internalPubKey,
         data,
-        contentType,
     });
 
     // estimate fee and select UTXOs
@@ -127,7 +122,7 @@ const createInscribeImgTx = async ({
         hashLockRedeem,
         script_p2tr,
         revealTxFee: estRevealTxFee,
-        address: receiverAddress,
+        address: senderAddress,
         sequence: 0,
     });
 
@@ -234,54 +229,6 @@ const remove0x = (data: string): string => {
     return data;
 };
 
-
-// chunkSlice splits input slice into slices
-export const chunkSlice = (version: number, slice: Buffer): Buffer[] => {
-
-    // console.log({ "Len:": slice.length });
-    let chunkSize = 520;
-    if (slice.length % 520 == 0) {
-        chunkSize = 519
-    }
-
-    const chunks: Buffer[] = [];
-
-    for (let i = 0; i < slice.length; i += chunkSize) {
-
-        let end = i + chunkSize;
-        let sliceCopy = [...slice];
-
-        // necessary check to avoid slicing beyond
-        // slice capacity
-        if (end > slice.length) {
-            end = slice.length
-        }
-
-        let tmp = sliceCopy.slice(i, end);
-
-        // console.log({ i, end, tmp: tmp.length, chunks, "Slice copy leng: ": sliceCopy.length }, sliceCopy);
-        if (version >= 3) {
-            if (i == slice.length - tmp.length) {
-
-                let newSlice = [];
-                newSlice.push(...tmp);
-                newSlice.push(0)
-                // let originSlice  tmp;
-                // let newSlice = Buffer.concat(originSlice. , [0]);
-
-                // originSlice.
-                chunks.push(Buffer.from(newSlice));
-                break
-            }
-        }
-
-        chunks.push(Buffer.from(tmp));
-    }
-
-    return chunks
-
-}
-
 function generateInscribeContent(datas: string[]): string {
     // let content = Buffer.from(protocolID);
     // reimbursementAddr = remove0x(reimbursementAddr);
@@ -323,14 +270,12 @@ const toHex = (asciiStr: string) => {
 };
 
 
-const createLockScriptForImageInsc = ({
+const createLockScriptForZKProof = ({
     internalPubKey,
     data,
-    contentType,
 }: {
     internalPubKey: Buffer,
     data: Buffer,
-    contentType: string,
 }): {
     hashLockKeyPair: ECPairInterface,
     hashScriptAsm: string,
@@ -360,9 +305,8 @@ const createLockScriptForImageInsc = ({
     // const protocolIDHex = toHex(protocolID);
     // console.log("protocolIDHex: ", protocolIDHex);
 
-    // const contentType = "image/png";  // TODO: update to image
+    const contentType = "text/plain;charset=utf-8";
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
-    const contentTypeLenHex = contentType.length.toString(16);
     // const contentTypeHex = toHex(contentType);
     // console.log("contentTypeHex0: ", contentTypeHex0);
     // console.log("contentTypeHex: ", contentTypeHex);
@@ -372,30 +316,14 @@ const createLockScriptForImageInsc = ({
     // Tick string`json:"tick"`
     // Amt  string`json:"amt"`
 
-    const contentStrHex = data.toString("hex");
-    // const contentStrHex = toHex(data);
-    // console.log("contentStrHex: ", contentStrHex);
+    //const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
+    
 
     // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
 
-
-    const dataChunks = chunkSlice(0, data);
-    console.log({ dataChunks });
-
-    // let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
-
-    let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
-    for (const chunk of dataChunks) {
-        const chunkHex = chunk.toString("hex");
-        hashScriptAsm += ` ${chunkHex}`;
-    }
-    hashScriptAsm += ` OP_ENDIF`;
-
-    console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
-    const hashLockScript = script.fromASM(hashScriptAsm);
-    console.log({ hashLockScript });
-
-
+    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} ${op1} ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
+    // const hashLockScript = script.fromASM(hashScriptAsm);
     // const len = contentStrHex.length / 2;
     // const lenHex = len.toString(16);
     // console.log("lenHex: ", lenHex);
@@ -407,7 +335,7 @@ const createLockScriptForImageInsc = ({
     // hexStr += "03";  // len protocol
     // hexStr += protocolIDHex;
     // hexStr += "0101";
-    // hexStr += contentTypeLenHex;  // len content type = 9
+    // hexStr += "18";  // len content type
     // hexStr += contentTypeHex;
     // hexStr += "00"; // op_0
     // hexStr += lenHex;
@@ -415,12 +343,21 @@ const createLockScriptForImageInsc = ({
     // hexStr += "68"; // OP_ENDIF
 
     // console.log("hexStr: ", hexStr);
-    // const hashLockScript = Buffer.from(hexStr, "hex");
 
+    const dataChunks = chunkSlice(0, data);
+    
+    let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
+    for (const chunk of dataChunks) {
+        const chunkHex = chunk.toString("hex");
+        hashScriptAsm += ` ${chunkHex}`;
+    }
+    hashScriptAsm += ` OP_ENDIF`;
+
+    const hashLockScript = script.fromASM(hashScriptAsm);
     console.log("hashLockScript: ", hashLockScript.toString("hex"));
 
     // const asm2 = script.toASM(hashLockScript);
-    // console.log("script asm2 form : ", asm2);
+    // console.log("asm2: ", asm2);
 
     const hashLockRedeem = {
         output: hashLockScript,
@@ -446,6 +383,62 @@ const createLockScriptForImageInsc = ({
     };
 };
 
+const createLockScriptV0 = async ({
+    // privateKey,
+    // internalPubKey,
+    tcTxIDs,
+    tcClient,
+}: {
+    // privateKey: Buffer,
+    // internalPubKey: Buffer,
+    tcTxIDs: string[],
+    tcClient: TcClient,
+}): Promise<{
+    hashLockKeyPair: ECPairInterface,
+    hashLockScript: Buffer,
+    hashLockRedeem: Tapleaf,
+    script_p2tr: payments.Payment,
+}> => {
+    // Create a tap tree with two spend paths
+    // One path should allow spending using secret
+    // The other path should pay to another pubkey
+
+    // Make random key pair for hash_lock script
+    const hashLockKeyPair = ECPair.makeRandom({ network: tcBTCNetwork });
+    const internalPubKey = toXOnly(hashLockKeyPair.publicKey);
+
+
+
+    // call TC node to get Tapscript and hash lock redeem
+    const { hashLockScriptHex } = await tcClient.getTapScriptInfo(hashLockKeyPair.publicKey.toString("hex"), tcTxIDs);
+    const hashLockScript = Buffer.from(hashLockScriptHex, "hex");
+
+
+    // TODO: generate hash lock script follow by Ordinal
+
+
+
+    const hashLockRedeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+
+    const scriptTree: Taptree = hashLockRedeem;
+    const script_p2tr = payments.p2tr({
+        internalPubkey: internalPubKey,
+        scriptTree,
+        redeem: hashLockRedeem,
+        network: tcBTCNetwork
+    });
+
+    return {
+        hashLockKeyPair,
+        hashLockScript,
+        hashLockRedeem,
+        script_p2tr
+    };
+};
+
 function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_addr: any, hash_lock_keypair: any) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
@@ -462,10 +455,6 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
             tapLeafScript
         ]
     });
-
-
-    const decompliledPubKey = script.decompile(hash_lock_redeem.output);
-    console.log({ script: hash_lock_redeem.output, decompliledPubKey });
 
     // output has OP_RETURN zero value
     // const data = Buffer.from("https://trustless.computer", "utf-8");
@@ -506,7 +495,6 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
     return tx.virtualSize();
 }
 
-
 export {
-    createInscribeImgTx
+    createInscribeZKProofTx
 };
