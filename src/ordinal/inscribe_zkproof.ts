@@ -13,6 +13,7 @@ import {
     toSat,
     chunkSlice,
 } from "..";
+import crypto from "crypto";
 import { ECPair, generateTaprootAddressFromPubKey, generateTaprootKeyPair, getKeyPairInfo, toXOnly } from "../bitcoin/wallet";
 import { Psbt, address, opcodes, payments, script } from "bitcoinjs-lib";
 import { Tapleaf, Taptree } from "bitcoinjs-lib/src/types";
@@ -31,6 +32,7 @@ import { witnessStackToScriptWitness } from "../tc/witness_stack_to_script_witne
 * @param inscriptions list of inscription infos of the sender
 * @param tcTxID TC txID need to be inscribed
 * @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isRegtest boolean flag to indicate regtest mode
 * @returns the hex commit transaction
 * @returns the commit transaction id
 * @returns the hex reveal transaction
@@ -46,6 +48,7 @@ const createInscribeZKProofTx = async ({
     data,
     sequence = DefaultSequenceRBF,
     isSelectUTXOs = true,
+    isRegtest,
 }: {
     senderPrivateKey: Buffer,
     senderAddress: string,
@@ -55,6 +58,7 @@ const createInscribeZKProofTx = async ({
     data: Buffer,
     sequence?: number;
     isSelectUTXOs?: boolean,
+    isRegtest: boolean,
 }): Promise<{
     commitTxHex: string,
     commitTxID: string,
@@ -75,6 +79,7 @@ const createInscribeZKProofTx = async ({
     const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScriptForZKProof({
         internalPubKey,
         data,
+        isRegtest,
     });
 
     // estimate fee and select UTXOs
@@ -273,9 +278,11 @@ const toHex = (asciiStr: string) => {
 const createLockScriptForZKProof = ({
     internalPubKey,
     data,
+    isRegtest,
 }: {
     internalPubKey: Buffer,
     data: Buffer,
+    isRegtest: boolean,
 }): {
     hashLockKeyPair: ECPairInterface,
     hashScriptAsm: string,
@@ -290,61 +297,22 @@ const createLockScriptForZKProof = ({
     // Make random key pair for hash_lock script
     const hashLockKeyPair = ECPair.makeRandom({ network: Network });
 
-    // TODO: comment
-    // const hashLockPrivKey = hashLockKeyPair.toWIF();
-    // console.log("hashLockPrivKey wif : ", hashLockPrivKey);
-
-
-    // Note: for debug and test
-    // const hashLockPrivKey = "";
-    // const hashLockKeyPair = ECPair.fromWIF(hashLockPrivKey);
-    // console.log("newKeyPair: ", hashLockKeyPair.privateKey);
-
     const protocolID = "ord";
     const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
-    // const protocolIDHex = toHex(protocolID);
-    // console.log("protocolIDHex: ", protocolIDHex);
-
-    const contentType = "text/plain;charset=utf-8";
-    const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
-    // const contentTypeHex = toHex(contentType);
-    // console.log("contentTypeHex0: ", contentTypeHex0);
-    // console.log("contentTypeHex: ", contentTypeHex);
-
-    // P    string`json:"p"`
-    // Op   string`json:"op"`
-    // Tick string`json:"tick"`
-    // Amt  string`json:"amt"`
-
-    //const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
     
-
-    // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
-
-    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} ${op1} ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
-    // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
-    // const hashLockScript = script.fromASM(hashScriptAsm);
-    // const len = contentStrHex.length / 2;
-    // const lenHex = len.toString(16);
-    // console.log("lenHex: ", lenHex);
-
-
-    // let hexStr = "20"; // 32 - len public key
-    // hexStr += toXOnly(hashLockKeyPair.publicKey).toString("hex");
-    // hexStr += "ac0063";  // OP_CHECKSIG OP_0 OP_IF
-    // hexStr += "03";  // len protocol
-    // hexStr += protocolIDHex;
-    // hexStr += "0101";
-    // hexStr += "18";  // len content type
-    // hexStr += contentTypeHex;
-    // hexStr += "00"; // op_0
-    // hexStr += lenHex;
-    // hexStr += contentStrHex;
-    // hexStr += "68"; // OP_ENDIF
-
-    // console.log("hexStr: ", hexStr);
-
-    const dataChunks = chunkSlice(0, data);
+    const contentType = "text/html;charset=utf-8";
+    const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
+    
+    const defaultHtml = Buffer.from('<body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>', 'utf-8');
+    let html;
+    if (isRegtest) {
+        html ='<script src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="display: none"></body>';
+    } else {
+        html ='<script src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="display: none"></body>';
+    }
+    const insData = Buffer.concat([defaultHtml, Buffer.from(html, 'utf-8'), Buffer.alloc(8,0), data]);
+    
+    const dataChunks = chunkSlice(0, insData);
     
     let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
     for (const chunk of dataChunks) {
