@@ -304,9 +304,9 @@ const createLockScriptForZKProof = ({
     
     let html;
     if (isRegtest) {
-        html ='<script data-s="%RANDOM%" src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>';
+        html ='<script data-s="%RANDOM%" src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2-network</h1></body>';
     } else {
-        html ='<script data-s="%RANDOM%" src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>';
+        html ='<script data-s="%RANDOM%" src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2-network</h1></body>';
     }
     // Compute the SHA-256 hash of the embedded data
     const dataHash = crypto.createHash('sha256').update(data).digest('hex');
@@ -318,6 +318,9 @@ const createLockScriptForZKProof = ({
     const dataChunks = chunkSlice(0, insData);
     
     let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
+    console.info("len of hashScriptAsm: ", hashScriptAsm.length);
+    console.info("len of dataChunks: ", dataChunks.length);
+    console.info("--------------------");
     for (const chunk of dataChunks) {
         const chunkHex = chunk.toString("hex");
         hashScriptAsm += ` ${chunkHex}`;
