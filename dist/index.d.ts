@@ -1346,13 +1346,14 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
 * @param inscriptions list of inscription infos of the sender
 * @param tcTxID TC txID need to be inscribed
 * @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isRegtest boolean flag to indicate regtest mode
 * @returns the hex commit transaction
 * @returns the commit transaction id
 * @returns the hex reveal transaction
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeZKProofTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence, isSelectUTXOs, }: {
+declare const createInscribeZKProofTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence, isSelectUTXOs, isRegtest, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -1363,6 +1364,7 @@ declare const createInscribeZKProofTx: ({ senderPrivateKey, senderAddress, utxos
     data: Buffer;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
+    isRegtest: boolean;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;
