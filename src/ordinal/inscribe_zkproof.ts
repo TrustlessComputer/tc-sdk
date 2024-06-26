@@ -274,7 +274,6 @@ const toHex = (asciiStr: string) => {
     return arr1.join("");
 };
 
-
 const createLockScriptForZKProof = ({
     internalPubKey,
     data,
@@ -303,14 +302,18 @@ const createLockScriptForZKProof = ({
     const contentType = "text/html;charset=utf-8";
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
     
-    const defaultHtml = Buffer.from('<body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>', 'utf-8');
     let html;
     if (isRegtest) {
-        html ='<script src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="display: none"></body>';
+        html ='<script src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>';
     } else {
-        html ='<script src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="display: none"></body>';
+        html ='<script src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>';
     }
-    const insData = Buffer.concat([defaultHtml, Buffer.from(html, 'utf-8'), Buffer.alloc(8,0), data]);
+    // Compute the SHA-256 hash of the embedded data
+    const dataHash = crypto.createHash('sha256').update(data).digest('hex');
+    // Replace %RANDOM% with the computed hash in the HTML
+    const predata = Buffer.from(html.replace('%RANDOM%', dataHash), 'utf-8');
+
+    const insData = Buffer.concat([predata, Buffer.alloc(8,0), data]);
     
     const dataChunks = chunkSlice(0, insData);
     

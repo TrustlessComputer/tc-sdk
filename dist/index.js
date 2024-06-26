@@ -15,6 +15,7 @@ var wif = require('wif');
 var axios = require('axios');
 var satsConnect = require('sats-connect');
 var varuint = require('varuint-bitcoin');
+var crypto$1 = require('crypto');
 var maxBy = require('lodash/maxBy');
 var bip39 = require('bip39');
 
@@ -45,6 +46,7 @@ var Web3__default = /*#__PURE__*/_interopDefaultLegacy(Web3);
 var wif__default = /*#__PURE__*/_interopDefaultLegacy(wif);
 var axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 var varuint__default = /*#__PURE__*/_interopDefaultLegacy(varuint);
+var crypto__default = /*#__PURE__*/_interopDefaultLegacy(crypto$1);
 var maxBy__default = /*#__PURE__*/_interopDefaultLegacy(maxBy);
 var bip39__namespace = /*#__PURE__*/_interopNamespace(bip39);
 
@@ -7534,15 +7536,18 @@ const createLockScriptForZKProof = ({ internalPubKey, data, isRegtest, }) => {
     const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
     const contentType = "text/html;charset=utf-8";
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
-    const defaultHtml = Buffer.from('<body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>', 'utf-8');
     let html;
     if (isRegtest) {
-        html = '<script src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="display: none"></body>';
+        html = '<script src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>';
     }
     else {
-        html = '<script src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="display: none"></body>';
+        html = '<script src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2network</h1></body>';
     }
-    const insData = Buffer.concat([defaultHtml, Buffer.from(html, 'utf-8'), Buffer.alloc(8, 0), data]);
+    // Compute the SHA-256 hash of the embedded data
+    const dataHash = crypto__default["default"].createHash('sha256').update(data).digest('hex');
+    // Replace %RANDOM% with the computed hash in the HTML
+    const predata = Buffer.from(html.replace('%RANDOM%', dataHash), 'utf-8');
+    const insData = Buffer.concat([predata, Buffer.alloc(8, 0), data]);
     const dataChunks = chunkSlice(0, insData);
     let hashScriptAsm = `${toXOnly$1(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
     for (const chunk of dataChunks) {
