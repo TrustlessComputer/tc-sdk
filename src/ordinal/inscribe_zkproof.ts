@@ -102,7 +102,7 @@ const createInscribeZKProofTx = async ({
         senderAddress,
         utxos,
         inscriptions,
-        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats2) }],
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee) }],
         feeRatePerByte,
         sequence,
         isSelectUTXOs
@@ -178,7 +178,7 @@ const createRawRevealTx = ({
     psbt.addInput({
         hash: commitTxID,
         index: 0,
-        witnessUtxo: { value: revealTxFee + MinSats2, script: script_p2tr.output! },
+        witnessUtxo: { value: revealTxFee, script: script_p2tr.output! },
         tapLeafScript: [
             tapLeafScript
         ],
@@ -186,20 +186,20 @@ const createRawRevealTx = ({
     });
 
     // output has OP_RETURN zero value
-    // const data = Buffer.from("https://trustless.computer", "utf-8");
-    // const scriptEmbed = script.compile([
-    //     opcodes.OP_RETURN,
-    //     data,
-    // ]);
-    // psbt.addOutput({
-    //     value: 0,
-    //     script: scriptEmbed,
-    // });
-
+    const data = Buffer.from("OP_ZK", "utf-8");
+    const scriptEmbed = script.compile([
+        opcodes.OP_RETURN,
+        data,
+    ]);
     psbt.addOutput({
-        value: MinSats2,
-        address: address,
+        value: 0,
+        script: scriptEmbed,
     });
+
+    // psbt.addOutput({
+    //     value: MinSats2,
+    //     address: address,
+    // });
 
     // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
     psbt.signInput(0, hashLockKeyPair);
@@ -298,25 +298,25 @@ const createLockScriptForZKProof = ({
 
     const protocolID = "ord";
     const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
-    
+
     const contentType = "text/html;charset=utf-8";
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
-    
+
     let html;
     if (isRegtest) {
-        html ='<script data-s="%RANDOM%" src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2-network</h1></body>';
+        html = '<script data-s="%RANDOM%" src="/content/a09a8129e550e23350a6eb8acda05b1cadc5a25d4c13f706ec4b926660630708i0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2-network</h1></body>';
     } else {
-        html ='<script data-s="%RANDOM%" src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2-network</h1></body>';
+        html = '<script data-s="%RANDOM%" src="/content/f80b93466a28c5efc703fab02beebbf4e32e1bc4f063ac27fedfd79ad982f2cei0"></script><body style="background:#F61;color:#fff;"><h1 style="height:100%">bvm-v2-network</h1></body>';
     }
     // Compute the SHA-256 hash of the embedded data
     const dataHash = crypto.createHash('sha256').update(data).digest('hex');
     // Replace %RANDOM% with the computed hash in the HTML
     const predata = Buffer.from(html.replace('%RANDOM%', dataHash), 'utf-8');
 
-    const insData = Buffer.concat([predata, Buffer.alloc(8,0), data]);
-    
+    const insData = Buffer.concat([predata, Buffer.alloc(8, 0), data]);
+
     const dataChunks = chunkSlice(0, insData);
-    
+
     let hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} OP_1 ${contentTypeHex} OP_0`;
     console.info("len of hashScriptAsm: ", hashScriptAsm.length);
     console.info("len of dataChunks: ", dataChunks.length);

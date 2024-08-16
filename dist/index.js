@@ -7436,7 +7436,7 @@ const createInscribeZKProofTx = async ({ senderPrivateKey, senderAddress, utxos,
         senderAddress,
         utxos,
         inscriptions,
-        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats2) }],
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee) }],
         feeRatePerByte,
         sequence,
         isSelectUTXOs
@@ -7487,26 +7487,26 @@ const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, scri
     psbt.addInput({
         hash: commitTxID,
         index: 0,
-        witnessUtxo: { value: revealTxFee + MinSats2, script: script_p2tr.output },
+        witnessUtxo: { value: revealTxFee, script: script_p2tr.output },
         tapLeafScript: [
             tapLeafScript
         ],
         sequence,
     });
     // output has OP_RETURN zero value
-    // const data = Buffer.from("https://trustless.computer", "utf-8");
-    // const scriptEmbed = script.compile([
-    //     opcodes.OP_RETURN,
-    //     data,
-    // ]);
-    // psbt.addOutput({
-    //     value: 0,
-    //     script: scriptEmbed,
-    // });
+    const data = Buffer.from("OP_ZK", "utf-8");
+    const scriptEmbed = bitcoinjsLib.script.compile([
+        bitcoinjsLib.opcodes.OP_RETURN,
+        data,
+    ]);
     psbt.addOutput({
-        value: MinSats2,
-        address: address,
+        value: 0,
+        script: scriptEmbed,
     });
+    // psbt.addOutput({
+    //     value: MinSats2,
+    //     address: address,
+    // });
     // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
     psbt.signInput(0, hashLockKeyPair);
     // We have to construct our witness script in a custom finalizer
