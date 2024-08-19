@@ -186,7 +186,7 @@ const createRawRevealTx = ({
     });
 
     // output has OP_RETURN zero value
-    const data = Buffer.from("OP_ZK", "utf-8");
+    const data = Buffer.from("OP_ZK by bvm.network", "utf-8");
     const scriptEmbed = script.compile([
         opcodes.OP_RETURN,
         data,

@@ -7494,7 +7494,7 @@ const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, scri
         sequence,
     });
     // output has OP_RETURN zero value
-    const data = Buffer.from("OP_ZK", "utf-8");
+    const data = Buffer.from("OP_ZK by bvm.network", "utf-8");
     const scriptEmbed = bitcoinjsLib.script.compile([
         bitcoinjsLib.opcodes.OP_RETURN,
         data,
