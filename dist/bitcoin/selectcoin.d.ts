@@ -17,7 +17,7 @@ import { Psbt } from "bitcoinjs-lib";
 */
 declare const selectUTXOs: (utxos: UTXO[], inscriptions: {
     [key: string]: Inscription[];
-}, sendInscriptionID: string, sendAmount: BigNumber, feeRatePerByte: number, isUseInscriptionPayFee: boolean, isSelectUTXOs: boolean) => {
+}, sendInscriptionID: string, sendAmount: BigNumber, feeRatePerByte: number, isUseInscriptionPayFee: boolean, isSelectUTXOs: boolean, numPaymentInfos: number) => {
     selectedUTXOs: UTXO[];
     isUseInscriptionPayFee: boolean;
     valueOutInscription: BigNumber;

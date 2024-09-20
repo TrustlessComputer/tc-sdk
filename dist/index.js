@@ -3249,7 +3249,7 @@ const toSat = (value) => {
 * @returns the value of inscription outputs, and the change amount (if any)
 * @returns the network fee
 */
-const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFee, isSelectUTXOs) => {
+const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFee, isSelectUTXOs, numPaymentInfos) => {
     let resultUTXOs = [];
     let normalUTXOs = [];
     let inscriptionUTXO = null;
@@ -3273,9 +3273,13 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
     }
     else {
         // estimate fee
-        const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-        const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
-        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
+        const estNum = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+        let numOuts = estNum.numOuts;
+        if (numPaymentInfos > 0) {
+            numOuts += numPaymentInfos;
+        }
+        const estFee = new BigNumber(estimateTxFee(estNum.numIns, numOuts, feeRatePerByte));
+        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: estNum.numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
         // when BTC amount need to send is greater than 0, 
         // we should use normal BTC to pay fee
         if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
@@ -3913,6 +3917,7 @@ const NetworkType$1 = {
     Mainnet: 1,
     Testnet: 2,
     Regtest: 3,
+    Fractal: 4, // mainnet
 };
 const setBTCNetwork$1 = (netType) => {
     switch (netType) {
@@ -3929,6 +3934,11 @@ const setBTCNetwork$1 = (netType) => {
         case NetworkType$1.Regtest: {
             exports.Network = bitcoinjsLib.networks.regtest;
             exports.BlockStreamURL = "https://blockstream.regtest.trustless.computer/regtest/api";
+            break;
+        }
+        case NetworkType$1.Fractal: {
+            exports.Network = bitcoinjsLib.networks.bitcoin;
+            exports.BlockStreamURL = "https://mempool.fractalbitcoin.io/api";
             break;
         }
     }
@@ -4325,7 +4335,7 @@ sequence = DefaultSequenceRBF, }) => {
         throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
     }
     // select UTXOs
-    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
+    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true, 0);
     let feeRes = fee;
     let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
     // add inputs
@@ -4436,7 +4446,7 @@ const createRawTxSendBTCFromMultisig = ({ senderPublicKey, senderAddress, utxos,
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs, paymentInfos.length);
     let feeRes = fee;
     let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
     // TODO:  2525
@@ -4529,7 +4539,7 @@ const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions,
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs, paymentInfos.length);
     let feeRes = fee;
     let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
     // add inputs
@@ -4603,7 +4613,7 @@ const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRate
         totalPaymentAmount = totalPaymentAmount.plus(info.amount);
     }
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, true);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, true, paymentInfos.length);
     let feeRes = fee;
     let changeAmountRes = changeAmount;
     // init key pair and tweakedSigner from senderPrivateKey
@@ -5068,6 +5078,7 @@ const NetworkType = {
     Mainnet: 1,
     Testnet: 2,
     Regtest: 3,
+    Fractal: 4, // mainnet
 };
 const setBTCNetwork = (netType) => {
     switch (netType) {
@@ -5081,6 +5092,10 @@ const setBTCNetwork = (netType) => {
         }
         case NetworkType.Regtest: {
             bitcoinjsLib.networks.regtest;
+            break;
+        }
+        case NetworkType.Fractal: {
+            bitcoinjsLib.networks.bitcoin;
             break;
         }
     }
@@ -5247,6 +5262,10 @@ const setupConfig = ({ storage, tcClient, netType }) => {
         }
         case NetworkType.Regtest: {
             network = bitcoinjsLib.networks.regtest;
+            break;
+        }
+        case NetworkType.Fractal: {
+            network = bitcoinjsLib.networks.bitcoin;
             break;
         }
     }

@@ -474,7 +474,7 @@ const createRawTx = ({
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
     }
     // select UTXOs
-    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
+    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true, 0);
     let feeRes = fee;
 
     let psbt = new Psbt({ network: tcBTCNetwork });
@@ -642,7 +642,7 @@ const createRawTxSendBTCFromMultisig = (
     }
 
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs, paymentInfos.length);
     let feeRes = fee;
 
     let psbt = new Psbt({ network: tcBTCNetwork });
@@ -771,7 +771,7 @@ const createTxSendBTC = (
     }
 
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs, paymentInfos.length);
     let feeRes = fee;
 
     let psbt = new Psbt({ network: tcBTCNetwork });
@@ -870,7 +870,7 @@ const createRawTxSendBTC = (
     }
 
     // select UTXOs
-    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, true);
+    const { selectedUTXOs, changeAmount, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, true, paymentInfos.length);
     let feeRes = fee;
     let changeAmountRes = changeAmount;
 

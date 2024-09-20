@@ -25,6 +25,10 @@ const setupConfig = ({ storage, tcClient, netType }: ISetupPayload) => {
             network = networks.regtest;
             break;
         }
+        case NetworkType.Fractal: {
+            network = networks.bitcoin;
+            break;
+        }
     }
 
     const _global = global || globalThis;

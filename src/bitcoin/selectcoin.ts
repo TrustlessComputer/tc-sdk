@@ -32,6 +32,7 @@ const selectUTXOs = (
     feeRatePerByte: number,
     isUseInscriptionPayFee: boolean,
     isSelectUTXOs: boolean,
+    numPaymentInfos: number,
 ): { selectedUTXOs: UTXO[], isUseInscriptionPayFee: boolean, valueOutInscription: BigNumber, changeAmount: BigNumber, fee: BigNumber } => {
     let resultUTXOs: UTXO[] = [];
     let normalUTXOs: UTXO[] = [];
@@ -59,9 +60,14 @@ const selectUTXOs = (
 
     } else {
         // estimate fee
-        const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-        const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
-        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
+        const estNum = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
+        let numOuts = estNum.numOuts;
+        if (numPaymentInfos > 0) {
+            numOuts += numPaymentInfos;
+        }
+
+        const estFee = new BigNumber(estimateTxFee(estNum.numIns, numOuts, feeRatePerByte));
+        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: estNum.numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
 
         // when BTC amount need to send is greater than 0, 
         // we should use normal BTC to pay fee

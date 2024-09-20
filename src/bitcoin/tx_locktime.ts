@@ -147,7 +147,7 @@ const createRawTxWithLockTime = ({
         throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
     }
     // select UTXOs
-    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true);
+    const { selectedUTXOs, valueOutInscription, changeAmount, fee } = selectUTXOs(utxos, inscriptions, sendInscriptionID, sendAmount, feeRatePerByte, isUseInscriptionPayFeeParam, true, 0);
     let feeRes = fee;
 
     let psbt = new Psbt({ network: tcBTCNetwork });

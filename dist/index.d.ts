@@ -134,7 +134,7 @@ interface IKeyPairInfo {
 */
 declare const selectUTXOs: (utxos: UTXO[], inscriptions: {
     [key: string]: Inscription[];
-}, sendInscriptionID: string, sendAmount: BigNumber, feeRatePerByte: number, isUseInscriptionPayFee: boolean, isSelectUTXOs: boolean) => {
+}, sendInscriptionID: string, sendAmount: BigNumber, feeRatePerByte: number, isUseInscriptionPayFee: boolean, isSelectUTXOs: boolean, numPaymentInfos: number) => {
     selectedUTXOs: UTXO[];
     isUseInscriptionPayFee: boolean;
     valueOutInscription: BigNumber;
@@ -712,6 +712,7 @@ declare const NetworkType: {
     Mainnet: number;
     Testnet: number;
     Regtest: number;
+    Fractal: number;
 };
 declare const setBTCNetwork: (netType: number) => void;
 

@@ -8,6 +8,7 @@ const NetworkType = {
     Mainnet: 1,
     Testnet: 2,
     Regtest: 3,
+    Fractal: 4,  // mainnet
 };
 
 const setBTCNetwork = (netType: number) => {
@@ -25,6 +26,11 @@ const setBTCNetwork = (netType: number) => {
         case NetworkType.Regtest: {
             Network = networks.regtest;
             BlockStreamURL = "https://blockstream.regtest.trustless.computer/regtest/api";
+            break;
+        }
+        case NetworkType.Fractal: {
+            Network = networks.bitcoin;
+            BlockStreamURL = "https://mempool.fractalbitcoin.io/api";
             break;
         }
     }
