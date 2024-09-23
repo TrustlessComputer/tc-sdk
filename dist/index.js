@@ -3200,7 +3200,7 @@ const estimateTxSize = (numIns, numOuts) => {
 * @param isUseInscriptionPayFee use inscription output coin to pay fee or not
 * @returns returns the estimated number of inputs and outputs in the transaction
 */
-const estimateNumInOutputs = (inscriptionID, sendAmount, isUseInscriptionPayFee) => {
+const estimateNumInOutputs = (inscriptionID, sendAmount, isUseInscriptionPayFee, lenPaymentInfos) => {
     let numOuts = 0;
     let numIns = 0;
     if (inscriptionID !== "") {
@@ -3213,6 +3213,9 @@ const estimateNumInOutputs = (inscriptionID, sendAmount, isUseInscriptionPayFee)
     if (sendAmount.gt(BNZero) || !isUseInscriptionPayFee) {
         numIns++;
         numOuts++; // for change BTC output
+    }
+    if (lenPaymentInfos > 0) {
+        numOuts = lenPaymentInfos + 1;
     }
     return { numIns, numOuts };
 };
@@ -3273,13 +3276,9 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
     }
     else {
         // estimate fee
-        const estNum = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-        let numOuts = estNum.numOuts;
-        if (numPaymentInfos > 0) {
-            numOuts += numPaymentInfos;
-        }
-        const estFee = new BigNumber(estimateTxFee(estNum.numIns, numOuts, feeRatePerByte));
-        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: estNum.numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
+        const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee, numPaymentInfos);
+        const estFee = new BigNumber(estimateTxFee(numIns, numOuts, feeRatePerByte));
+        console.log("selectUTXOs estFee: ", { estFee: estFee, numIns: numIns, numOuts: numOuts, feeRatePerByte: feeRatePerByte });
         // when BTC amount need to send is greater than 0, 
         // we should use normal BTC to pay fee
         if (isUseInscriptionPayFee && sendAmount.gt(BNZero)) {
@@ -3324,11 +3323,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
             console.log("totalInputAmount: ", totalInputAmount.toNumber());
             if (!isUseInscriptionPayFee) {
                 // re-estimate fee with exact number of inputs and outputs
-                const estNum = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-                let numOuts = estNum.numOuts;
-                if (numPaymentInfos > 0) {
-                    numOuts += numPaymentInfos;
-                }
+                const { numIns, numOuts } = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee, numPaymentInfos);
                 const feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, numOuts, feeRatePerByte));
                 console.log("feeRes: ", feeRes);
                 if (sendAmount.plus(feeRes).gt(totalInputAmount)) {
@@ -3342,12 +3337,8 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
         }
     }
     // re-estimate fee with exact number of inputs and outputs
-    const estNumRes = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee);
-    let reNumOuts = estNumRes.numOuts;
-    if (numPaymentInfos > 0) {
-        reNumOuts += numPaymentInfos;
-    }
-    let feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, reNumOuts, feeRatePerByte));
+    const estNumRes = estimateNumInOutputs(sendInscriptionID, sendAmount, isUseInscriptionPayFee, numPaymentInfos);
+    let feeRes = new BigNumber(estimateTxFee(resultUTXOs.length, estNumRes.numOuts, feeRatePerByte));
     // calculate output amount
     if (isUseInscriptionPayFee) {
         if (maxAmountInsTransfer.lt(feeRes)) {

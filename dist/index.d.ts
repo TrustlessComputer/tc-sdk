@@ -556,7 +556,7 @@ declare const estimateTxSize: (numIns: number, numOuts: number) => number;
 * @param isUseInscriptionPayFee use inscription output coin to pay fee or not
 * @returns returns the estimated number of inputs and outputs in the transaction
 */
-declare const estimateNumInOutputs: (inscriptionID: string, sendAmount: BigNumber, isUseInscriptionPayFee: boolean) => {
+declare const estimateNumInOutputs: (inscriptionID: string, sendAmount: BigNumber, isUseInscriptionPayFee: boolean, lenPaymentInfos: number) => {
     numIns: number;
     numOuts: number;
 };
