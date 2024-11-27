@@ -2,10 +2,15 @@
 import { ECPairAPI, ECPairInterface } from 'ecpair';
 import { IKeyPairInfo, Inscription, UTXO, Wallet } from "./types";
 import { Signer, payments } from "bitcoinjs-lib";
+import { address } from 'bitcoinjs-lib';
 import { ethers } from "ethers";
 import { BIP32Interface } from "bip32";
 import BigNumber from "bignumber.js";
 declare const ECPair: ECPairAPI;
+declare const randomTaprootWallet: () => {
+    privateKey: string;
+    address: string;
+};
 /**
 * convertPrivateKey converts buffer private key to WIF private key string
 * @param bytes buffer private key
@@ -136,4 +141,4 @@ declare const getAddressType: ({ btcAddress, pubKey, }: {
     btcAddress: string;
     pubKey: Buffer;
 }) => number;
-export { ECPair, convertPrivateKey, convertPrivateKeyFromStr, toXOnly, tweakSigner, tapTweakHash, generateTaprootAddress, generateTaprootKeyPair, generateP2PKHKeyPair, generateP2PKHKeyFromRoot, getBTCBalance, importBTCPrivateKey, derivePasswordWallet, getBitcoinKeySignContent, encryptWallet, decryptWallet, deriveSegwitWallet, deriveETHWallet, signByETHPrivKey, generateTaprootAddressFromPubKey, getAddressType, BTCAddressType, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, getKeyPairInfo, };
+export { ECPair, convertPrivateKey, convertPrivateKeyFromStr, toXOnly, tweakSigner, tapTweakHash, generateTaprootAddress, generateTaprootKeyPair, generateP2PKHKeyPair, generateP2PKHKeyFromRoot, getBTCBalance, importBTCPrivateKey, derivePasswordWallet, getBitcoinKeySignContent, encryptWallet, decryptWallet, deriveSegwitWallet, deriveETHWallet, signByETHPrivKey, generateTaprootAddressFromPubKey, getAddressType, BTCAddressType, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, getKeyPairInfo, randomTaprootWallet, };

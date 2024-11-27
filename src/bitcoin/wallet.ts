@@ -32,7 +32,13 @@ const bip32 = BIP32Factory(ecc);
 const ETHWalletDefaultPath = "m/44'/60'/0'/0/0";
 const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
 
-
+const randomTaprootWallet = (): { privateKey: string, address: string } => {
+    const keyPair = ECPair.makeRandom({ network: tcBTCNetwork });
+    return {
+        privateKey: convertPrivateKey(keyPair.privateKey!),
+        address: generateTaprootAddress(keyPair.privateKey!),
+    }
+};
 
 /**
 * convertPrivateKey converts buffer private key to WIF private key string
@@ -40,6 +46,7 @@ const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
 * @returns the WIF private key string
 */
 const convertPrivateKey = (bytes: Buffer): string => {
+    ECPair.makeRandom()
     return wif.encode(128, bytes, true);
 };
 
@@ -442,4 +449,5 @@ export {
     generateP2WPKHKeyPair,
     generateP2WPKHKeyPairFromPubKey,
     getKeyPairInfo,
+    randomTaprootWallet,
 };

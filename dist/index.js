@@ -3623,12 +3623,20 @@ const ECPair$1 = ecpair.ECPairFactory(ecc__namespace);
 const bip32$3 = BIP32Factory__default["default"](ecc__namespace);
 const ETHWalletDefaultPath = "m/44'/60'/0'/0/0";
 const BTCSegwitWalletDefaultPath = "m/84'/0'/0'/0/0";
+const randomTaprootWallet = () => {
+    const keyPair = ECPair$1.makeRandom({ network: tcBTCNetwork });
+    return {
+        privateKey: convertPrivateKey$1(keyPair.privateKey),
+        address: generateTaprootAddress(keyPair.privateKey),
+    };
+};
 /**
 * convertPrivateKey converts buffer private key to WIF private key string
 * @param bytes buffer private key
 * @returns the WIF private key string
 */
 const convertPrivateKey$1 = (bytes) => {
+    ECPair$1.makeRandom();
     return wif__default["default"].encode(128, bytes, true);
 };
 /**
@@ -4602,6 +4610,87 @@ const createTxSendBTC = ({ senderPrivateKey, senderAddress, utxos, inscriptions,
 * @returns the hex signed transaction
 * @returns the network fee
 */
+const createTxSendBTC_MintRunes = ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts = [], feeRatePerByte, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
+    // validation
+    let totalPaymentAmount = BNZero;
+    for (const info of paymentInfos) {
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError$1(ERROR_CODE$1.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
+        }
+        totalPaymentAmount = totalPaymentAmount.plus(info.amount);
+    }
+    // select UTXOs
+    const { selectedUTXOs, changeAmount: cm, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs, paymentInfos.length);
+    let extraFee = new BigNumber((20) * feeRatePerByte);
+    let feeRes = BigNumber.sum(fee, extraFee); // op return data
+    let changeAmount = new BigNumber(cm.toNumber() - extraFee.toNumber());
+    console.log("createTxSendBTC_MintRunes feeRes: ", feeRes.toString(), changeAmount.toString(), extraFee.toString());
+    let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    // add inputs
+    psbt = addInputs({
+        psbt,
+        addressType: addressType,
+        inputs: selectedUTXOs,
+        payment: payment,
+        sequence,
+        keyPair: keyPair,
+    });
+    // add output script
+    for (const info of paymentScripts) {
+        psbt.addOutput({
+            script: info.script,
+            value: info.amount.toNumber(),
+        });
+    }
+    // add outputs send BTC
+    for (const info of paymentInfos) {
+        psbt.addOutput({
+            address: info.address,
+            value: info.amount.toNumber(),
+        });
+    }
+    // add change output
+    if (changeAmount.gt(BNZero)) {
+        if (changeAmount.gte(MinSats2)) {
+            psbt.addOutput({
+                address: senderAddress,
+                value: changeAmount.toNumber(),
+            });
+        }
+        else {
+            feeRes = feeRes.plus(changeAmount);
+            changeAmount = BNZero;
+        }
+    }
+    // sign tx
+    for (let i = 0; i < selectedUTXOs.length; i++) {
+        psbt.signInput(i, signer, [sigHashTypeDefault]);
+    }
+    psbt.finalizeAllInputs();
+    // get tx hex
+    const tx = psbt.extractTransaction();
+    console.log("Transaction : ", tx);
+    const txHex = tx.toHex();
+    return { txID: tx.getId(), txHex, fee: feeRes, selectedUTXOs, changeAmount, tx };
+};
+/**
+* createTx creates the Bitcoin transaction (including sending inscriptions).
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionID id of inscription to send
+* @param receiverInsAddress the address of the inscription receiver
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
 const createRawTxSendBTC = ({ pubKey, utxos, inscriptions, paymentInfos, feeRatePerByte, }) => {
     // validation
     let totalPaymentAmount = BNZero;
@@ -5041,6 +5130,7 @@ BIP32Factory__default["default"](ecc__namespace);
 * @returns the WIF private key string
 */
 const convertPrivateKey = (bytes) => {
+    ECPair.makeRandom();
     return wif__default["default"].encode(128, bytes, true);
 };
 function toXOnly(pubkey) {
@@ -5312,7 +5402,7 @@ function witnessStackToScriptWitness(witness) {
     return buffer;
 }
 
-const createRawRevealTx$2 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
+const createRawRevealTx$3 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -5357,7 +5447,7 @@ const createRawRevealTx$2 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, scri
     console.log("revealTX: ", revealTX);
     return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
 };
-function getRevealVirtualSize$2(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+function getRevealVirtualSize$3(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
         script: hash_lock_redeem.output,
@@ -5418,14 +5508,14 @@ const createInscribeTx$1 = async ({ senderPrivateKey, senderAddress, utxos, insc
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     // const internalPubKey = toXOnly(keyPair.publicKey);
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript$1({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         // internalPubKey,
         tcTxIDs,
         tcClient
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize$2(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$3(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -5454,7 +5544,7 @@ const createInscribeTx$1 = async ({ senderPrivateKey, senderAddress, utxos, insc
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx$2({
+    const { revealTxHex, revealTxID } = createRawRevealTx$3({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5620,14 +5710,14 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     // const internalPubKey = toXOnly(keyPair.publicKey);
     const { address: senderAddress } = generateTaprootAddressFromPubKey(pubKey);
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript$1({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
         // internalPubKey: pubKey,
         tcTxIDs,
         tcClient,
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize$2(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$3(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -5653,7 +5743,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
     console.log("commitTX: ", commitTx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx$2({
+    const { revealTxHex, revealTxID } = createRawRevealTx$3({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -5669,7 +5759,7 @@ const createInscribeTxFromAnyWallet = async ({ pubKey, utxos, inscriptions, tcTx
         totalFee: new BigNumber(totalFee),
     };
 };
-const createLockScript$1 = async ({ 
+const createLockScript = async ({ 
 // privateKey,
 // internalPubKey,
 tcTxIDs, tcClient, }) => {
@@ -6112,6 +6202,27 @@ const getOutputCoinValue = async (txID, voutIndex) => {
     }
     return new BigNumber(tx.vout[voutIndex].value);
 };
+// curl - X GET "https://api.hiro.so/runes/v1/addresses/string/balances?offset=0&limit=1"
+const getRuneBalance = async (btcAddress) => {
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    const res = await axios__default["default"].get(`https://api.hiro.so/runes/v1/addresses/${btcAddress}/balances?offset=0&limit=1`);
+    const data = res.data;
+    console.log("data: ", data);
+    if (data?.results?.length > 0) {
+        return new BigNumber(data?.results[0].balance, 10);
+    }
+    return new BigNumber(0);
+};
+const getRuneBalanceByRuneID = async (btcAddress, runeID) => {
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    const res = await axios__default["default"].get(`https://open-api.unisat.io/v1/indexer/address/${btcAddress}/runes/${runeID}/balance`);
+    const data = res.data;
+    console.log("data: ", data);
+    if (data?.results?.length > 0) {
+        return new BigNumber(data?.amount, 10);
+    }
+    return new BigNumber(0);
+};
 
 const extractOldTxInfo = async ({ revealTxID, tcClient, tcAddress, btcAddress, }) => {
     const txs = await tcClient.getPendingInscribeTxsDetail(tcAddress);
@@ -6531,6 +6642,44 @@ var RequestMethod;
 (function (RequestMethod) {
     RequestMethod["account"] = "account";
 })(RequestMethod || (RequestMethod = {}));
+
+var K=0xffn,O=0xffffn,P=0xffff_ffffn,Q=0xffff_ffff_ffff_ffffn,k=0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffffn,x=19;function Y(w){if(w<0n)throw new Error("Value must be positive");if(w>k)throw new Error(`Can't encode value more than ${k}`);const h=Buffer.alloc(x);let s=0;while(w>>7n>0)h[s]=Number(w&0b1111_1111n|0b1000_0000n),w>>=7n,s+=1;return h[s]=Number(w),h.subarray(0,s+1)}function q(w){if(w.length>x||w.length===x&&w[w.length-1]>3)throw new Error(`Can't decode value more than ${k}, buffer overflow`);let h=BigInt(0);for(let s=0;s<w.length;s+=1){const W=w[s]&127;h=h|BigInt(W)<<7n*BigInt(s);}if(h<0n)throw new Error("Value is minus, something wrong");return h}class j{n;maxNumber;constructor(w,h){this.n=w,this.maxNumber=h,this.baseValidation();}baseValidation(){if(this.n<0n)throw new Error("Value must be positive");if(this.n>this.maxNumber)throw new Error(`Value must be less than ${this.maxNumber}`)}get MAX(){return this.maxNumber}toVaruint(){return Y(this.n)}toString(){return this.n.toString()}toJSON(){return this.n.toString()}toValue(){return this.n}}class z extends j{constructor(w){super(w,K);}static fromString(w){return new z(BigInt(w))}static fromNumber(w){return new z(BigInt(w))}static fromVaruint(w){return new z(q(w))}}class C extends j{constructor(w){super(w,O);}static fromString(w){return new C(BigInt(w))}static fromNumber(w){return new C(BigInt(w))}static fromVaruint(w){return new C(q(w))}}class D extends j{constructor(w){super(w,P);}static fromString(w){return new D(BigInt(w))}static fromNumber(w){return new D(BigInt(w))}static fromVaruint(w){return new D(q(w))}}class I extends j{constructor(w){super(w,Q);}static fromString(w){return new I(BigInt(w))}static fromVaruint(w){return new I(q(w))}}class J extends j{constructor(w){super(w,k);}static fromString(w){return new J(BigInt(w))}static fromVaruint(w){return new J(q(w))}}
+
+var FlagEnum$1;
+(function (FlagEnum) {
+    FlagEnum[FlagEnum["Etching"] = 0] = "Etching";
+    FlagEnum[FlagEnum["Terms"] = 1] = "Terms";
+    FlagEnum[FlagEnum["Cenotaph"] = 127] = "Cenotaph";
+})(FlagEnum$1 || (FlagEnum$1 = {}));
+
+var Tag$1;
+(function (Tag) {
+    Tag[Tag["Body"] = 0] = "Body";
+    Tag[Tag["Flags"] = 2] = "Flags";
+    Tag[Tag["Rune"] = 4] = "Rune";
+    Tag[Tag["Premine"] = 6] = "Premine";
+    Tag[Tag["Cap"] = 8] = "Cap";
+    Tag[Tag["Amount"] = 10] = "Amount";
+    Tag[Tag["HeightStart"] = 12] = "HeightStart";
+    Tag[Tag["HeightEnd"] = 14] = "HeightEnd";
+    Tag[Tag["OffsetStart"] = 16] = "OffsetStart";
+    Tag[Tag["OffsetEnd"] = 18] = "OffsetEnd";
+    Tag[Tag["Mint"] = 20] = "Mint";
+    Tag[Tag["Pointer"] = 22] = "Pointer";
+    Tag[Tag["Cenotaph"] = 126] = "Cenotaph";
+    Tag[Tag["Divisibility"] = 1] = "Divisibility";
+    Tag[Tag["Spacers"] = 3] = "Spacers";
+    Tag[Tag["Symbol"] = 5] = "Symbol";
+    Tag[Tag["Nop"] = 127] = "Nop";
+})(Tag$1 || (Tag$1 = {}));
+var ValueType$1;
+(function (ValueType) {
+    ValueType[ValueType["U8"] = 0] = "U8";
+    ValueType[ValueType["U16"] = 1] = "U16";
+    ValueType[ValueType["U32"] = 2] = "U32";
+    ValueType[ValueType["U64"] = 3] = "U64";
+    ValueType[ValueType["U128"] = 4] = "U128";
+})(ValueType$1 || (ValueType$1 = {}));
 
 const deriveHDNodeByIndex$1 = (payload) => {
     const hdNode = ethers.ethers.utils.HDNode
@@ -7175,19 +7324,23 @@ const setStorageMasterless = async (wallet, password) => {
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence = DefaultSequenceRBF, isSelectUTXOs = true, metaProtocol = "", }) => {
     const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
     const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
     // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
     const internalPubKey = toXOnly$1(keyPair.publicKey);
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScriptWithCollection({
         internalPubKey,
         data,
+        metaProtocol
     });
+    console.log(`createInscribeTx ${hashLockKeyPair}, ${hashLockRedeem}`);
+    // const arr = decompile(script_p2tr.output!);
+    // console.log(`createInscribeTx ${arr}`);
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$2(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -7216,7 +7369,7 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx$1({
+    const { revealTxHex, revealTxID } = createRawRevealTx$2({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -7241,7 +7394,7 @@ const createInscribeTx = async ({ senderPrivateKey, senderAddress, utxos, inscri
         newUTXOs: newUTXOs,
     };
 };
-const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
+const createRawRevealTx$2 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -7290,7 +7443,35 @@ const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, scri
     console.log("revealTX: ", revealTX);
     return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
 };
-const createLockScript = ({ internalPubKey, data, }) => {
+const getNumberHex$1 = (n) => {
+    // Convert the number to a hexadecimal string
+    const hex = n.toString(16);
+    // Ensure it's at least 2 characters by padding with a leading zero
+    return hex.padStart(2, '0');
+    // return new BigNumber(n).toString(16);
+};
+const getMetaProtocolScript$1 = (metaProtocol) => {
+    if (metaProtocol === "") {
+        return "";
+    }
+    const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
+    const lenMetaProtocolHex = getNumberHex$1(metaProtocol.length);
+    // tag meta protocol + len + metaprotocol
+    return "0107" + lenMetaProtocolHex + metaProtocolHex;
+};
+const getParentInscriptionScript$1 = (parentInscTxID, parentInscTxIndex) => {
+    if (parentInscTxID === "") {
+        return "";
+    }
+    const txIDBytes = Buffer.from(parentInscTxID, "hex");
+    const txIDBytesRev = txIDBytes.reverse();
+    const txIDHex = txIDBytesRev.toString("hex");
+    const txIndexHex = getNumberHex$1(parentInscTxIndex);
+    const lenParent = getNumberHex$1((txIDHex.length + txIndexHex.length) / 2);
+    // tag parent + len + parent id
+    return "0103" + lenParent + txIDHex + txIndexHex;
+};
+const createLockScriptWithCollection = ({ internalPubKey, data, metaProtocol = "", parentInscTxID = "", parentInscTxIndex = 0, }) => {
     // Create a tap tree with two spend paths
     // One path should allow spending using secret
     // The other path should pay to another pubkey
@@ -7309,23 +7490,18 @@ const createLockScript = ({ internalPubKey, data, }) => {
     // console.log("protocolIDHex: ", protocolIDHex);
     const contentType = "text/plain;charset=utf-8";
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
-    // const contentTypeHex = toHex(contentType);
-    // console.log("contentTypeHex0: ", contentTypeHex0);
-    // console.log("contentTypeHex: ", contentTypeHex);
-    // P    string`json:"p"`
-    // Op   string`json:"op"`
-    // Tick string`json:"tick"`
-    // Amt  string`json:"amt"`
     const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
+    // const contentTypeHex = toHex(contentType);
     // const contentStrHex = toHex(data);
     // console.log("contentStrHex: ", contentStrHex);
     // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
     // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} ${op1} ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
     // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
     // const hashLockScript = script.fromASM(hashScriptAsm);
-    const len = contentStrHex.length / 2;
-    const lenHex = len.toString(16);
+    // const len = contentStrHex.length / 2;
+    const lenHex = getNumberHex$1(contentStrHex.length / 2);
     console.log("lenHex: ", lenHex);
+    console.log(`createLockScriptWithCollection ${contentStrHex} ${lenHex}`);
     let hexStr = "20"; // 32 - len public key
     hexStr += toXOnly$1(hashLockKeyPair.publicKey).toString("hex");
     hexStr += "ac0063"; // OP_CHECKSIG OP_0 OP_IF
@@ -7334,6 +7510,8 @@ const createLockScript = ({ internalPubKey, data, }) => {
     hexStr += "0101";
     hexStr += "18"; // len content type
     hexStr += contentTypeHex;
+    hexStr += getMetaProtocolScript$1(metaProtocol);
+    hexStr += getParentInscriptionScript$1(parentInscTxID, parentInscTxIndex);
     hexStr += "00"; // op_0
     hexStr += lenHex;
     hexStr += contentStrHex;
@@ -7364,7 +7542,7 @@ const createLockScript = ({ internalPubKey, data, }) => {
         script_p2tr
     };
 };
-function getRevealVirtualSize$1(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+function getRevealVirtualSize$2(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
         script: hash_lock_redeem.output,
@@ -7438,7 +7616,7 @@ const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, ins
     });
     // estimate fee and select UTXOs
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const revealVByte = getRevealVirtualSize$1(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
     // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
@@ -7467,7 +7645,7 @@ const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, ins
     console.log("commitTX: ", tx);
     console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
     // create and sign reveal tx
-    const { revealTxHex, revealTxID } = createRawRevealTx({
+    const { revealTxHex, revealTxID } = createRawRevealTx$1({
         commitTxID,
         hashLockKeyPair,
         hashLockRedeem,
@@ -7492,7 +7670,7 @@ const createInscribeImgTx = async ({ senderPrivateKey, senderAddress, utxos, ins
         newUTXOs: newUTXOs,
     };
 };
-const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
+const createRawRevealTx$1 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence = 0, }) => {
     const tapLeafScript = {
         leafVersion: hashLockRedeem?.redeemVersion,
         script: hashLockRedeem?.output,
@@ -7658,7 +7836,7 @@ const createLockScriptForImageInsc = ({ internalPubKey, data, contentType, }) =>
         script_p2tr
     };
 };
-function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+function getRevealVirtualSize$1(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
     const tapLeafScript = {
         leafVersion: hash_lock_redeem.redeemVersion,
         script: hash_lock_redeem.output,
@@ -7706,6 +7884,282 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
     const tx = psbt.extractTransaction();
     return tx.virtualSize();
 }
+
+const getMetaProtocolScript = (metaProtocol) => {
+    if (metaProtocol === "") {
+        return "";
+    }
+    const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
+    const lenMetaProtocolHex = getNumberHex$1(metaProtocol.length);
+    // tag meta protocol + len + metaprotocol
+    return "0107" + lenMetaProtocolHex + metaProtocolHex;
+};
+const getParentInscriptionScript = (parentInscTxID, parentInscTxIndex) => {
+    if (parentInscTxID === "") {
+        return "";
+    }
+    const txIDBytes = Buffer.from(parentInscTxID, "hex");
+    const txIDBytesRev = txIDBytes.reverse();
+    const txIDHex = txIDBytesRev.toString("hex");
+    let txIndexHex = "";
+    if (parentInscTxIndex > 0) {
+        txIndexHex = getNumberHex$1(parentInscTxIndex);
+    }
+    const lenParent = getNumberHex$1((txIDHex.length + txIndexHex.length) / 2);
+    // tag parent + len + parent id
+    return "0103" + lenParent + txIDHex + txIndexHex;
+};
+const createLockScriptGeneral = ({ internalPubKey, data, contentType, metaProtocol = "", parentInscTxID = "", parentInscTxIndex = 0, }) => {
+    // Create a tap tree with two spend paths
+    // One path should allow spending using secret
+    // The other path should pay to another pubkey
+    // Make random key pair for hash_lock script
+    const hashLockKeyPair = ECPair$1.makeRandom({ network: exports.Network });
+    // TODO: comment
+    // const hashLockPrivKey = hashLockKeyPair.toWIF();
+    // console.log("hashLockPrivKey wif : ", hashLockPrivKey);
+    // Note: for debug and test
+    // const hashLockPrivKey = "";
+    // const hashLockKeyPair = ECPair.fromWIF(hashLockPrivKey);
+    // console.log("newKeyPair: ", hashLockKeyPair.privateKey);
+    const protocolID = "ord";
+    const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
+    // const protocolIDHex = toHex(protocolID);
+    // console.log("protocolIDHex: ", protocolIDHex);
+    const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
+    const contentStrHex = data.toString("hex");
+    const lenContentTypeHex = getNumberHex$1(contentType.length);
+    const lenContentHex = getNumberHex$1(data.length);
+    console.log("createLockScriptGeneral lenContentHex: ", lenContentHex);
+    const metaProtocolScript = getMetaProtocolScript(metaProtocol);
+    const parentInscScript = getParentInscriptionScript(parentInscTxID, parentInscTxIndex);
+    console.log(`createLockScriptGeneral ${metaProtocolScript} ${parentInscScript}`);
+    console.log(`createLockScriptGeneral content ${contentTypeHex} ${contentStrHex}`);
+    let hexStr = "20"; // 32 - len public key
+    hexStr += toXOnly$1(hashLockKeyPair.publicKey).toString("hex");
+    hexStr += "ac0063"; // OP_CHECKSIG OP_0 OP_IF
+    hexStr += "03"; // len protocol
+    hexStr += protocolIDHex;
+    hexStr += "0101";
+    hexStr += lenContentTypeHex; // len content type
+    hexStr += contentTypeHex; // content type
+    hexStr += metaProtocolScript; // meta protocol script (if any)
+    hexStr += parentInscScript; // parent insc script (if any)
+    hexStr += "00"; // OP_0
+    // content 
+    const dataChunks = chunkSlice(0, data);
+    console.log({ dataChunks });
+    for (const chunk of dataChunks) {
+        hexStr += getNumberHex$1(chunk.length);
+        hexStr += chunk.toString("hex");
+    }
+    // hexStr += lenContentHex;  // len content
+    // hexStr += contentStrHex; // content
+    hexStr += "68"; // OP_ENDIF
+    console.log("hexStr: ", hexStr);
+    // const hexStr = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
+    const hashLockScript = Buffer.from(hexStr, "hex");
+    console.log("hashLockScript: ", hashLockScript.toString("hex"));
+    // const asm2 = script.toASM(hashLockScript);
+    // console.log("asm2: ", asm2);
+    const hashLockRedeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+    const scriptTree = hashLockRedeem;
+    const script_p2tr = bitcoinjsLib.payments.p2tr({
+        internalPubkey: internalPubKey,
+        scriptTree,
+        redeem: hashLockRedeem,
+        network: exports.Network
+    });
+    console.log("InscribeOrd script_p2tr: ", script_p2tr.address);
+    return {
+        hashLockKeyPair,
+        hashScriptAsm: "",
+        hashLockScript,
+        hashLockRedeem,
+        script_p2tr
+    };
+};
+// make sure the sender of tx create parent insc must be same as the sender of tx create child inscs
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeTxGeneral = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, sequence = DefaultSequenceRBF, isSelectUTXOs = true, metaProtocol = "", parentInscTxID = "", parentInscTxIndex = 0, parentUTXO = undefined, }) => {
+    // validate inputs
+    if (parentInscTxID !== "") {
+        if (!parentUTXO) {
+            throw new Error(`Required parent UTXO with parent inscription id: ${parentInscTxID}:${parentInscTxIndex}`);
+        }
+    }
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    const internalPubKey = toXOnly$1(keyPair.publicKey);
+    // create lock script for commit tx
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScriptGeneral({
+        internalPubKey,
+        data,
+        contentType,
+        metaProtocol,
+        parentInscTxID,
+        parentInscTxIndex,
+    });
+    console.log(`createInscribeTx ${hashLockKeyPair}, ${hashLockRedeem}`);
+    // const arr = decompile(script_p2tr.output!);
+    // console.log(`createInscribeTx ${arr}`);
+    // estimate fee and select UTXOs
+    const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
+    let revealVByte = getRevealVirtualSize$2(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    if (parentUTXO) {
+        // extra fee
+        revealVByte = revealVByte + 68 + 43; // add more one in, one out
+    }
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
+    // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
+    if (script_p2tr.address === undefined || script_p2tr.address === "") {
+        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
+    }
+    const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats2) }],
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs
+    });
+    const newUTXOs = [];
+    if (changeAmount.gt(BNZero)) {
+        newUTXOs.push({
+            tx_hash: commitTxID,
+            tx_output_n: 1,
+            value: changeAmount
+        });
+    }
+    console.log("commitTX: ", tx);
+    console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+    let res;
+    if (parentUTXO) {
+        console.log("Create tx reveal with parent uxto");
+        res = createRawRevealTxWithParentUTXO({
+            commitTxID,
+            hashLockKeyPair,
+            hashLockRedeem,
+            script_p2tr,
+            revealTxFee: estRevealTxFee,
+            receiverAddress: senderAddress,
+            parentUTXO: parentUTXO,
+            parentAddress: senderAddress,
+            parentPrivateKey: senderPrivateKey,
+            sequence: 0,
+        });
+    }
+    else {
+        // create and sign reveal tx
+        res = createRawRevealTx$2({
+            commitTxID,
+            hashLockKeyPair,
+            hashLockRedeem,
+            script_p2tr,
+            revealTxFee: estRevealTxFee,
+            address: senderAddress,
+            sequence: 0,
+        });
+    }
+    const revealTxHex = res.revealTxHex;
+    const revealTxID = res.revealTxID;
+    console.log("commitTxHex: ", commitTxHex);
+    console.log("revealTxHex: ", revealTxHex);
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
+    // const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    // console.log("btcTxID: ", btcTxID);
+    return {
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee: new BigNumber(totalFee),
+        selectedUTXOs: selectedUTXOs,
+        newUTXOs: newUTXOs,
+    };
+};
+const createRawRevealTxWithParentUTXO = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, receiverAddress, parentUTXO, parentPrivateKey, parentAddress, sequence = 0, }) => {
+    // get key info iof parent utxo to sign
+    const keyPairInfo = getKeyPairInfo({ privateKey: parentPrivateKey, address: parentAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    const tapLeafScript = {
+        leafVersion: hashLockRedeem?.redeemVersion,
+        script: hashLockRedeem?.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1],
+    };
+    let psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    // the first input is parent utxos
+    psbt = addInputs({
+        psbt,
+        addressType: addressType,
+        inputs: [parentUTXO],
+        payment: payment,
+        sequence,
+        keyPair: keyPair,
+    });
+    // add input to reveal
+    psbt.addInput({
+        hash: commitTxID,
+        index: 0,
+        witnessUtxo: { value: revealTxFee + MinSats2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ],
+        sequence,
+    });
+    // the first output: return to parent
+    psbt.addOutput({
+        value: parentUTXO.value.toNumber(),
+        address: parentAddress,
+    });
+    // the second output: receiver child inscription
+    psbt.addOutput({
+        value: MinSats2,
+        address: receiverAddress,
+    });
+    // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
+    psbt.signInput(0, signer, [sigHashTypeDefault]);
+    psbt.signInput(1, hashLockKeyPair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0);
+    psbt.finalizeInput(1, customFinalizer);
+    const revealTX = psbt.extractTransaction();
+    console.log("revealTX: ", revealTX);
+    return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
+};
 
 /**
 * createTransferSRC20RawTx creates raw tx to transfer src20 (don't include signing)
@@ -7926,6 +8380,792 @@ const ARC4Decrypt = (secretKey, ciphertext) => {
     return res.toString(CryptoJS__namespace.enc.Hex);
 };
 
+var FlagEnum;
+(function (FlagEnum) {
+    FlagEnum[FlagEnum["Etching"] = 0] = "Etching";
+    FlagEnum[FlagEnum["Terms"] = 1] = "Terms";
+    FlagEnum[FlagEnum["Cenotaph"] = 127] = "Cenotaph";
+})(FlagEnum || (FlagEnum = {}));
+class Flag {
+    constructor(value) {
+        this.flag = value;
+    }
+    set(flag) {
+        const mask = 1n << BigInt(flag);
+        this.flag = new z(this.flag.toValue() | mask);
+    }
+    hasFlag(flag) {
+        const mask = 1n << BigInt(flag);
+        return (this.flag.toValue() & mask) !== 0n;
+    }
+    toValue() {
+        return this.flag;
+    }
+}
+
+class Rune {
+    constructor(rune) {
+        this.rune = rune;
+    }
+    static fromString(str) {
+        let number = 0n;
+        for (let i = 0; i < str.length; i += 1) {
+            const c = str.charAt(i);
+            if (i > 0) {
+                number += 1n;
+            }
+            number *= 26n;
+            if (c >= "A" && c <= "Z") {
+                number += BigInt(c.charCodeAt(0) - "A".charCodeAt(0));
+            }
+            else {
+                throw new Error(`Invalid character in rune name: ${c}`);
+            }
+        }
+        return new Rune(new J(number));
+    }
+    commitBuffer() {
+        let number = this.rune.toValue();
+        const arr = [];
+        while (number >> 8n > 0) {
+            arr.push(Number(number & 255n));
+            number >>= 8n;
+        }
+        arr.push(Number(number));
+        return Buffer.from(arr);
+    }
+    toString() {
+        let n = this.rune.toValue();
+        n += 1n;
+        let str = "";
+        while (n > 0n) {
+            str += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Number((n - 1n) % 26n)];
+            n = (n - 1n) / 26n;
+        }
+        return str.split("").reverse().join("");
+    }
+    toJSON() {
+        return this.toString();
+    }
+}
+
+class RuneId {
+    constructor(block, tx) {
+        this.block = block;
+        this.tx = tx;
+    }
+    delta(next) {
+        const block = next.block.toValue() - this.block.toValue();
+        let tx = next.tx.toValue();
+        if (block === 0n) {
+            tx -= this.tx.toValue();
+        }
+        return new RuneId(new I(block), new D(tx));
+    }
+    next(next) {
+        const block = this.block.toValue() + next.block.toValue();
+        const tx = next.block.toValue() === 0n
+            ? this.tx.toValue() + next.tx.toValue()
+            : next.tx.toValue();
+        return new RuneId(new I(block), new D(tx));
+    }
+    toJSON() {
+        return {
+            block: this.block.toString(),
+            tx: this.tx.toString(),
+        };
+    }
+}
+
+var Tag;
+(function (Tag) {
+    Tag[Tag["Body"] = 0] = "Body";
+    Tag[Tag["Flags"] = 2] = "Flags";
+    Tag[Tag["Rune"] = 4] = "Rune";
+    Tag[Tag["Premine"] = 6] = "Premine";
+    Tag[Tag["Cap"] = 8] = "Cap";
+    Tag[Tag["Amount"] = 10] = "Amount";
+    Tag[Tag["HeightStart"] = 12] = "HeightStart";
+    Tag[Tag["HeightEnd"] = 14] = "HeightEnd";
+    Tag[Tag["OffsetStart"] = 16] = "OffsetStart";
+    Tag[Tag["OffsetEnd"] = 18] = "OffsetEnd";
+    Tag[Tag["Mint"] = 20] = "Mint";
+    Tag[Tag["Pointer"] = 22] = "Pointer";
+    Tag[Tag["Cenotaph"] = 126] = "Cenotaph";
+    Tag[Tag["Divisibility"] = 1] = "Divisibility";
+    Tag[Tag["Spacers"] = 3] = "Spacers";
+    Tag[Tag["Symbol"] = 5] = "Symbol";
+    Tag[Tag["Nop"] = 127] = "Nop";
+})(Tag || (Tag = {}));
+var ValueType;
+(function (ValueType) {
+    ValueType[ValueType["U8"] = 0] = "U8";
+    ValueType[ValueType["U16"] = 1] = "U16";
+    ValueType[ValueType["U32"] = 2] = "U32";
+    ValueType[ValueType["U64"] = 3] = "U64";
+    ValueType[ValueType["U128"] = 4] = "U128";
+})(ValueType || (ValueType = {}));
+class TagPayload {
+    constructor(buff) {
+        this.payloads = [];
+        this.edicts = [];
+        this.tagMap = new Map();
+        if (!buff) {
+            return;
+        }
+        this.payloads.push(...buff);
+    }
+    decode() {
+        const arr = [];
+        let startI = -1;
+        for (let i = 0; i < this.payloads.length; i += 1) {
+            const byte = this.payloads[i];
+            // maximum varuint per byte value is 127
+            if ((byte & 128) === 0) {
+                if (startI !== -1) {
+                    arr.push(q(Buffer.from(this.payloads.slice(startI, i + 1))));
+                    startI = -1;
+                }
+                else {
+                    arr.push(BigInt(byte));
+                }
+                continue;
+            }
+            if (startI === -1) {
+                startI = i;
+            }
+        }
+        for (let i = 0; i < arr.length / 2; i++) {
+            const keyI = i * 2;
+            const key = arr[keyI];
+            // split the edicts data, edict has different data format
+            if (Number(key) === Tag.Body) {
+                this.edicts = arr.slice(keyI + 1);
+                break;
+            }
+            const valueI = i * 2 + 1;
+            if (valueI >= arr.length) {
+                throw new Error("Buffer length is not valid");
+            }
+            const value = arr[valueI];
+            const mapValue = this.tagMap.get(Number(key));
+            if (mapValue) {
+                this.tagMap.set(Number(key), mapValue.concat(value));
+                continue;
+            }
+            this.tagMap.set(Number(key), [value]);
+        }
+    }
+    getValue(tag, valueType, index = 0) {
+        const valueArr = this.tagMap.get(tag);
+        if (!valueArr) {
+            return undefined;
+        }
+        const value = valueArr[index];
+        switch (valueType) {
+            case ValueType.U8:
+                return new z(value);
+            case ValueType.U16:
+                return new C(value);
+            case ValueType.U32:
+                return new D(value);
+            case ValueType.U64:
+                return new I(value);
+            case ValueType.U128:
+                return new J(value);
+        }
+    }
+    pushVaruint(varuint) {
+        const bytes = varuint.toVaruint();
+        for (let i = 0; i < bytes.length; i += 1) {
+            this.payloads.push(bytes[i]);
+        }
+    }
+    encodeTagPush(tag, ...ns) {
+        for (let i = 0; i < ns.length; i++) {
+            const n = ns[i];
+            if (n === undefined) {
+                continue;
+            }
+            this.payloads.push(tag);
+            this.pushVaruint(n);
+        }
+    }
+    encodeMultiplePush(ns) {
+        if (!ns.length) {
+            return;
+        }
+        for (let i = 0; i < ns.length; i++) {
+            const n = ns[i];
+            if (n === undefined) {
+                continue;
+            }
+            this.pushVaruint(n);
+        }
+    }
+    toBuffer() {
+        return Buffer.from(this.payloads);
+    }
+}
+
+class Symbol$1 {
+    constructor(symbol) {
+        this.symbol = symbol;
+    }
+    static fromString(symbolStr) {
+        if (symbolStr.length !== 1) {
+            throw new Error("Symbol must be 1 character");
+        }
+        return new Symbol$1(new z(BigInt(Buffer.from(symbolStr, "utf8")[0])));
+    }
+    toString() {
+        return Buffer.from([Number(this.symbol.toValue())]).toString("utf8");
+    }
+    toJSON() {
+        return this.toString();
+    }
+}
+
+class Runestone {
+    constructor(runestone) {
+        this.edicts = runestone.edicts;
+        this.etching = runestone.etching;
+        this.mint = runestone.mint;
+        this.pointer = runestone.pointer;
+    }
+    static dechiper(buff) {
+        const tagPayload = new TagPayload(buff);
+        tagPayload.decode();
+        let etching;
+        const flagP = tagPayload.getValue(Tag.Flags, ValueType.U8);
+        if (flagP) {
+            const flag = new Flag(flagP);
+            if (flag.hasFlag(FlagEnum.Etching)) {
+                etching = {
+                    divisibility: tagPayload.getValue(Tag.Divisibility, ValueType.U8),
+                    premine: tagPayload.getValue(Tag.Premine, ValueType.U128),
+                    rune: new Rune(tagPayload.getValue(Tag.Rune, ValueType.U128)),
+                    spacers: tagPayload.getValue(Tag.Spacers, ValueType.U32),
+                    symbol: tagPayload.getValue(Tag.Symbol, ValueType.U8)
+                        ? new Symbol$1(tagPayload.getValue(Tag.Symbol, ValueType.U8))
+                        : undefined,
+                    terms: flag.hasFlag(FlagEnum.Terms)
+                        ? {
+                            amount: tagPayload.getValue(Tag.Amount, ValueType.U128),
+                            cap: tagPayload.getValue(Tag.Cap, ValueType.U128),
+                            height: {
+                                start: tagPayload.getValue(Tag.HeightStart, ValueType.U64),
+                                end: tagPayload.getValue(Tag.HeightEnd, ValueType.U64),
+                            },
+                            offset: {
+                                start: tagPayload.getValue(Tag.OffsetStart, ValueType.U64),
+                                end: tagPayload.getValue(Tag.OffsetEnd, ValueType.U64),
+                            },
+                        }
+                        : undefined,
+                };
+            }
+        }
+        const pointer = tagPayload.getValue(Tag.Pointer, ValueType.U32);
+        const runeIdBlock = tagPayload.getValue(Tag.Mint, ValueType.U64, 0);
+        const runeIdTx = tagPayload.getValue(Tag.Mint, ValueType.U64, 1);
+        let mint;
+        if (runeIdBlock && runeIdTx) {
+            mint = new RuneId(runeIdBlock, runeIdTx);
+        }
+        const edicts = [];
+        const edictsP = tagPayload.edicts;
+        if (edictsP.length) {
+            if (edictsP.length && edictsP.length % 4) {
+                throw new Error("Edict data length is not valid");
+            }
+            let next = new RuneId(new I(0n), new D(0n));
+            for (let i = 0; i < edictsP.length / 4; i++) {
+                const eI = i * 4;
+                const runeId = next.next(new RuneId(new I(edictsP[eI]), new D(edictsP[eI + 1])));
+                const amount = edictsP[eI + 2];
+                const output = edictsP[eI + 3];
+                edicts.push({
+                    id: runeId,
+                    amount: new J(amount),
+                    output: new D(output),
+                });
+                next = runeId;
+            }
+        }
+        return new Runestone({
+            etching: etching,
+            edicts,
+            pointer,
+            mint,
+        });
+    }
+    enchiper() {
+        const tag = new TagPayload();
+        if (this.etching !== undefined) {
+            const etching = this.etching;
+            const flag = new Flag(new z(0n));
+            flag.set(FlagEnum.Etching);
+            if (etching.terms) {
+                flag.set(FlagEnum.Terms);
+            }
+            tag.encodeTagPush(Tag.Flags, flag.toValue());
+            tag.encodeTagPush(Tag.Rune, etching.rune?.rune);
+            tag.encodeTagPush(Tag.Divisibility, etching.divisibility);
+            tag.encodeTagPush(Tag.Spacers, etching.spacers);
+            tag.encodeTagPush(Tag.Premine, etching.premine);
+            tag.encodeTagPush(Tag.Symbol, etching.symbol?.symbol);
+            if (etching.terms) {
+                const terms = etching.terms;
+                tag.encodeTagPush(Tag.Amount, terms.amount);
+                tag.encodeTagPush(Tag.Cap, terms.cap);
+                if (terms.height) {
+                    tag.encodeTagPush(Tag.HeightStart, terms.height.start);
+                    tag.encodeTagPush(Tag.HeightEnd, terms.height.end);
+                }
+                if (terms.offset) {
+                    tag.encodeTagPush(Tag.OffsetStart, terms.offset.start);
+                    tag.encodeTagPush(Tag.OffsetEnd, terms.offset.end);
+                }
+            }
+        }
+        tag.encodeTagPush(Tag.Pointer, this.pointer);
+        if (this.mint !== undefined) {
+            tag.encodeTagPush(Tag.Mint, this.mint.block, this.mint.tx);
+        }
+        if (this.edicts.length) {
+            tag.payloads.push(Tag.Body);
+            this.edicts.sort((a, b) => {
+                return Number(a.id.block.toValue() - b.id.block.toValue() ||
+                    a.id.tx.toValue() - b.id.tx.toValue());
+            });
+            let delta = new RuneId(new I(0n), new D(0n));
+            for (let i = 0; i < this.edicts.length; i += 1) {
+                const edict = this.edicts[i];
+                const runeId = delta.delta(edict.id);
+                tag.encodeMultiplePush([
+                    runeId.block,
+                    runeId.tx,
+                    edict.amount,
+                    edict.output,
+                ]);
+                delta = edict.id;
+            }
+        }
+        return tag.toBuffer();
+    }
+}
+
+class SpacedRune {
+    constructor(rune, spacers) {
+        this.rune = rune;
+        this.spacers = spacers;
+    }
+    static fromString(str) {
+        let runeStr = "";
+        let spacers = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str[i];
+            // valid character
+            if (/[A-Z]/.test(char)) {
+                runeStr += char;
+            }
+            else if (char === "." || char === "•") {
+                const flag = 1 << (runeStr.length - 1);
+                if ((spacers & flag) !== 0) {
+                    throw new Error("Double spacer");
+                }
+                spacers |= flag;
+            }
+            else {
+                throw new Error("Invalid spacer character");
+            }
+        }
+        if (32 - Math.clz32(spacers) >= runeStr.length) {
+            throw new Error("Trailing spacer");
+        }
+        return new SpacedRune(Rune.fromString(runeStr), new D(BigInt(spacers)));
+    }
+    toString() {
+        const runeStr = this.rune.toString();
+        let result = "";
+        for (let i = 0; i < runeStr.length; i += 1) {
+            const str = runeStr[i];
+            result += str;
+            if (this.spacers.toValue() & (1n << BigInt(i))) {
+                result += "•";
+            }
+        }
+        return result;
+    }
+    toJSON() {
+        return this.toString();
+    }
+}
+
+const createRune = ({ runeIDBlockHeight, runeIDTxIndex, runeName, }) => {
+    const spacedRune = SpacedRune.fromString(runeName);
+    const runestone = new Runestone({
+        edicts: [],
+        pointer: new D(0n),
+        // etching: {
+        //     rune: spacedRune.rune,
+        //     // spacers: spacedRune.spacers,
+        //     // premine: new U128(1000_000n),
+        //     // symbol: Symbol.fromString("R"),
+        //     // terms: {
+        //     //     amount: new U128(1000n),
+        //     //     cap: new U128(100n),
+        //     // },
+        // },
+        mint: new RuneId(new I(runeIDBlockHeight), new D(runeIDTxIndex))
+    });
+    let buffer = runestone.enchiper(); // remove first 2-byte 
+    buffer = buffer.slice(2);
+    return { buffer, commitBuffer: spacedRune?.rune?.commitBuffer() };
+};
+const createRuneToEtch = ({ runeName, symbol, }) => {
+    console.log("createRuneToEtch symbol: ", symbol, symbol.length);
+    const spacedRune = SpacedRune.fromString(runeName);
+    // 100000000
+    // 10000
+    const runestone = new Runestone({
+        edicts: [],
+        pointer: new D(0n),
+        etching: {
+            rune: spacedRune.rune,
+            spacers: spacedRune.spacers,
+            premine: new J(0n),
+            symbol: Symbol$1.fromString(symbol),
+            terms: {
+                amount: new J(10000n),
+                cap: new J(10000n), // number mints
+            },
+        },
+        // mint: new RuneId(new U64(runeIDBlockHeight), new U32(runeIDTxIndex))
+    });
+    let buffer = runestone.enchiper(); // remove first 2-byte 
+    // buffer = buffer.slice(2)
+    return { buffer, commitBuffer: spacedRune?.rune?.commitBuffer() };
+};
+const getNumberHex = (n) => {
+    // Convert the number to a hexadecimal string
+    const hex = n.toString(16);
+    // Ensure it's at least 2 characters by padding with a leading zero
+    return hex.padStart(2, '0');
+};
+const createEtchLockScript = (commitBuffer, pubKeyXonly) => {
+    // example witness + text inscription
+    // *commit buffer is required
+    // const ordinalStacks = [
+    //     pubKeyXonly,
+    //     opcodes.OP_CHECKSIG,
+    //     opcodes.OP_FALSE,
+    //     opcodes.OP_IF,
+    //     Buffer.from("ord", "utf8"),
+    //     1,
+    //     1,
+    //     Buffer.concat([Buffer.from("text/plain;charset=utf-8", "utf8")]),
+    //     1,
+    //     2,
+    //     opcodes.OP_0,
+    //     1,
+    //     13,
+    //     commitBuffer,
+    //     // opcodes.OP_0,
+    //     // Buffer.concat([Buffer.from("Chainwave", "utf8")]),
+    //     opcodes.OP_ENDIF,
+    // ];
+    const protocolID = "ord";
+    const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
+    // const contentType = "text/plain;charset=utf-8";
+    // const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
+    const contentStrHex = commitBuffer.toString("hex");
+    const lenHex = getNumberHex(commitBuffer.length);
+    console.log("lenHex: ", lenHex);
+    console.log("contentStrHex: ", contentStrHex);
+    let hexStr = "20"; // 32 - len public key
+    hexStr += pubKeyXonly.toString("hex");
+    hexStr += "ac0063"; // OP_CHECKSIG OP_0 OP_IF
+    hexStr += "03"; // len protocol
+    hexStr += protocolIDHex;
+    hexStr += "0102";
+    // hexStr += "18";  // len content type
+    // hexStr += contentTypeHex;
+    hexStr += "00"; // op_0
+    hexStr += "010d"; // 
+    hexStr += lenHex;
+    hexStr += contentStrHex;
+    hexStr += "68"; // OP_ENDIF
+    console.log("hexStr: ", hexStr);
+    // const hexStr = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
+    const hashLockScript = Buffer.from(hexStr, "hex");
+    const scriptTree = {
+        output: hashLockScript,
+    };
+    const redeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+    const payment = bitcoinjsLib.payments.p2tr({
+        internalPubkey: pubKeyXonly,
+        network: tcBTCNetwork,
+        scriptTree,
+        redeem,
+    });
+    return {
+        hashLockScript: hashLockScript,
+        hashLockRedeem: redeem,
+        script_p2tr: payment
+    };
+};
+/**
+* createInscribeTxEtchRunes creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeTxEtchRunes = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, runeName, symbol, receiverInsc, receiverRune, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    // const { keyPair, p2pktr, senderAddress } = generateTaprootKeyPair(senderPrivateKey);
+    const internalPubKey = toXOnly$1(keyPair.publicKey);
+    // create lock script for commit tx
+    const rune = createRuneToEtch({ runeName, symbol });
+    console.log("Rune commit buffer: ", rune.commitBuffer?.toString("hex"));
+    console.log("Rune buffer: ", rune.buffer?.toString("hex"));
+    const { hashLockRedeem, script_p2tr } = createEtchLockScript(rune.commitBuffer, internalPubKey);
+    const hashLockKeyPair = keyPair; // use the same key pair
+    console.log(`createInscribeTxEtchRunes ${hashLockKeyPair}, ${hashLockRedeem}`);
+    // const arr = decompile(script_p2tr.output!);
+    // console.log(`createInscribeTx ${arr}`);
+    // estimate fee and select UTXOs
+    const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
+    const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
+    const estRevealTxFee = revealVByte * feeRatePerByte;
+    const totalFee = estCommitTxFee + estRevealTxFee;
+    // const totalAmount = new BigNumber(totalFee + MinSats); // MinSats for new output in the reveal tx
+    // const { selectedUTXOs, totalInputAmount } = selectCardinalUTXOs(utxos, inscriptions, totalAmount);
+    if (script_p2tr.address === undefined || script_p2tr.address === "") {
+        throw new SDKError$1(ERROR_CODE$1.INVALID_TAPSCRIPT_ADDRESS, "");
+    }
+    const { txHex: commitTxHex, txID: commitTxID, fee: commitTxFee, changeAmount, selectedUTXOs, tx } = createTxSendBTC({
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        paymentInfos: [{ address: script_p2tr.address || "", amount: new BigNumber(estRevealTxFee + MinSats2 * 2) }],
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs
+    });
+    const newUTXOs = [];
+    if (changeAmount.gt(BNZero)) {
+        newUTXOs.push({
+            tx_hash: commitTxID,
+            tx_output_n: 1,
+            value: changeAmount
+        });
+    }
+    console.log("commitTX: ", tx);
+    console.log("COMMITTX selectedUTXOs: ", selectedUTXOs);
+    // create and sign reveal tx
+    const { revealTxHex, revealTxID } = createRawRevealTx({
+        commitTxID,
+        hashLockKeyPair,
+        hashLockRedeem,
+        script_p2tr,
+        revealTxFee: estRevealTxFee,
+        runeBuffer: rune.buffer,
+        receiverInsc,
+        receiverRune,
+        sequence: 0,
+    });
+    console.log("commitTxHex: ", commitTxHex);
+    console.log("revealTxHex: ", revealTxHex);
+    console.log("commitTxID: ", commitTxID);
+    console.log("revealTxID: ", revealTxID);
+    // const { btcTxID } = await tcClient.submitInscribeTx([commitTxHex, revealTxHex]);
+    // console.log("btcTxID: ", btcTxID);
+    return {
+        commitTxHex,
+        commitTxID,
+        revealTxHex,
+        revealTxID,
+        totalFee: new BigNumber(totalFee),
+        selectedUTXOs: selectedUTXOs,
+        newUTXOs: newUTXOs,
+    };
+};
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+const createInscribeTxMintRunes = async ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, runeIDBlockHeight, runeIDTxIndex, runeName, sequence = DefaultSequenceRBF, isSelectUTXOs = true, }) => {
+    const keyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+    toXOnly$1(keyPair.publicKey);
+    // create lock script for commit tx
+    const rune = createRune({ runeIDBlockHeight, runeIDTxIndex, runeName });
+    console.log("Rune commit buffer: ", rune.commitBuffer?.toString("hex"));
+    console.log("Rune buffer: ", rune.buffer?.toString("hex"));
+    // the second output: OP_RETURN
+    const runeScript = bitcoinjsLib.script.compile([
+        bitcoinjsLib.opcodes.OP_RETURN,
+        bitcoinjsLib.opcodes.OP_13,
+        rune.buffer,
+    ]);
+    const { txHex, txID, fee, changeAmount, selectedUTXOs, tx } = createTxSendBTC_MintRunes({
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        // paymentInfos: [{ address: senderAddress || "", amount: new BigNumber(MinSats2) }],
+        paymentInfos: [],
+        paymentScripts: [{ amount: new BigNumber(0), script: runeScript }],
+        feeRatePerByte,
+        sequence,
+        isSelectUTXOs
+    });
+    console.log("mintTxHex: ", txHex);
+    console.log("mintTxID: ", txID);
+    return {
+        txHex,
+        txID,
+        totalFee: fee,
+        selectedUTXOs: selectedUTXOs,
+        changeAmount: changeAmount,
+    };
+};
+const createRawRevealTx = ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, runeBuffer, receiverInsc, receiverRune, sequence = 0, }) => {
+    const tapLeafScript = {
+        leafVersion: hashLockRedeem?.redeemVersion,
+        script: hashLockRedeem?.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1],
+    };
+    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    psbt.addInput({
+        hash: commitTxID,
+        index: 0,
+        witnessUtxo: { value: revealTxFee + MinSats2 * 2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ],
+        sequence,
+    });
+    // output has OP_RETURN zero value
+    // const data = Buffer.from("https://trustless.computer", "utf-8");
+    // const scriptEmbed = script.compile([
+    //     opcodes.OP_RETURN,
+    //     data,
+    // ]);
+    // psbt.addOutput({
+    //     value: 0,
+    //     script: scriptEmbed,
+    // });
+    // the first output: runes receiver address
+    psbt.addOutput({
+        value: MinSats2,
+        address: receiverInsc,
+    });
+    psbt.addOutput({
+        value: MinSats2,
+        address: receiverRune,
+    });
+    // the second output: OP_RETURN
+    const runeScript = bitcoinjsLib.script.compile([
+        bitcoinjsLib.opcodes.OP_RETURN,
+        bitcoinjsLib.opcodes.OP_13,
+        runeBuffer,
+    ]);
+    psbt.addOutput({
+        script: runeScript,
+        value: 0,
+    });
+    // const hash_lock_keypair = ECPair.fromWIF(hashLockPriKey);
+    psbt.signInput(0, hashLockKeyPair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0, customFinalizer);
+    const revealTX = psbt.extractTransaction();
+    console.log("revealTX: ", revealTX);
+    return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
+};
+function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_lock_keypair) {
+    const tapLeafScript = {
+        leafVersion: hash_lock_redeem.redeemVersion,
+        script: hash_lock_redeem.output,
+        controlBlock: script_p2tr.witness[script_p2tr.witness.length - 1]
+    };
+    const psbt = new bitcoinjsLib.Psbt({ network: tcBTCNetwork });
+    psbt.addInput({
+        hash: "00".repeat(32),
+        index: 0,
+        witnessUtxo: { value: MinSats2 * 2, script: script_p2tr.output },
+        tapLeafScript: [
+            tapLeafScript
+        ]
+    });
+    // output has OP_RETURN zero value
+    // const data = Buffer.from("https://trustless.computer", "utf-8");
+    // const scriptEmbed = script.compile([
+    //     opcodes.OP_RETURN,
+    //     data,
+    // ]);
+    // psbt.addOutput({
+    //     value: 0,
+    //     script: scriptEmbed,
+    // });
+    psbt.addOutput({
+        value: MinSats2,
+        address: p2pktr_addr,
+    });
+    psbt.signInput(0, hash_lock_keypair);
+    // We have to construct our witness script in a custom finalizer
+    const customFinalizer = (_inputIndex, input) => {
+        const scriptSolution = [
+            input.tapScriptSig[0].signature,
+        ];
+        const witness = scriptSolution
+            .concat(tapLeafScript.script)
+            .concat(tapLeafScript.controlBlock);
+        return {
+            finalScriptWitness: witnessStackToScriptWitness(witness)
+        };
+    };
+    psbt.finalizeInput(0, customFinalizer);
+    const tx = psbt.extractTransaction();
+    return tx.virtualSize();
+}
+
 exports.ARC4Decrypt = ARC4Decrypt;
 exports.ARC4Encrypt = ARC4Encrypt;
 exports.BNZero = BNZero;
@@ -7971,9 +9211,12 @@ exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
 exports.createBatchInscribeTxs = createBatchInscribeTxs;
 exports.createInscribeImgTx = createInscribeImgTx;
 exports.createInscribeTx = createInscribeTx$1;
+exports.createInscribeTxEtchRunes = createInscribeTxEtchRunes;
 exports.createInscribeTxFromAnyWallet = createInscribeTxFromAnyWallet;
-exports.createLockScript = createLockScript$1;
-exports.createRawRevealTx = createRawRevealTx$2;
+exports.createInscribeTxGeneral = createInscribeTxGeneral;
+exports.createInscribeTxMintRunes = createInscribeTxMintRunes;
+exports.createLockScript = createLockScript;
+exports.createRawRevealTx = createRawRevealTx$3;
 exports.createRawTx = createRawTx;
 exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createRawTxSendBTCFromMultisig = createRawTxSendBTCFromMultisig;
@@ -7983,6 +9226,7 @@ exports.createTransferSRC20Tx = createTransferSRC20Tx;
 exports.createTx = createTx;
 exports.createTxFromAnyWallet = createTxFromAnyWallet;
 exports.createTxSendBTC = createTxSendBTC;
+exports.createTxSendBTC_MintRunes = createTxSendBTC_MintRunes;
 exports.createTxSendMultiReceivers = createTxSendMultiReceivers;
 exports.createTxWithSpecificUTXOs = createTxWithSpecificUTXOs;
 exports.decryptAES = decryptAES$1;
@@ -8017,7 +9261,10 @@ exports.getAddressType = getAddressType;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
 exports.getKeyPairInfo = getKeyPairInfo;
+exports.getNumberHex = getNumberHex$1;
 exports.getOutputCoinValue = getOutputCoinValue;
+exports.getRuneBalance = getRuneBalance;
+exports.getRuneBalanceByRuneID = getRuneBalanceByRuneID;
 exports.getStorageHDWallet = getStorageHDWallet;
 exports.getStorageHDWalletCipherText = getStorageHDWalletCipherText;
 exports.getStorageMasterless = getStorageMasterless;
@@ -8031,6 +9278,7 @@ exports.increaseGasPrice = increaseGasPrice;
 exports.isRBFable = isRBFable;
 exports.ordCreateInscribeTx = createInscribeTx;
 exports.randomMnemonic = randomMnemonic;
+exports.randomTaprootWallet = randomTaprootWallet;
 exports.replaceByFeeInscribeTx = replaceByFeeInscribeTx;
 exports.requestAccountResponse = requestAccountResponse;
 exports.selectCardinalUTXOs = selectCardinalUTXOs;

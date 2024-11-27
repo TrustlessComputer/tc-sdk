@@ -1239,6 +1239,11 @@ bech32@^2.0.0:
   resolved "https://registry.npmjs.org/bech32/-/bech32-2.0.0.tgz"
   integrity sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg==
 
+big-varuint-js@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/big-varuint-js/-/big-varuint-js-0.2.1.tgz#b4c5d9e92b061919465ebb4f66057eebd873231a"
+  integrity sha512-79JS5h53rP+L2CyXbpgMaLPKyHek7VAglJbug3KWR3CBtBabkcvxaU0PSMTBP9jBhDYoJsz5f+Ow20XSp8n52A==
+
 bignumber.js@^9.0.0, bignumber.js@^9.1.1:
   version "9.1.1"
   resolved "https://registry.npmjs.org/bignumber.js/-/bignumber.js-9.1.1.tgz"

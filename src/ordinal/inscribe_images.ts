@@ -508,5 +508,6 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
 
 
 export {
-    createInscribeImgTx
+    createInscribeImgTx,
+    chunkSlice
 };

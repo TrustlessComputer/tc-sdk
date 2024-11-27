@@ -57,6 +57,7 @@ const createInscribeTx = async ({
     data,
     sequence = DefaultSequenceRBF,
     isSelectUTXOs = true,
+    metaProtocol = "",
 }: {
     senderPrivateKey: Buffer,
     senderAddress: string,
@@ -66,6 +67,7 @@ const createInscribeTx = async ({
     data: string,
     sequence?: number;
     isSelectUTXOs?: boolean,
+    metaProtocol?: string,
 }): Promise<{
     commitTxHex: string,
     commitTxID: string,
@@ -83,15 +85,20 @@ const createInscribeTx = async ({
     const internalPubKey = toXOnly(keyPair.publicKey);
 
     // create lock script for commit tx
-    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = await createLockScript({
+
+    const { hashLockKeyPair, hashLockRedeem, script_p2tr } = createLockScriptWithCollection({
         internalPubKey,
         data,
+        metaProtocol
     });
+
+    console.log(`createInscribeTx ${hashLockKeyPair}, ${hashLockRedeem}`)
+    // const arr = decompile(script_p2tr.output!);
+    // console.log(`createInscribeTx ${arr}`);
 
     // estimate fee and select UTXOs
 
     const estCommitTxFee = estimateTxFee(1, 2, feeRatePerByte);
-
     const revealVByte = getRevealVirtualSize(hashLockRedeem, script_p2tr, senderAddress, hashLockKeyPair);
     const estRevealTxFee = revealVByte * feeRatePerByte;
     const totalFee = estCommitTxFee + estRevealTxFee;
@@ -344,11 +351,166 @@ const createLockScript = ({
     let hexStr = "20"; // 32 - len public key
     hexStr += toXOnly(hashLockKeyPair.publicKey).toString("hex");
     hexStr += "ac0063";  // OP_CHECKSIG OP_0 OP_IF
+
     hexStr += "03";  // len protocol
     hexStr += protocolIDHex;
     hexStr += "0101";
     hexStr += "18";  // len content type
     hexStr += contentTypeHex;
+    hexStr += "00"; // op_0
+    hexStr += lenHex;
+    hexStr += contentStrHex;
+    hexStr += "68"; // OP_ENDIF
+
+    console.log("hexStr: ", hexStr);
+
+
+    // const hexStr = "207022ae3ead9927479c920d24b29249e97ed905ad5865439f962ba765147ee038ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800367b2270223a226272632d3230222c226f70223a227472616e73666572222c227469636b223a227a626974222c22616d74223a2231227d68";
+    const hashLockScript = Buffer.from(hexStr, "hex");
+
+    console.log("hashLockScript: ", hashLockScript.toString("hex"));
+
+    // const asm2 = script.toASM(hashLockScript);
+    // console.log("asm2: ", asm2);
+
+    const hashLockRedeem = {
+        output: hashLockScript,
+        redeemVersion: 192,
+    };
+
+    const scriptTree: Taptree = hashLockRedeem;
+    const script_p2tr = payments.p2tr({
+        internalPubkey: internalPubKey,
+        scriptTree,
+        redeem: hashLockRedeem,
+        network: Network
+    });
+
+    console.log("InscribeOrd script_p2tr: ", script_p2tr.address);
+
+    return {
+        hashLockKeyPair,
+        hashScriptAsm: "",
+        hashLockScript,
+        hashLockRedeem,
+        script_p2tr
+    };
+};
+
+
+const getNumberHex = (n: number): string => {
+    // Convert the number to a hexadecimal string
+    const hex = n.toString(16);
+    // Ensure it's at least 2 characters by padding with a leading zero
+    return hex.padStart(2, '0');
+
+
+    // return new BigNumber(n).toString(16);
+}
+
+const getMetaProtocolScript = (metaProtocol: string): string => {
+    if (metaProtocol === "") {
+        return "";
+    }
+
+    const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
+    const lenMetaProtocolHex = getNumberHex(metaProtocol.length);
+
+    // tag meta protocol + len + metaprotocol
+    return "0107" + lenMetaProtocolHex + metaProtocolHex;
+}
+
+const getParentInscriptionScript = (parentInscTxID: string, parentInscTxIndex: number): string => {
+    if (parentInscTxID === "") {
+        return "";
+    }
+
+    const txIDBytes = Buffer.from(parentInscTxID, "hex");
+    const txIDBytesRev = txIDBytes.reverse();
+    const txIDHex = txIDBytesRev.toString("hex");
+    const txIndexHex = getNumberHex(parentInscTxIndex);
+    const lenParent = getNumberHex((txIDHex.length + txIndexHex.length) / 2);
+
+    // tag parent + len + parent id
+    return "0103" + lenParent + txIDHex + txIndexHex;
+}
+
+
+const createLockScriptWithCollection = ({
+    internalPubKey,
+    data,
+    metaProtocol = "",
+    parentInscTxID = "",
+    parentInscTxIndex = 0,
+}: {
+    internalPubKey: Buffer,
+    data: string,
+    metaProtocol?: string,
+    parentInscTxID?: string,
+    parentInscTxIndex?: number,
+}): {
+    hashLockKeyPair: ECPairInterface,
+    hashScriptAsm: string,
+    hashLockScript: Buffer,
+    hashLockRedeem: Tapleaf,
+    script_p2tr: payments.Payment,
+} => {
+    // Create a tap tree with two spend paths
+    // One path should allow spending using secret
+    // The other path should pay to another pubkey
+
+    // Make random key pair for hash_lock script
+    const hashLockKeyPair = ECPair.makeRandom({ network: Network });
+
+    // TODO: comment
+    // const hashLockPrivKey = hashLockKeyPair.toWIF();
+    // console.log("hashLockPrivKey wif : ", hashLockPrivKey);
+
+
+    // Note: for debug and test
+    // const hashLockPrivKey = "";
+    // const hashLockKeyPair = ECPair.fromWIF(hashLockPrivKey);
+    // console.log("newKeyPair: ", hashLockKeyPair.privateKey);
+
+    const protocolID = "ord";
+    const protocolIDHex = Buffer.from(protocolID, "utf-8").toString("hex");
+    // const protocolIDHex = toHex(protocolID);
+    // console.log("protocolIDHex: ", protocolIDHex);
+
+    const contentType = "text/plain;charset=utf-8";
+    const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
+    const contentStrHex = Buffer.from(data, "utf-8").toString("hex");
+
+
+    // const contentTypeHex = toHex(contentType);
+    // const contentStrHex = toHex(data);
+    // console.log("contentStrHex: ", contentStrHex);
+
+    // Construct script to pay to hash_lock_keypair if the correct preimage/secret is provided
+
+    // const hashScriptAsm = `${toXOnly(hashLockKeyPair.publicKey).toString("hex")} OP_CHECKSIG OP_0 OP_IF ${protocolIDHex} ${op1} ${contentTypeHex} OP_0 ${contentStrHex} OP_ENDIF`;
+    // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
+    // const hashLockScript = script.fromASM(hashScriptAsm);
+    // const len = contentStrHex.length / 2;
+    const lenHex = getNumberHex(contentStrHex.length / 2);
+    console.log("lenHex: ", lenHex);
+
+    console.log(`createLockScriptWithCollection ${contentStrHex} ${lenHex}`);
+
+
+    let hexStr = "20"; // 32 - len public key
+    hexStr += toXOnly(hashLockKeyPair.publicKey).toString("hex");
+    hexStr += "ac0063";  // OP_CHECKSIG OP_0 OP_IF
+
+    hexStr += "03";  // len protocol
+    hexStr += protocolIDHex;
+
+    hexStr += "0101";
+    hexStr += "18";  // len content type
+    hexStr += contentTypeHex;
+    hexStr += getMetaProtocolScript(metaProtocol);
+    hexStr += getParentInscriptionScript(parentInscTxID, parentInscTxIndex);
+
     hexStr += "00"; // op_0
     hexStr += lenHex;
     hexStr += contentStrHex;
@@ -502,5 +664,8 @@ function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_ad
 }
 
 export {
-    createInscribeTx
+    createInscribeTx,
+    getNumberHex,
+    createRawRevealTx,
+    getRevealVirtualSize,
 };

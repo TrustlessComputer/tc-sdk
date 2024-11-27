@@ -4,7 +4,6 @@ import {
     Inscription,
     MinSats,
     NetworkType,
-    Regtest,
     UTXO,
     broadcastTx,
     convertPrivateKey,
@@ -23,6 +22,7 @@ import {
     PaymentInfo,
 } from "../dist";
 import {
+    Regtest,
     Mainnet,
     MasterWallet,
     StorageService,
@@ -75,6 +75,7 @@ describe("Create tx with multiple UTXOs Tests", () => {
         tcClient: tcClient,
         netType: NetworkType.Mainnet
     })
+    setBTCNetwork(NetworkType.Mainnet);
     // @ts-ignore
     globalThis.storage = storage;
 
@@ -254,11 +255,13 @@ describe("Create tx with multiple UTXOs Tests", () => {
 
     it("send BTC multiple receivers", async () => {
 
+        // TODO: update new UTXO
+
         let utxos: UTXO[] = [
             {
-                tx_hash: "1371cb4e41ae3b1157533194f4109fc2ae4e1c127c991bf47adb01578a2a836a",
-                tx_output_n: 14,
-                value: new BigNumber(390398),
+                tx_hash: "0efd57bb91bb1c97b1ec3e3164e22a54a60ac1663d1f9f84b970a791e1d182a1",
+                tx_output_n: 1,
+                value: new BigNumber(2282),
             },
         ]
 
@@ -274,11 +277,137 @@ describe("Create tx with multiple UTXOs Tests", () => {
         console.log("inscPaymentInfos: ", inscPaymentInfos);
 
         let paymentInfos: PaymentInfo[] = [
+
             {
-                address: "bc1plaz82ldz33jg7g5ly69syh790735uq56wh7c40gx22k6gaqt4saqkksgmd",
-                amount: new BigNumber(10000),
-            }
-        ];
+                address: "bc1pggfjl6an4z6krgev4ataqsvln8nw5jru6tv9adxt393akgn963jq8tgpzh",
+                amount: new BigNumber(800),
+            },
+        ]
+
+        // let paymentInfos: PaymentInfo[] = [
+
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1pggfjl6an4z6krgev4ataqsvln8nw5jru6tv9adxt393akgn963jq8tgpzh",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1pcnz30qlng8s4kuc0p949rp3uc6hu8jqy7sqd3pszn8h0juhd8hgqupnutq",
+        //         amount: new BigNumber(100000),
+        //     },
+        //     {
+        //         address: "bc1q42w8y4zv05k5h32rhrl4rwr6z6dhrnkw2lnuj3",
+        //         amount: new BigNumber(92995),
+        //     },
+        // ];
 
         const { txID, txHex, fee: feeRes } = createTxSendMultiReceivers({
             senderPrivateKey: privateKey2,
@@ -287,12 +416,15 @@ describe("Create tx with multiple UTXOs Tests", () => {
             inscriptions: insciptions,
             inscPaymentInfos,
             paymentInfos,
-            feeRatePerByte: 600,
+            feeRatePerByte: 6,
             sequence: DefaultSequenceRBF,
         });
 
         console.log({ txID, txHex, feeRes });
 
-        // await broadcastTx(txHex)
+
+        await broadcastTx(txHex)
+
+
     });
 });
