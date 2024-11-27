@@ -469,6 +469,34 @@ declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscri
 * @returns the hex signed transaction
 * @returns the network fee
 */
+declare const createTxSendBTC_MintRunes: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts, feeRatePerByte, sequence, isSelectUTXOs, }: {
+    senderPrivateKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    paymentInfos: PaymentInfo[];
+    paymentScripts?: PaymentScript[] | undefined;
+    feeRatePerByte: number;
+    sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
+}) => ICreateTxResp;
+/**
+* createTx creates the Bitcoin transaction (including sending inscriptions).
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionID id of inscription to send
+* @param receiverInsAddress the address of the inscription receiver
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
 declare const createRawTxSendBTC: ({ pubKey, utxos, inscriptions, paymentInfos, feeRatePerByte, }: {
     pubKey: Buffer;
     utxos: UTXO[];
@@ -575,6 +603,10 @@ declare const fromSat: (sat: number) => number;
 declare const toSat: (value: number) => number;
 
 declare const ECPair: ECPairAPI;
+declare const randomTaprootWallet: () => {
+    privateKey: string;
+    address: string;
+};
 /**
 * convertPrivateKey converts buffer private key to WIF private key string
 * @param bytes buffer private key
@@ -1166,6 +1198,8 @@ declare const getUTXOs: ({ btcAddress, tcAddress, serviceType, }: {
 declare const getUTXOsFromBlockStream: (btcAddress: string, isConfirmed: boolean) => Promise<UTXO[]>;
 declare const getTxFromBlockStream: (txID: string) => Promise<any>;
 declare const getOutputCoinValue: (txID: string, voutIndex: number) => Promise<BigNumber>;
+declare const getRuneBalance: (btcAddress: string) => Promise<BigNumber>;
+declare const getRuneBalanceByRuneID: (btcAddress: string, runeID: string) => Promise<BigNumber>;
 
 type Target = "_blank" | "_parent" | "_self" | "_top";
 declare enum RequestFunction {
@@ -1318,7 +1352,7 @@ declare const setStorageMasterless: (wallet: Array<IMasterless$1>, password: str
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence, isSelectUTXOs, }: {
+declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence, isSelectUTXOs, metaProtocol, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -1329,6 +1363,7 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
     data: string;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
+    metaProtocol?: string | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;
@@ -1338,6 +1373,7 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
+declare const getNumberHex: (n: number) => string;
 
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
@@ -1366,6 +1402,46 @@ declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, in
     receiverAddress: string;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
+}) => Promise<{
+    commitTxHex: string;
+    commitTxID: string;
+    revealTxHex: string;
+    revealTxID: string;
+    totalFee: BigNumber;
+    selectedUTXOs: UTXO[];
+    newUTXOs: UTXO[];
+}>;
+
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+declare const createInscribeTxGeneral: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, sequence, isSelectUTXOs, metaProtocol, parentInscTxID, parentInscTxIndex, parentUTXO, }: {
+    senderPrivateKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    feeRatePerByte: number;
+    data: Buffer;
+    contentType: string;
+    sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
+    metaProtocol?: string | undefined;
+    parentInscTxID?: string | undefined;
+    parentInscTxIndex?: number | undefined;
+    parentUTXO?: UTXO | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;
@@ -1445,4 +1521,76 @@ declare const createTransferSRC20Script: ({ secretKey, data, }: {
 declare const ARC4Encrypt: (secretKey: string, msg: string) => CryptoJS.lib.CipherParams;
 declare const ARC4Decrypt: (secretKey: string, ciphertext: CryptoJS.lib.CipherParams) => string;
 
-export { ARC4Decrypt, ARC4Encrypt, BNZero, BTCAddressType, BTCSegwitDerivationPath, BTCTaprootDerivationPath, BTCVinVout, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DefaultEndpointTCNodeMainnet, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ETHDerivationPath, GetPendingInscribeTxsResp, GetTxByHashResp, HDWallet, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, IDeriveKey, IDeriveMasterlessReq, IDeriveReq, IHDWallet, IKeyPairInfo, IMasterless, ISignPSBTResp, InputSize, InscPaymentInfo, Inscription, Mainnet, MasterWallet, Masterless, MaxTxSize, MinSats, MinSats2, MinSats3, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, PaymentScript, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, ScriptPubKeyResult, ServiceGetUTXOType, StorageKeys, StorageService, TCTxDetail, Target, TcClient, Testnet, URL_MAINNET, URL_REGTEST, UTXO, UTXOFromBlockStream, UTXOStatusFromBlockStream, Validator, Vin, Vout, Wallet, WalletType, actionRequest, addInputs, addZeroTrail, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeImgTx, createInscribeTx$1 as createInscribeTx, createInscribeTxFromAnyWallet, createLockScript, createRawRevealTx, createRawTx, createRawTxSendBTC, createRawTxSendBTCFromMultisig, createTransferSRC20RawTx, createTransferSRC20Script, createTransferSRC20Tx, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSendMultiReceivers, createTxWithSpecificUTXOs, decryptAES, decryptWallet, deriveETHWallet, deriveHDNodeByIndex, deriveMasterless, derivePasswordWallet, deriveSegwitWallet, encryptAES, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, estimateTxSize, estimateTxTransferSRC20Fee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateHDWalletFromMnemonic, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, generateSegwitHDNodeFromMnemonic, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootHDNodeFromMnemonic, generateTaprootKeyPair, getAddressType, getBTCBalance, getBitcoinKeySignContent, getKeyPairInfo, getOutputCoinValue, getStorageHDWallet, getStorageHDWalletCipherText, getStorageMasterless, getStorageMasterlessCipherText, getTxFromBlockStream, getUTXOs, getUTXOsFromBlockStream, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, isRBFable, createInscribeTx as ordCreateInscribeTx, randomMnemonic, replaceByFeeInscribeTx, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, selectUTXOsV2, setBTCNetwork, setStorageHDWallet, setStorageMasterless, setupConfig, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner, validateHDWallet, validateMasterless, validateMnemonicBTC };
+/**
+* createInscribeTxEtchRunes creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+declare const createInscribeTxEtchRunes: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, runeName, symbol, receiverInsc, receiverRune, sequence, isSelectUTXOs, }: {
+    senderPrivateKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    feeRatePerByte: number;
+    runeName: string;
+    symbol: string;
+    receiverInsc: string;
+    receiverRune: string;
+    sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
+}) => Promise<{
+    commitTxHex: string;
+    commitTxID: string;
+    revealTxHex: string;
+    revealTxID: string;
+    totalFee: BigNumber;
+    selectedUTXOs: UTXO[];
+    newUTXOs: UTXO[];
+}>;
+/**
+* createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the inscriber
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param tcTxID TC txID need to be inscribed
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @returns the hex commit transaction
+* @returns the commit transaction id
+* @returns the hex reveal transaction
+* @returns the reveal transaction id
+* @returns the total network fee
+*/
+declare const createInscribeTxMintRunes: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, runeIDBlockHeight, runeIDTxIndex, runeName, sequence, isSelectUTXOs, }: {
+    senderPrivateKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    feeRatePerByte: number;
+    runeIDBlockHeight: bigint;
+    runeIDTxIndex: bigint;
+    runeName: string;
+    sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
+}) => Promise<{
+    txHex: string;
+    txID: string;
+    totalFee: BigNumber;
+    selectedUTXOs: UTXO[];
+    changeAmount: BigNumber;
+}>;
+
+export { ARC4Decrypt, ARC4Encrypt, BNZero, BTCAddressType, BTCSegwitDerivationPath, BTCTaprootDerivationPath, BTCVinVout, BatchInscribeTxResp, BlockStreamURL, BuyReqFullInfo, BuyReqInfo, CallWalletPayload, DefaultEndpointTCNodeMainnet, DefaultSequence, DefaultSequenceRBF, DummyUTXOValue, ECPair, ERROR_CODE, ERROR_MESSAGE, ETHDerivationPath, GetPendingInscribeTxsResp, GetTxByHashResp, HDWallet, ICreateRawTxResp, ICreateTxBuyResp, ICreateTxResp, ICreateTxSellResp, ICreateTxSplitInscriptionResp, IDeriveKey, IDeriveMasterlessReq, IDeriveReq, IHDWallet, IKeyPairInfo, IMasterless, ISignPSBTResp, InputSize, InscPaymentInfo, Inscription, Mainnet, MasterWallet, Masterless, MaxTxSize, MinSats, MinSats2, MinSats3, NeedPaymentUTXO, Network, NetworkType, OutputSize, PaymentInfo, PaymentScript, Regtest, RequestAccountResponse, RequestFunction, RequestMethod, RequestPayload, SDKError, ScriptPubKeyResult, ServiceGetUTXOType, StorageKeys, StorageService, TCTxDetail, Target, TcClient, Testnet, URL_MAINNET, URL_REGTEST, UTXO, UTXOFromBlockStream, UTXOStatusFromBlockStream, Validator, Vin, Vout, Wallet, WalletType, actionRequest, addInputs, addZeroTrail, aggregateUTXOs, broadcastTx, convertPrivateKey, convertPrivateKeyFromStr, createBatchInscribeTxs, createInscribeImgTx, createInscribeTx$1 as createInscribeTx, createInscribeTxEtchRunes, createInscribeTxFromAnyWallet, createInscribeTxGeneral, createInscribeTxMintRunes, createLockScript, createRawRevealTx, createRawTx, createRawTxSendBTC, createRawTxSendBTCFromMultisig, createTransferSRC20RawTx, createTransferSRC20Script, createTransferSRC20Tx, createTx, createTxFromAnyWallet, createTxSendBTC, createTxSendBTC_MintRunes, createTxSendMultiReceivers, createTxWithSpecificUTXOs, decryptAES, decryptWallet, deriveETHWallet, deriveHDNodeByIndex, deriveMasterless, derivePasswordWallet, deriveSegwitWallet, encryptAES, encryptWallet, estimateInscribeFee, estimateNumInOutputs, estimateNumInOutputsForBuyInscription, estimateTxFee, estimateTxSize, estimateTxTransferSRC20Fee, filterAndSortCardinalUTXOs, findExactValueUTXO, fromSat, generateHDWalletFromMnemonic, generateP2PKHKeyFromRoot, generateP2PKHKeyPair, generateP2WPKHKeyPair, generateP2WPKHKeyPairFromPubKey, generateSegwitHDNodeFromMnemonic, generateTaprootAddress, generateTaprootAddressFromPubKey, generateTaprootHDNodeFromMnemonic, generateTaprootKeyPair, getAddressType, getBTCBalance, getBitcoinKeySignContent, getKeyPairInfo, getNumberHex, getOutputCoinValue, getRuneBalance, getRuneBalanceByRuneID, getStorageHDWallet, getStorageHDWalletCipherText, getStorageMasterless, getStorageMasterlessCipherText, getTxFromBlockStream, getUTXOs, getUTXOsFromBlockStream, handleSignPsbtWithSpecificWallet, importBTCPrivateKey, increaseGasPrice, isRBFable, createInscribeTx as ordCreateInscribeTx, randomMnemonic, randomTaprootWallet, replaceByFeeInscribeTx, requestAccountResponse, selectCardinalUTXOs, selectInscriptionUTXO, selectTheSmallestUTXO, selectUTXOs, selectUTXOsToCreateBuyTx, selectUTXOsV2, setBTCNetwork, setStorageHDWallet, setStorageMasterless, setupConfig, signByETHPrivKey, signPSBT, signPSBT2, signTransaction, splitBatchInscribeTx, tapTweakHash, toSat, toXOnly, tweakSigner, validateHDWallet, validateMasterless, validateMnemonicBTC };

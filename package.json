@@ -33,7 +33,10 @@
     "test-hd-wallet": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/hdwallet.spec.ts'",
     "test-tx": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 10000 -r ts-node/register  'test/tx.spec.ts'",
     "test-ord": "yarn build &&  env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/ordinal.spec.ts'",
-    "test-stamps": " env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/stamps.spec.ts'"
+    "test-collection": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/ordinal_colection.spec.ts'",
+    "test-stamps": " env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/stamps.spec.ts'",
+    "test-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/runes.spec.ts'",
+    "mint-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' ts-node 'scripts/mint_runes.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",
@@ -67,6 +70,7 @@
     "@types/lodash": "^4.14.194",
     "@types/node": "^17.0.13",
     "axios": "^0.24.0",
+    "big-varuint-js": "^0.2.1",
     "bignumber.js": "^9.1.1",
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",

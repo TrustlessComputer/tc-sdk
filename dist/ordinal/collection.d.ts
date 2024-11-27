@@ -1,7 +1,5 @@
 import { Inscription, UTXO } from "../";
-import { payments } from "bitcoinjs-lib";
 import BigNumber from "bignumber.js";
-import { ECPairInterface } from "ecpair";
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.
 * NOTE: Currently, the function only supports sending from Taproot address.
@@ -16,7 +14,7 @@ import { ECPairInterface } from "ecpair";
 * @returns the reveal transaction id
 * @returns the total network fee
 */
-declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, sequence, isSelectUTXOs, metaProtocol, }: {
+declare const createInscribeTxGeneral: ({ senderPrivateKey, senderAddress, utxos, inscriptions, feeRatePerByte, data, contentType, sequence, isSelectUTXOs, metaProtocol, parentInscTxID, parentInscTxIndex, parentUTXO, }: {
     senderPrivateKey: Buffer;
     senderAddress: string;
     utxos: UTXO[];
@@ -24,10 +22,14 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
         [key: string]: Inscription[];
     };
     feeRatePerByte: number;
-    data: string;
+    data: Buffer;
+    contentType: string;
     sequence?: number | undefined;
     isSelectUTXOs?: boolean | undefined;
     metaProtocol?: string | undefined;
+    parentInscTxID?: string | undefined;
+    parentInscTxIndex?: number | undefined;
+    parentUTXO?: UTXO | undefined;
 }) => Promise<{
     commitTxHex: string;
     commitTxID: string;
@@ -37,18 +39,4 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-declare const createRawRevealTx: ({ commitTxID, hashLockKeyPair, hashLockRedeem, script_p2tr, revealTxFee, address, sequence, }: {
-    commitTxID: string;
-    hashLockKeyPair: ECPairInterface;
-    hashLockRedeem: any;
-    script_p2tr: payments.Payment;
-    revealTxFee: number;
-    address: string;
-    sequence?: number | undefined;
-}) => {
-    revealTxHex: string;
-    revealTxID: string;
-};
-declare const getNumberHex: (n: number) => string;
-declare function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_addr: any, hash_lock_keypair: any): number;
-export { createInscribeTx, getNumberHex, createRawRevealTx, getRevealVirtualSize, };
+export { createInscribeTxGeneral };

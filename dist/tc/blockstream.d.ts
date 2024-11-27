@@ -10,3 +10,5 @@ import BigNumber from "bignumber.js";
 export declare const getUTXOsFromBlockStream: (btcAddress: string, isConfirmed: boolean) => Promise<UTXO[]>;
 export declare const getTxFromBlockStream: (txID: string) => Promise<any>;
 export declare const getOutputCoinValue: (txID: string, voutIndex: number) => Promise<BigNumber>;
+export declare const getRuneBalance: (btcAddress: string) => Promise<BigNumber>;
+export declare const getRuneBalanceByRuneID: (btcAddress: string, runeID: string) => Promise<BigNumber>;

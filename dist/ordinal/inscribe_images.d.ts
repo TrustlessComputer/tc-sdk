@@ -36,4 +36,5 @@ declare const createInscribeImgTx: ({ senderPrivateKey, senderAddress, utxos, in
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-export { createInscribeImgTx };
+declare const chunkSlice: (version: number, slice: Buffer) => Buffer[];
+export { createInscribeImgTx, chunkSlice };

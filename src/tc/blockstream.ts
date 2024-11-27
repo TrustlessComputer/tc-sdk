@@ -51,3 +51,34 @@ export const getOutputCoinValue = async (txID: string, voutIndex: number): Promi
 
     return new BigNumber(tx.vout[voutIndex].value);
 };
+
+// curl - X GET "https://api.hiro.so/runes/v1/addresses/string/balances?offset=0&limit=1"
+
+export const getRuneBalance = async (btcAddress: string): Promise<BigNumber> => {
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    const res = await axios.get(`https://api.hiro.so/runes/v1/addresses/${btcAddress}/balances?offset=0&limit=1`);
+    const data = res.data;
+    console.log("data: ", data);
+
+    if (data?.results?.length > 0) {
+        return new BigNumber(data?.results[0].balance, 10);
+    }
+
+    return new BigNumber(0);
+
+};
+
+
+export const getRuneBalanceByRuneID = async (btcAddress: string, runeID: string): Promise<BigNumber> => {
+    // https://blockstream.regtest.trustless.computer/regtest/api/address/bcrt1p7vs2w9cyeqpc7ktzuqnm9qxmtng5cethgh66ykjz9uhdaz0arpfq93cr3a/txs
+    const res = await axios.get(`https://open-api.unisat.io/v1/indexer/address/${btcAddress}/runes/${runeID}/balance`);
+    const data = res.data;
+    console.log("data: ", data);
+
+    if (data?.results?.length > 0) {
+        return new BigNumber(data?.amount, 10);
+    }
+
+    return new BigNumber(0);
+
+};

@@ -829,6 +829,122 @@ const createTxSendBTC = (
     return { txID: tx.getId(), txHex, fee: feeRes, selectedUTXOs, changeAmount, tx };
 };
 
+
+/**
+* createTx creates the Bitcoin transaction (including sending inscriptions). 
+* NOTE: Currently, the function only supports sending from Taproot address. 
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionID id of inscription to send
+* @param receiverInsAddress the address of the inscription receiver
+* @param sendAmount satoshi amount need to send 
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee 
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
+const createTxSendBTC_MintRunes = (
+    {
+        senderPrivateKey,
+        senderAddress,
+        utxos,
+        inscriptions,
+        paymentInfos,
+        paymentScripts = [],
+        feeRatePerByte,
+        sequence = DefaultSequenceRBF,
+        isSelectUTXOs = true,
+    }: {
+        senderPrivateKey: Buffer,
+        senderAddress: string,
+        utxos: UTXO[],
+        inscriptions: { [key: string]: Inscription[] },
+        paymentInfos: PaymentInfo[],
+        paymentScripts?: PaymentScript[],
+        feeRatePerByte: number,
+        sequence?: number,
+        isSelectUTXOs?: boolean,
+    }
+): ICreateTxResp => {
+    const keyPairInfo: IKeyPairInfo = getKeyPairInfo({ privateKey: senderPrivateKey, address: senderAddress });
+    const { addressType, payment, keyPair, signer, sigHashTypeDefault } = keyPairInfo;
+
+    console.log("isSelectUTXOs createTxSendBTC: ", isSelectUTXOs);
+    // validation
+    let totalPaymentAmount = BNZero;
+
+    for (const info of paymentInfos) {
+        if (info.amount.gt(BNZero) && info.amount.lt(MinSats2)) {
+            throw new SDKError(ERROR_CODE.INVALID_PARAMS, "sendAmount must not be less than " + fromSat(MinSats2) + " BTC.");
+        }
+        totalPaymentAmount = totalPaymentAmount.plus(info.amount);
+    }
+
+
+    // select UTXOs
+    const { selectedUTXOs, changeAmount: cm, fee } = selectUTXOs(utxos, inscriptions, "", totalPaymentAmount, feeRatePerByte, false, isSelectUTXOs, paymentInfos.length);
+    let extraFee = new BigNumber((20) * feeRatePerByte);
+    let feeRes = BigNumber.sum(fee, extraFee);  // op return data
+    let changeAmount = new BigNumber(cm.toNumber() - extraFee.toNumber());
+    console.log("createTxSendBTC_MintRunes feeRes: ", feeRes.toString(), changeAmount.toString(), extraFee.toString());
+
+
+    let psbt = new Psbt({ network: tcBTCNetwork });
+    // add inputs
+    psbt = addInputs({
+        psbt,
+        addressType: addressType,
+        inputs: selectedUTXOs,
+        payment: payment,
+        sequence,
+        keyPair: keyPair,
+    });
+
+    // add output script
+    for (const info of paymentScripts) {
+        psbt.addOutput({
+            script: info.script,
+            value: info.amount.toNumber(),
+        });
+    }
+
+    // add outputs send BTC
+    for (const info of paymentInfos) {
+        psbt.addOutput({
+            address: info.address,
+            value: info.amount.toNumber(),
+        });
+    }
+
+    // add change output
+    if (changeAmount.gt(BNZero)) {
+        if (changeAmount.gte(MinSats2)) {
+            psbt.addOutput({
+                address: senderAddress,
+                value: changeAmount.toNumber(),
+            });
+        } else {
+            feeRes = feeRes.plus(changeAmount);
+            changeAmount = BNZero;
+        }
+    }
+
+    // sign tx
+    for (let i = 0; i < selectedUTXOs.length; i++) {
+        psbt.signInput(i, signer, [sigHashTypeDefault]);
+    }
+
+    psbt.finalizeAllInputs();
+
+    // get tx hex
+    const tx = psbt.extractTransaction();
+    console.log("Transaction : ", tx);
+    const txHex = tx.toHex();
+    return { txID: tx.getId(), txHex, fee: feeRes, selectedUTXOs, changeAmount, tx };
+};
+
 /**
 * createTx creates the Bitcoin transaction (including sending inscriptions). 
 * NOTE: Currently, the function only supports sending from Taproot address. 
@@ -1145,4 +1261,5 @@ export {
     addInputs,
     createTxSendMultiReceivers,
     createRawTxSendBTCFromMultisig,
+    createTxSendBTC_MintRunes,
 };

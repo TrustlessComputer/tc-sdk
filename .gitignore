@@ -73,3 +73,6 @@ test/images
 .cache
 
 .idea
+.DS_Store
+
+scripts/*.json

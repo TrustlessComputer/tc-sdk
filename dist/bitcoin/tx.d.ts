@@ -225,6 +225,34 @@ declare const createTxSendBTC: ({ senderPrivateKey, senderAddress, utxos, inscri
 * @returns the hex signed transaction
 * @returns the network fee
 */
+declare const createTxSendBTC_MintRunes: ({ senderPrivateKey, senderAddress, utxos, inscriptions, paymentInfos, paymentScripts, feeRatePerByte, sequence, isSelectUTXOs, }: {
+    senderPrivateKey: Buffer;
+    senderAddress: string;
+    utxos: UTXO[];
+    inscriptions: {
+        [key: string]: Inscription[];
+    };
+    paymentInfos: PaymentInfo[];
+    paymentScripts?: PaymentScript[] | undefined;
+    feeRatePerByte: number;
+    sequence?: number | undefined;
+    isSelectUTXOs?: boolean | undefined;
+}) => ICreateTxResp;
+/**
+* createTx creates the Bitcoin transaction (including sending inscriptions).
+* NOTE: Currently, the function only supports sending from Taproot address.
+* @param senderPrivateKey buffer private key of the sender
+* @param utxos list of utxos (include non-inscription and inscription utxos)
+* @param inscriptions list of inscription infos of the sender
+* @param sendInscriptionID id of inscription to send
+* @param receiverInsAddress the address of the inscription receiver
+* @param sendAmount satoshi amount need to send
+* @param feeRatePerByte fee rate per byte (in satoshi)
+* @param isUseInscriptionPayFee flag defines using inscription coin to pay fee
+* @returns the transaction id
+* @returns the hex signed transaction
+* @returns the network fee
+*/
 declare const createRawTxSendBTC: ({ pubKey, utxos, inscriptions, paymentInfos, feeRatePerByte, }: {
     pubKey: Buffer;
     utxos: UTXO[];
@@ -281,4 +309,4 @@ declare const createTxSendMultiReceivers: ({ senderPrivateKey, senderAddress, ut
     sequence?: number | undefined;
 }) => ICreateTxResp;
 declare const broadcastTx: (txHex: string) => Promise<string>;
-export { selectUTXOs, createTx, createRawTx, createTxFromAnyWallet, broadcastTx, createTxWithSpecificUTXOs, createTxSendBTC, createRawTxSendBTC, signPSBT, signPSBT2, addInputs, createTxSendMultiReceivers, createRawTxSendBTCFromMultisig, };
+export { selectUTXOs, createTx, createRawTx, createTxFromAnyWallet, broadcastTx, createTxWithSpecificUTXOs, createTxSendBTC, createRawTxSendBTC, signPSBT, signPSBT2, addInputs, createTxSendMultiReceivers, createRawTxSendBTCFromMultisig, createTxSendBTC_MintRunes, };
