@@ -398,15 +398,28 @@ const createLockScript = ({
 };
 
 
-const getNumberHex = (n: number): string => {
+const getNumberHex = ({
+    n,
+    expectedLen = 2,
+}: {
+    n: number,
+    expectedLen?: number
+}): string => {
+
+
     // Convert the number to a hexadecimal string
     const hex = n.toString(16);
     // Ensure it's at least 2 characters by padding with a leading zero
-    return hex.padStart(2, '0');
+    return hex.padStart(expectedLen, '0');
 
 
     // return new BigNumber(n).toString(16);
 }
+
+
+
+
+
 
 const getMetaProtocolScript = (metaProtocol: string): string => {
     if (metaProtocol === "") {
@@ -414,7 +427,7 @@ const getMetaProtocolScript = (metaProtocol: string): string => {
     }
 
     const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
-    const lenMetaProtocolHex = getNumberHex(metaProtocol.length);
+    const lenMetaProtocolHex = getNumberHex({ n: metaProtocol.length });
 
     // tag meta protocol + len + metaprotocol
     return "0107" + lenMetaProtocolHex + metaProtocolHex;
@@ -428,8 +441,8 @@ const getParentInscriptionScript = (parentInscTxID: string, parentInscTxIndex: n
     const txIDBytes = Buffer.from(parentInscTxID, "hex");
     const txIDBytesRev = txIDBytes.reverse();
     const txIDHex = txIDBytesRev.toString("hex");
-    const txIndexHex = getNumberHex(parentInscTxIndex);
-    const lenParent = getNumberHex((txIDHex.length + txIndexHex.length) / 2);
+    const txIndexHex = getNumberHex({ n: parentInscTxIndex });
+    const lenParent = getNumberHex({ n: (txIDHex.length + txIndexHex.length) / 2 });
 
     // tag parent + len + parent id
     return "0103" + lenParent + txIDHex + txIndexHex;
@@ -492,7 +505,7 @@ const createLockScriptWithCollection = ({
     // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
     // const hashLockScript = script.fromASM(hashScriptAsm);
     // const len = contentStrHex.length / 2;
-    const lenHex = getNumberHex(contentStrHex.length / 2);
+    const lenHex = getNumberHex({ n: contentStrHex.length / 2 });
     console.log("lenHex: ", lenHex);
 
     console.log(`createLockScriptWithCollection ${contentStrHex} ${lenHex}`);

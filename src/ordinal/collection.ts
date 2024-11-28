@@ -45,7 +45,7 @@ const getMetaProtocolScript = (metaProtocol: string): string => {
     }
 
     const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
-    const lenMetaProtocolHex = getNumberHex(metaProtocol.length);
+    const lenMetaProtocolHex = getNumberHex({ n: metaProtocol.length });
 
     // tag meta protocol + len + metaprotocol
     return "0107" + lenMetaProtocolHex + metaProtocolHex;
@@ -62,15 +62,56 @@ const getParentInscriptionScript = (parentInscTxID: string, parentInscTxIndex: n
 
     let txIndexHex = "";
     if (parentInscTxIndex > 0) {
-        txIndexHex = getNumberHex(parentInscTxIndex);
+        txIndexHex = getNumberHex({ n: parentInscTxIndex });
     } else {
         // omit
     }
-    const lenParent = getNumberHex((txIDHex.length + txIndexHex.length) / 2);
+    const lenParent = getNumberHex({ n: (txIDHex.length + txIndexHex.length) / 2 });
 
     // tag parent + len + parent id
     return "0103" + lenParent + txIDHex + txIndexHex;
 }
+
+const toLittleEndianHexStr = (n: number, byteLength: number): string => {
+    const buffer = Buffer.alloc(byteLength); // Allocate a buffer of the desired byte length
+    buffer.writeUIntLE(n, 0, byteLength); // Write the number in little-endian format
+    return buffer.toString("hex");
+}
+
+const getContentScript = (data: Buffer): string => {
+    if (data.length <= 75) {
+        // use OP_PUSHBYTES
+        const contentStrHex = data.toString("hex");
+        const lenContentHex = getNumberHex({ n: data.length });
+
+        console.log("getContentScript lenContentHex: ", lenContentHex, "contentStrHex: ", contentStrHex);
+
+        const script = lenContentHex + contentStrHex;  // len + content
+        return script;
+    }
+
+    // use OP_PUSHDATA2
+
+
+    // content 
+    const dataChunks = chunkSlice(0, data);
+    console.log({ dataChunks });
+
+    let script = "";
+    for (const chunk of dataChunks) {
+        const chunkLenHex = toLittleEndianHexStr(chunk.length, 2);
+        const chunkHex = chunk.toString("hex");
+
+        script = script + "4d" + chunkLenHex + chunkHex; // OP_PUSHDATA2
+
+        console.log(`getContentScript push data ${chunkLenHex} - ${chunkHex}`);
+    }
+
+    return script;
+}
+
+
+
 
 
 const createLockScriptGeneral = ({
@@ -119,15 +160,18 @@ const createLockScriptGeneral = ({
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
     const contentStrHex = data.toString("hex");
 
-    const lenContentTypeHex = getNumberHex(contentType.length);
-    const lenContentHex = getNumberHex(data.length);
+    const lenContentTypeHex = getNumberHex({ n: contentType.length });
+    const lenContentHex = getNumberHex({ n: data.length });
     console.log("createLockScriptGeneral lenContentHex: ", lenContentHex);
 
     const metaProtocolScript = getMetaProtocolScript(metaProtocol);
     const parentInscScript = getParentInscriptionScript(parentInscTxID, parentInscTxIndex);
     console.log(`createLockScriptGeneral ${metaProtocolScript} ${parentInscScript}`);
 
+    const contentScript = getContentScript(data);
+
     console.log(`createLockScriptGeneral content ${contentTypeHex} ${contentStrHex}`);
+    console.log(`createLockScriptGeneral contentScript ${contentScript}`);
 
 
     let hexStr = "20"; // 32 - len public key
@@ -145,15 +189,21 @@ const createLockScriptGeneral = ({
 
     hexStr += "00"; // OP_0
 
+    hexStr += getContentScript(data);
 
-    // content 
-    const dataChunks = chunkSlice(0, data);
-    console.log({ dataChunks });
+    // if (data.length < 520) {
 
-    for (const chunk of dataChunks) {
-        hexStr += getNumberHex(chunk.length);
-        hexStr += chunk.toString("hex")
-    }
+    // }
+
+
+    // // content 
+    // const dataChunks = chunkSlice(0, data);
+    // console.log({ dataChunks });
+
+    // for (const chunk of dataChunks) {
+    //     hexStr += getNumberHex(chunk.length);
+    //     hexStr += chunk.toString("hex")
+    // }
 
     // hexStr += lenContentHex;  // len content
     // hexStr += contentStrHex; // content

@@ -1373,7 +1373,10 @@ declare const createInscribeTx: ({ senderPrivateKey, senderAddress, utxos, inscr
     selectedUTXOs: UTXO[];
     newUTXOs: UTXO[];
 }>;
-declare const getNumberHex: (n: number) => string;
+declare const getNumberHex: ({ n, expectedLen, }: {
+    n: number;
+    expectedLen?: number | undefined;
+}) => string;
 
 /**
 * createInscribeTx creates commit and reveal tx to inscribe data on Bitcoin netword.

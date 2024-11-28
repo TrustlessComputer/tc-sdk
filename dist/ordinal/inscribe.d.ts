@@ -49,6 +49,9 @@ declare const createRawRevealTx: ({ commitTxID, hashLockKeyPair, hashLockRedeem,
     revealTxHex: string;
     revealTxID: string;
 };
-declare const getNumberHex: (n: number) => string;
+declare const getNumberHex: ({ n, expectedLen, }: {
+    n: number;
+    expectedLen?: number | undefined;
+}) => string;
 declare function getRevealVirtualSize(hash_lock_redeem: any, script_p2tr: any, p2pktr_addr: any, hash_lock_keypair: any): number;
 export { createInscribeTx, getNumberHex, createRawRevealTx, getRevealVirtualSize, };

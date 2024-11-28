@@ -7443,11 +7443,11 @@ const createRawRevealTx$2 = ({ commitTxID, hashLockKeyPair, hashLockRedeem, scri
     console.log("revealTX: ", revealTX);
     return { revealTxHex: revealTX.toHex(), revealTxID: revealTX.getId() };
 };
-const getNumberHex$1 = (n) => {
+const getNumberHex$1 = ({ n, expectedLen = 2, }) => {
     // Convert the number to a hexadecimal string
     const hex = n.toString(16);
     // Ensure it's at least 2 characters by padding with a leading zero
-    return hex.padStart(2, '0');
+    return hex.padStart(expectedLen, '0');
     // return new BigNumber(n).toString(16);
 };
 const getMetaProtocolScript$1 = (metaProtocol) => {
@@ -7455,7 +7455,7 @@ const getMetaProtocolScript$1 = (metaProtocol) => {
         return "";
     }
     const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
-    const lenMetaProtocolHex = getNumberHex$1(metaProtocol.length);
+    const lenMetaProtocolHex = getNumberHex$1({ n: metaProtocol.length });
     // tag meta protocol + len + metaprotocol
     return "0107" + lenMetaProtocolHex + metaProtocolHex;
 };
@@ -7466,8 +7466,8 @@ const getParentInscriptionScript$1 = (parentInscTxID, parentInscTxIndex) => {
     const txIDBytes = Buffer.from(parentInscTxID, "hex");
     const txIDBytesRev = txIDBytes.reverse();
     const txIDHex = txIDBytesRev.toString("hex");
-    const txIndexHex = getNumberHex$1(parentInscTxIndex);
-    const lenParent = getNumberHex$1((txIDHex.length + txIndexHex.length) / 2);
+    const txIndexHex = getNumberHex$1({ n: parentInscTxIndex });
+    const lenParent = getNumberHex$1({ n: (txIDHex.length + txIndexHex.length) / 2 });
     // tag parent + len + parent id
     return "0103" + lenParent + txIDHex + txIndexHex;
 };
@@ -7499,7 +7499,7 @@ const createLockScriptWithCollection = ({ internalPubKey, data, metaProtocol = "
     // console.log("InscribeOrd hashScriptAsm: ", hashScriptAsm);
     // const hashLockScript = script.fromASM(hashScriptAsm);
     // const len = contentStrHex.length / 2;
-    const lenHex = getNumberHex$1(contentStrHex.length / 2);
+    const lenHex = getNumberHex$1({ n: contentStrHex.length / 2 });
     console.log("lenHex: ", lenHex);
     console.log(`createLockScriptWithCollection ${contentStrHex} ${lenHex}`);
     let hexStr = "20"; // 32 - len public key
@@ -7890,7 +7890,7 @@ const getMetaProtocolScript = (metaProtocol) => {
         return "";
     }
     const metaProtocolHex = Buffer.from(metaProtocol, "utf-8").toString("hex");
-    const lenMetaProtocolHex = getNumberHex$1(metaProtocol.length);
+    const lenMetaProtocolHex = getNumberHex$1({ n: metaProtocol.length });
     // tag meta protocol + len + metaprotocol
     return "0107" + lenMetaProtocolHex + metaProtocolHex;
 };
@@ -7903,11 +7903,38 @@ const getParentInscriptionScript = (parentInscTxID, parentInscTxIndex) => {
     const txIDHex = txIDBytesRev.toString("hex");
     let txIndexHex = "";
     if (parentInscTxIndex > 0) {
-        txIndexHex = getNumberHex$1(parentInscTxIndex);
+        txIndexHex = getNumberHex$1({ n: parentInscTxIndex });
     }
-    const lenParent = getNumberHex$1((txIDHex.length + txIndexHex.length) / 2);
+    const lenParent = getNumberHex$1({ n: (txIDHex.length + txIndexHex.length) / 2 });
     // tag parent + len + parent id
     return "0103" + lenParent + txIDHex + txIndexHex;
+};
+const toLittleEndianHexStr = (n, byteLength) => {
+    const buffer = Buffer.alloc(byteLength); // Allocate a buffer of the desired byte length
+    buffer.writeUIntLE(n, 0, byteLength); // Write the number in little-endian format
+    return buffer.toString("hex");
+};
+const getContentScript = (data) => {
+    if (data.length <= 75) {
+        // use OP_PUSHBYTES
+        const contentStrHex = data.toString("hex");
+        const lenContentHex = getNumberHex$1({ n: data.length });
+        console.log("getContentScript lenContentHex: ", lenContentHex, "contentStrHex: ", contentStrHex);
+        const script = lenContentHex + contentStrHex; // len + content
+        return script;
+    }
+    // use OP_PUSHDATA2
+    // content 
+    const dataChunks = chunkSlice(0, data);
+    console.log({ dataChunks });
+    let script = "";
+    for (const chunk of dataChunks) {
+        const chunkLenHex = toLittleEndianHexStr(chunk.length, 2);
+        const chunkHex = chunk.toString("hex");
+        script = script + "4d" + chunkLenHex + chunkHex; // OP_PUSHDATA2
+        console.log(`getContentScript push data ${chunkLenHex} - ${chunkHex}`);
+    }
+    return script;
 };
 const createLockScriptGeneral = ({ internalPubKey, data, contentType, metaProtocol = "", parentInscTxID = "", parentInscTxIndex = 0, }) => {
     // Create a tap tree with two spend paths
@@ -7928,13 +7955,15 @@ const createLockScriptGeneral = ({ internalPubKey, data, contentType, metaProtoc
     // console.log("protocolIDHex: ", protocolIDHex);
     const contentTypeHex = Buffer.from(contentType, "utf-8").toString("hex");
     const contentStrHex = data.toString("hex");
-    const lenContentTypeHex = getNumberHex$1(contentType.length);
-    const lenContentHex = getNumberHex$1(data.length);
+    const lenContentTypeHex = getNumberHex$1({ n: contentType.length });
+    const lenContentHex = getNumberHex$1({ n: data.length });
     console.log("createLockScriptGeneral lenContentHex: ", lenContentHex);
     const metaProtocolScript = getMetaProtocolScript(metaProtocol);
     const parentInscScript = getParentInscriptionScript(parentInscTxID, parentInscTxIndex);
     console.log(`createLockScriptGeneral ${metaProtocolScript} ${parentInscScript}`);
+    const contentScript = getContentScript(data);
     console.log(`createLockScriptGeneral content ${contentTypeHex} ${contentStrHex}`);
+    console.log(`createLockScriptGeneral contentScript ${contentScript}`);
     let hexStr = "20"; // 32 - len public key
     hexStr += toXOnly$1(hashLockKeyPair.publicKey).toString("hex");
     hexStr += "ac0063"; // OP_CHECKSIG OP_0 OP_IF
@@ -7946,13 +7975,16 @@ const createLockScriptGeneral = ({ internalPubKey, data, contentType, metaProtoc
     hexStr += metaProtocolScript; // meta protocol script (if any)
     hexStr += parentInscScript; // parent insc script (if any)
     hexStr += "00"; // OP_0
-    // content 
-    const dataChunks = chunkSlice(0, data);
-    console.log({ dataChunks });
-    for (const chunk of dataChunks) {
-        hexStr += getNumberHex$1(chunk.length);
-        hexStr += chunk.toString("hex");
-    }
+    hexStr += getContentScript(data);
+    // if (data.length < 520) {
+    // }
+    // // content 
+    // const dataChunks = chunkSlice(0, data);
+    // console.log({ dataChunks });
+    // for (const chunk of dataChunks) {
+    //     hexStr += getNumberHex(chunk.length);
+    //     hexStr += chunk.toString("hex")
+    // }
     // hexStr += lenContentHex;  // len content
     // hexStr += contentStrHex; // content
     hexStr += "68"; // OP_ENDIF
