@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { ECPairAPI, ECPairInterface } from 'ecpair';
 import { IKeyPairInfo, Inscription, UTXO, Wallet } from "./types";
 import { Signer, payments } from "bitcoinjs-lib";

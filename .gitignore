@@ -76,3 +76,5 @@ test/images
 .DS_Store
 
 scripts/*.json
+test/nbs-v3-deploy
+test/collection

@@ -14,7 +14,9 @@ var jsSha3 = require('js-sha3');
 var wif = require('wif');
 var axios = require('axios');
 var satsConnect = require('sats-connect');
+var crypto$1 = require('crypto');
 var varuint = require('varuint-bitcoin');
+var xrpl = require('xrpl');
 var maxBy = require('lodash/maxBy');
 var bip39 = require('bip39');
 
@@ -5375,6 +5377,33 @@ const setupConfig = ({ storage, tcClient, netType }) => {
     setBTCNetwork(netType);
 };
 
+const baseX$1 = require("base-x");
+// Define the Base58 alphabet
+const BASE58_ALPHABET$1 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const base58 = baseX$1(BASE58_ALPHABET$1);
+// Encode a buffer or string into Base58
+function encodeBase58(input) {
+    const buffer = typeof input === "string" ? Buffer.from(input) : Buffer.from(input);
+    return base58.encode(buffer);
+}
+// Decode a Base58 string back to its original form
+function decodeBase58(encoded) {
+    return base58.decode(encoded);
+}
+// Function to compute SHA-256 hash
+function sha256(data) {
+    return crypto$1.createHash("sha256").update(data).digest();
+}
+// Function to encode with checksum
+function encodeBase58WithChecksum(data) {
+    // Step 1: Compute checksum (first 4 bytes of double SHA-256)
+    const checksum = sha256(sha256(data)).slice(0, 4);
+    // Step 2: Append checksum to the data
+    const dataWithChecksum = Buffer.concat([data, checksum]);
+    // Step 3: Encode the data (with checksum) in Base58
+    return base58.encode(dataWithChecksum);
+}
+
 /**
  * Helper function that produces a serialized witness script
  * https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/csv.spec.ts#L477
@@ -6569,6 +6598,11 @@ const decryptAES = (cipherText, key) => {
     }
     throw new SDKError(ERROR_CODE.DECRYPT);
 };
+
+const baseX = require("base-x");
+// Define the Base58 alphabet
+const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+baseX(BASE58_ALPHABET);
 
 const URL_MAINNET = "https://trustlesswallet.io";
 const URL_REGTEST = "https://dev.trustlesswallet.io";
@@ -9198,6 +9232,227 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
     return tx.virtualSize();
 }
 
+async function getAccountInfo(address, client) {
+    // Replace with the XRPL node URL (testnet or mainnet)
+    // const client = new Client("wss://s.altnet.rippletest.net:51233"); // Testnet
+    // await client.connect();
+    // Replace with the Ripple address you want to query
+    // const address = "rBUCUFK578yFnWe8wSd23UKYgj42p61ssK";
+    // Fetch account info
+    // try {
+    const accountInfo = await client.request({
+        command: "account_info",
+        account: address,
+        ledger_index: "validated", // You can use "current", "closed", or a specific ledger number
+    });
+    // console.log("Account Info:", accountInfo);
+    return accountInfo;
+    // } finally {
+    //     await client.disconnect()
+    // }
+}
+const decodeBlobTx = (blobTx) => {
+    const decodedTx = xrpl.decode(blobTx);
+    console.log("Decoded Transaction:", decodedTx);
+};
+// Input data
+const sha256Hash = (data) => {
+    // const data = "Hello, world!";
+    // Generate SHA-256 hash
+    // const hash = createHash("sha256").update(data).digest("hex");
+    const hash = crypto$1.createHash("sha256").update(data);
+    return hash.digest();
+};
+
+// Dependencies for Node.js.
+const XRPL_RPC = "wss://s.altnet.rippletest.net:51233";
+const generateXRPWallet = (seed) => {
+    const seedEncoded = encodeBase58WithChecksum(Buffer.from(seed));
+    console.log(`generateXRPWallet ${seedEncoded}`);
+    // Step 2: Generate or use an existing wallet
+    const wallet = xrpl.Wallet.fromSeed(seedEncoded); // Replace with your secret key
+    console.log(`Wallet address: ${wallet.address}`);
+    console.log(`Wallet ${wallet}`);
+};
+const submitTx = async (blobTx, client) => {
+    const resp = await client.submitAndWait(blobTx);
+    if (resp.status == "error" || !resp.result) {
+        console.error(`submitTx error: ${resp}`);
+        throw new Error(`submitTx error: ${resp}`);
+    }
+    console.log("submitTx resp:", resp);
+    if (!resp.result.validated) {
+        throw new Error("submitTx transaction is not validated");
+    }
+    return resp.result;
+};
+const createRippleTransaction = async ({ wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), }) => {
+    // Step 1: Connect to the XRPL testnet
+    const client = new xrpl.Client(XRPL_RPC); // Testnet URL
+    await client.connect();
+    console.log("Connected to XRPL testnet");
+    const balance = await client.getBalances(wallet.address);
+    console.log("Get balance from node: ", balance);
+    const accountInfo = await getAccountInfo(wallet.address, client);
+    console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+    // Step 2: Generate or use an existing wallet
+    // const wallet = Wallet.fromSeed("L3DYgF3iHbkWvrmfyG5Cbwk2b5p88K9tmpp3wiT7HaUr5UU6p9Hc"); // Replace with your secret key
+    // console.log(`Wallet address: ${wallet.address}`);
+    // Step 3: Define the payment transaction
+    const payment = {
+        TransactionType: "Payment",
+        Account: wallet.address,
+        Destination: receiverAddress,
+        Amount: amount.toString(), // Amount in drops (1 XRP = 1,000,000 drops)
+        // Fee: fee.toString(),
+        // LastLedgerSequence:   // default current ledger + 200
+        // Memos: memos,
+    };
+    if (fee.comparedTo(new BigNumber(0)) == 1) {
+        payment.Fee = fee.toString(); // in drops
+    }
+    if (memos && memos.length > 0) {
+        payment.Memos = memos;
+    }
+    // Step 4: Prepare the transaction
+    const preparedTx = await client.autofill(payment);
+    console.log("Transaction prepared:", preparedTx);
+    // Step 5: Sign the transaction
+    const signedTx = wallet.sign(preparedTx);
+    console.log("Transaction signed:", signedTx);
+    // Step 6: Submit the transaction
+    const result = await submitTx(signedTx.tx_blob, client);
+    console.log("Transaction result:", result);
+    // Step 7: Disconnect from the client
+    await client.disconnect();
+    console.log("Disconnected from XRPL");
+    return { txID: result.hash, txFee: result.tx_json.Fee || "0" };
+};
+
+const randomWallet = () => {
+    // random seed : 16 bytes
+    const seedBytes = crypto$1.randomBytes(16);
+    encodeBase58WithChecksum(seedBytes);
+    const wallet1 = xrpl.Wallet.generate();
+    console.log(`randomWallet wallet1: ${wallet1}`);
+    console.log(`randomWallet address: ${wallet1.address}`);
+    console.log(`randomWallet  wallet1.seed: ${wallet1.seed}`);
+    console.log(`randomWallet  wallet1.privateKey: ${wallet1.privateKey}`);
+    // const walletFromSecret = Wallet.fromSecret(encodedSeed);
+    // console.log(`randomWallet walletFromSecret: ${walletFromSecret}`)
+    // console.log(`randomWallet encodedSeed: ${encodedSeed}`)
+    // const wallet = Wallet.fromSeed(encodedSeed);
+    // console.log(`randomWallet Wallet: ${wallet}`);
+    // console.log(`randomWallet address: ${wallet.address}`);
+    return wallet1;
+};
+const generateWalletFromSeed = (seed) => {
+    // random seed : 16 bytes
+    // const seedBytes = randomBytes(16);
+    // const encodedSeed = encodeBase58WithChecksum(seedBytes);
+    const wallet1 = xrpl.Wallet.fromSeed(seed);
+    console.log(`randomWallet address: ${wallet1.address}`);
+    // const walletFromSecret = Wallet.fromSecret(encodedSeed);
+    // console.log(`randomWallet walletFromSecret: ${walletFromSecret}`)
+    // console.log(`randomWallet encodedSeed: ${encodedSeed}`)
+    // const wallet = Wallet.fromSeed(encodedSeed);
+    // console.log(`randomWallet Wallet: ${wallet}`);
+    // console.log(`randomWallet address: ${wallet.address}`);
+    return wallet1;
+};
+
+function numberToBytes(number, byteLength) {
+    const buffer = new ArrayBuffer(byteLength); // Create an ArrayBuffer
+    const view = new DataView(buffer); // Create a DataView to interact with the buffer
+    // Write the number into the buffer (big-endian by default)
+    if (byteLength === 1) {
+        view.setUint8(0, number);
+    }
+    else if (byteLength === 2) {
+        view.setUint16(0, number);
+    }
+    else if (byteLength === 4) {
+        view.setUint32(0, number);
+    }
+    else {
+        throw new Error("Unsupported byte length");
+    }
+    // Convert the buffer into a Uint8Array (byte array)
+    return new Uint8Array(buffer);
+}
+const chunkData = (data, chunkSize) => {
+    const result = [];
+    for (let i = 0; i < data.length; i += chunkSize) {
+        result.push(data.slice(i, i + chunkSize));
+    }
+    return result;
+};
+const createScripts = (data) => {
+    const ProtocolID = "BVMV1";
+    const protocolIDBuff = Buffer.from(ProtocolID, "utf-8");
+    const MAX_CHUNK_LEN = 960; // 1000 - 40  // protocolID || dataID || Op_N || len chunk (2 byte) = 40 bytes
+    // 32 bytes
+    const dataID = sha256Hash(data); // sha256 hash data to get id
+    console.log("createScripts dataID: ", dataID.toString("hex"));
+    // nunber of chunks
+    const chunks = chunkData(data, MAX_CHUNK_LEN);
+    let n = chunks.length;
+    // len chunk
+    const scripts = [];
+    for (let i = 0; i < n; i++) {
+        // let script: Buffer = [];
+        let opN = numberToBytes(n - i - 1, 1); // start from n - 1 to 0
+        if (i == 0) {
+            // append prefix 4-byte zero before opN of the first chunk
+            opN = Buffer.concat([Buffer.from("00000000", "hex"), opN]);
+        }
+        const lenChunk = numberToBytes(chunks[i].length, 2);
+        let script = Buffer.concat([protocolIDBuff, dataID, opN, lenChunk, chunks[i]]);
+        console.log(`Script in bytes ${i} : ${script}`);
+        // console.log("createScripts dataID: ", dataID.toString("hex"));
+        // let script = Buffer.concat([protocolIDBuff, dataID]);
+        // let script = Buffer.concat([protocolIDBuff, dataID]);
+        // script.push(...protocolIDBuff);
+        // script.push(...dataID);
+        // const num = ;
+        // script.push(...num);  // op_N index chunk 
+        // script.push(...)  // len chunk
+        // script.push(...chunks[i]); // chunk data
+        scripts.push(script);
+    }
+    return scripts;
+    // chunk data
+};
+const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, fee = new BigNumber(0), }) => {
+    const wallet = generateWalletFromSeed(senderSeed);
+    const scripts = createScripts(data);
+    console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
+    const txIDs = [];
+    let totalNetworkFee = new BigNumber(0);
+    for (let s of scripts) {
+        const scriptHex = s.toString("hex");
+        console.log(`Script in hex : ${scriptHex}`);
+        const memos = [{
+                Memo: {
+                    MemoData: scriptHex,
+                }
+            }];
+        const { txID, txFee } = await createRippleTransaction({
+            wallet,
+            receiverAddress,
+            amount,
+            memos: memos,
+            fee: fee
+        });
+        txIDs.push(txID);
+        totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
+    }
+    return {
+        txIDs,
+        totalNetworkFee
+    };
+};
+
 exports.ARC4Decrypt = ARC4Decrypt;
 exports.ARC4Encrypt = ARC4Encrypt;
 exports.BNZero = BNZero;
@@ -9247,11 +9502,14 @@ exports.createInscribeTxEtchRunes = createInscribeTxEtchRunes;
 exports.createInscribeTxFromAnyWallet = createInscribeTxFromAnyWallet;
 exports.createInscribeTxGeneral = createInscribeTxGeneral;
 exports.createInscribeTxMintRunes = createInscribeTxMintRunes;
+exports.createInscribeTxs = createInscribeTxs;
 exports.createLockScript = createLockScript;
 exports.createRawRevealTx = createRawRevealTx$3;
 exports.createRawTx = createRawTx;
 exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createRawTxSendBTCFromMultisig = createRawTxSendBTCFromMultisig;
+exports.createRippleTransaction = createRippleTransaction;
+exports.createScripts = createScripts;
 exports.createTransferSRC20RawTx = createTransferSRC20RawTx;
 exports.createTransferSRC20Script = createTransferSRC20Script;
 exports.createTransferSRC20Tx = createTransferSRC20Tx;
@@ -9261,6 +9519,8 @@ exports.createTxSendBTC = createTxSendBTC;
 exports.createTxSendBTC_MintRunes = createTxSendBTC_MintRunes;
 exports.createTxSendMultiReceivers = createTxSendMultiReceivers;
 exports.createTxWithSpecificUTXOs = createTxWithSpecificUTXOs;
+exports.decodeBase58 = decodeBase58;
+exports.decodeBlobTx = decodeBlobTx;
 exports.decryptAES = decryptAES$1;
 exports.decryptWallet = decryptWallet;
 exports.deriveETHWallet = deriveETHWallet;
@@ -9268,6 +9528,8 @@ exports.deriveHDNodeByIndex = deriveHDNodeByIndex;
 exports.deriveMasterless = deriveMasterless;
 exports.derivePasswordWallet = derivePasswordWallet;
 exports.deriveSegwitWallet = deriveSegwitWallet;
+exports.encodeBase58 = encodeBase58;
+exports.encodeBase58WithChecksum = encodeBase58WithChecksum;
 exports.encryptAES = encryptAES$1;
 exports.encryptWallet = encryptWallet;
 exports.estimateInscribeFee = estimateInscribeFee;
@@ -9289,6 +9551,9 @@ exports.generateTaprootAddress = generateTaprootAddress;
 exports.generateTaprootAddressFromPubKey = generateTaprootAddressFromPubKey;
 exports.generateTaprootHDNodeFromMnemonic = generateTaprootHDNodeFromMnemonic;
 exports.generateTaprootKeyPair = generateTaprootKeyPair;
+exports.generateWalletFromSeed = generateWalletFromSeed;
+exports.generateXRPWallet = generateXRPWallet;
+exports.getAccountInfo = getAccountInfo;
 exports.getAddressType = getAddressType;
 exports.getBTCBalance = getBTCBalance;
 exports.getBitcoinKeySignContent = getBitcoinKeySignContent;
@@ -9311,6 +9576,7 @@ exports.isRBFable = isRBFable;
 exports.ordCreateInscribeTx = createInscribeTx;
 exports.randomMnemonic = randomMnemonic;
 exports.randomTaprootWallet = randomTaprootWallet;
+exports.randomWallet = randomWallet;
 exports.replaceByFeeInscribeTx = replaceByFeeInscribeTx;
 exports.requestAccountResponse = requestAccountResponse;
 exports.selectCardinalUTXOs = selectCardinalUTXOs;
@@ -9323,6 +9589,7 @@ exports.setBTCNetwork = setBTCNetwork$1;
 exports.setStorageHDWallet = setStorageHDWallet;
 exports.setStorageMasterless = setStorageMasterless;
 exports.setupConfig = setupConfig;
+exports.sha256Hash = sha256Hash;
 exports.signByETHPrivKey = signByETHPrivKey;
 exports.signPSBT = signPSBT;
 exports.signPSBT2 = signPSBT2;

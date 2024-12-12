@@ -36,7 +36,8 @@
     "test-collection": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/ordinal_colection.spec.ts'",
     "test-stamps": " env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/stamps.spec.ts'",
     "test-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/runes.spec.ts'",
-    "mint-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' ts-node 'scripts/mint_runes.ts'"
+    "mint-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' ts-node 'scripts/mint_runes.ts'",
+    "test-xrpl": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' mocha --timeout 0 -r ts-node/register 'test/ripple.spec.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",

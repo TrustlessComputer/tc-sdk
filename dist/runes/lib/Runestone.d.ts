@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { U32 } from "big-varuint-js";
 import { Edict, Etching, RunestoneParams } from "./types";
 import { RuneId } from "./RuneId";

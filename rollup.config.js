@@ -32,6 +32,7 @@ const config = [
             "bip39",
             "lodash/maxBy",
             "bsv-wasm",
+            "xrpl"
         ],
         plugins: [
             typescript(),

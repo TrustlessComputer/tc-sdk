@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { Psbt, Transaction, payments } from "bitcoinjs-lib";
 import BigNumber from "bignumber.js";
 import { ECPairInterface } from "ecpair";
