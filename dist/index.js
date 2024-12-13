@@ -9387,13 +9387,14 @@ const chunkData = (data, chunkSize) => {
     }
     return result;
 };
-const createScripts = (data) => {
-    const ProtocolID = "BVMV1";
+const createScripts = (data, encodeVersion) => {
+    const ProtocolID = "BVMV1"; // TODO 2525: custom protocol ID
     const protocolIDBuff = Buffer.from(ProtocolID, "utf-8");
     const MAX_CHUNK_LEN = 960; // 1000 - 40  // protocolID || dataID || Op_N || len chunk (2 byte) = 40 bytes
     // 32 bytes
     const dataID = sha256Hash(data); // sha256 hash data to get id
     console.log("createScripts dataID: ", dataID.toString("hex"));
+    let encodeVersionByte = numberToBytes(encodeVersion, 1);
     // nunber of chunks
     const chunks = chunkData(data, MAX_CHUNK_LEN);
     let n = chunks.length;
@@ -9403,8 +9404,8 @@ const createScripts = (data) => {
         // let script: Buffer = [];
         let opN = numberToBytes(n - i - 1, 1); // start from n - 1 to 0
         if (i == 0) {
-            // append prefix 4-byte zero before opN of the first chunk
-            opN = Buffer.concat([Buffer.from("00000000", "hex"), opN]);
+            // append prefix 4-byte zero & encode version byte before opN of the first chunk
+            opN = Buffer.concat([Buffer.from("00000000", "hex"), encodeVersionByte, opN]);
         }
         const lenChunk = numberToBytes(chunks[i].length, 2);
         let script = Buffer.concat([protocolIDBuff, dataID, opN, lenChunk, chunks[i]]);
@@ -9423,9 +9424,9 @@ const createScripts = (data) => {
     return scripts;
     // chunk data
 };
-const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, fee = new BigNumber(0), }) => {
+const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee = new BigNumber(0), }) => {
     const wallet = generateWalletFromSeed(senderSeed);
-    const scripts = createScripts(data);
+    const scripts = createScripts(data, encodeVersion);
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
     const txIDs = [];
     let totalNetworkFee = new BigNumber(0);

@@ -45,9 +45,9 @@ const chunkData = (data: Buffer, chunkSize: number): Buffer[] => {
 }
 
 
-const createScripts = (data: Buffer): Buffer[] => {
+const createScripts = (data: Buffer, encodeVersion: number): Buffer[] => {
 
-    const ProtocolID = "BVMV1";
+    const ProtocolID = "BVMV1";  // TODO 2525: custom protocol ID
     const protocolIDBuff = Buffer.from(ProtocolID, "utf-8");
 
     const MAX_CHUNK_LEN = 960; // 1000 - 40  // protocolID || dataID || Op_N || len chunk (2 byte) = 40 bytes
@@ -57,6 +57,7 @@ const createScripts = (data: Buffer): Buffer[] => {
 
     console.log("createScripts dataID: ", dataID.toString("hex"));
 
+    let encodeVersionByte = numberToBytes(encodeVersion, 1);
 
     // nunber of chunks
     const chunks = chunkData(data, MAX_CHUNK_LEN);
@@ -67,13 +68,12 @@ const createScripts = (data: Buffer): Buffer[] => {
     const scripts: Buffer[] = [];
     for (let i = 0; i < n; i++) {
         // let script: Buffer = [];
-
-
         let opN = numberToBytes(n - i - 1, 1); // start from n - 1 to 0
 
         if (i == 0) {
-            // append prefix 4-byte zero before opN of the first chunk
-            opN = Buffer.concat([Buffer.from("00000000", "hex"), opN])
+            // append prefix 4-byte zero & encode version byte before opN of the first chunk
+
+            opN = Buffer.concat([Buffer.from("00000000", "hex"), encodeVersionByte, opN]);
         }
 
         const lenChunk = numberToBytes(chunks[i].length, 2);
@@ -108,21 +108,22 @@ const createInscribeTxs = async ({
     receiverAddress,
     amount,
     data,
+    encodeVersion,
     fee = new BigNumber(0),
 }: {
     senderSeed: string,
     receiverAddress: string,
     amount: BigNumber,
     data: Buffer,
+    encodeVersion: number,
     fee?: BigNumber,
-
 }): Promise<{
     txIDs: string[],
     totalNetworkFee: BigNumber,
 }> => {
     const wallet = generateWalletFromSeed(senderSeed);
 
-    const scripts = createScripts(data);
+    const scripts = createScripts(data, encodeVersion);
 
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
 
