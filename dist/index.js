@@ -9265,7 +9265,6 @@ const sha256Hash = (data) => {
 };
 
 // Dependencies for Node.js.
-const XRPL_RPC = "wss://s.altnet.rippletest.net:51233";
 const generateXRPWallet = (seed) => {
     const seedEncoded = encodeBase58WithChecksum(Buffer.from(seed));
     console.log(`generateXRPWallet ${seedEncoded}`);
@@ -9286,18 +9285,15 @@ const submitTx = async (blobTx, client) => {
     }
     return resp.result;
 };
-const createRippleTransaction = async ({ wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), }) => {
+const createRippleTransaction = async ({ wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), rpcEndpoint, }) => {
     // Step 1: Connect to the XRPL testnet
-    const client = new xrpl.Client(XRPL_RPC); // Testnet URL
+    const client = new xrpl.Client(rpcEndpoint); // Testnet URL
     await client.connect();
     console.log("Connected to XRPL testnet");
     const balance = await client.getBalances(wallet.address);
     console.log("Get balance from node: ", balance);
     const accountInfo = await getAccountInfo(wallet.address, client);
     console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
-    // Step 2: Generate or use an existing wallet
-    // const wallet = Wallet.fromSeed("L3DYgF3iHbkWvrmfyG5Cbwk2b5p88K9tmpp3wiT7HaUr5UU6p9Hc"); // Replace with your secret key
-    // console.log(`Wallet address: ${wallet.address}`);
     // Step 3: Define the payment transaction
     const payment = {
         TransactionType: "Payment",
@@ -9424,7 +9420,7 @@ const createScripts = (data, encodeVersion) => {
     return scripts;
     // chunk data
 };
-const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee = new BigNumber(0), }) => {
+const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee = new BigNumber(0), rpcEndpoint, }) => {
     const wallet = generateWalletFromSeed(senderSeed);
     const scripts = createScripts(data, encodeVersion);
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
@@ -9443,7 +9439,8 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
             receiverAddress,
             amount,
             memos: memos,
-            fee: fee
+            fee: fee,
+            rpcEndpoint
         });
         txIDs.push(txID);
         totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));

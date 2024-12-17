@@ -47,16 +47,18 @@ const createRippleTransaction = async ({
     amount,
     memos = [],
     fee = new BigNumber(0),
+    rpcEndpoint,
 }: {
     wallet: any,
     receiverAddress: string
     amount: BigNumber,
     memos?: Memo[],
     fee?: BigNumber,
+    rpcEndpoint: string,
 }): Promise<{ txID: string, txFee: string }> => {
 
     // Step 1: Connect to the XRPL testnet
-    const client = new Client(XRPL_RPC); // Testnet URL
+    const client = new Client(rpcEndpoint); // Testnet URL
     await client.connect();
     console.log("Connected to XRPL testnet");
 
@@ -65,11 +67,6 @@ const createRippleTransaction = async ({
 
     const accountInfo = await getAccountInfo(wallet.address, client);
     console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
-
-    // Step 2: Generate or use an existing wallet
-    // const wallet = Wallet.fromSeed("L3DYgF3iHbkWvrmfyG5Cbwk2b5p88K9tmpp3wiT7HaUr5UU6p9Hc"); // Replace with your secret key
-    // console.log(`Wallet address: ${wallet.address}`);
-
 
     // Step 3: Define the payment transaction
     const payment: Payment = {

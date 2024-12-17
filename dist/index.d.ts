@@ -1602,12 +1602,13 @@ declare const createInscribeTxMintRunes: ({ senderPrivateKey, senderAddress, utx
 }>;
 
 declare const generateXRPWallet: (seed: string) => void;
-declare const createRippleTransaction: ({ wallet, receiverAddress, amount, memos, fee, }: {
+declare const createRippleTransaction: ({ wallet, receiverAddress, amount, memos, fee, rpcEndpoint, }: {
     wallet: any;
     receiverAddress: string;
     amount: BigNumber;
     memos?: Memo[] | undefined;
     fee?: BigNumber | undefined;
+    rpcEndpoint: string;
 }) => Promise<{
     txID: string;
     txFee: string;
@@ -1621,13 +1622,14 @@ declare const decodeBlobTx: (blobTx: string) => void;
 declare const sha256Hash: (data: Buffer) => Buffer;
 
 declare const createScripts: (data: Buffer, encodeVersion: number) => Buffer[];
-declare const createInscribeTxs: ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee, }: {
+declare const createInscribeTxs: ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee, rpcEndpoint, }: {
     senderSeed: string;
     receiverAddress: string;
     amount: BigNumber;
     data: Buffer;
     encodeVersion: number;
     fee?: BigNumber | undefined;
+    rpcEndpoint: string;
 }) => Promise<{
     txIDs: string[];
     totalNetworkFee: BigNumber;

@@ -110,6 +110,7 @@ const createInscribeTxs = async ({
     data,
     encodeVersion,
     fee = new BigNumber(0),
+    rpcEndpoint,
 }: {
     senderSeed: string,
     receiverAddress: string,
@@ -117,6 +118,7 @@ const createInscribeTxs = async ({
     data: Buffer,
     encodeVersion: number,
     fee?: BigNumber,
+    rpcEndpoint: string,
 }): Promise<{
     txIDs: string[],
     totalNetworkFee: BigNumber,
@@ -145,7 +147,8 @@ const createInscribeTxs = async ({
             receiverAddress,
             amount,
             memos: memos,
-            fee: fee
+            fee: fee,
+            rpcEndpoint
         });
 
         txIDs.push(txID);

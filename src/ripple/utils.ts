@@ -1,4 +1,4 @@
-import { Client, Wallet, Payment, AccountInfoResponse, decode } from "xrpl";
+import { Client, AccountInfoResponse, decode } from "xrpl";
 
 import { createHash } from "crypto";
 
@@ -34,12 +34,7 @@ const decodeBlobTx = (blobTx: string) => {
     console.log("Decoded Transaction:", decodedTx);
 }
 
-
-
-
 // Input data
-
-
 const sha256Hash = (data: Buffer): Buffer => {
     // const data = "Hello, world!";
 
@@ -48,10 +43,6 @@ const sha256Hash = (data: Buffer): Buffer => {
     const hash = createHash("sha256").update(data);
     return hash.digest();
 }
-
-
-
-
 
 export {
     getAccountInfo,
