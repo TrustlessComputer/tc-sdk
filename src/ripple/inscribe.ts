@@ -1,5 +1,5 @@
-import { Memo } from "xrpl";
-import { sha256Hash } from "./utils";
+import { Memo, Client } from "xrpl";
+import { sha256Hash, getAccountInfo } from "./utils";
 import BigNumber from "bignumber.js";
 import { createRippleTransaction } from "./tx";
 import { generateWalletFromSeed } from "./wallet";
@@ -129,6 +129,15 @@ const createInscribeTxs = async ({
 
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
 
+    // Step 1: Connect to the XRPL testnet
+    const client = new Client(rpcEndpoint); // Testnet URL
+    await client.connect();
+    console.log("Connected to XRPL testnet");
+
+    const accountInfo = await getAccountInfo(wallet.address, client);
+    console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+    let sequence = accountInfo.result.account_data?.Sequence;
+
     const txIDs: string[] = [];
     let totalNetworkFee = new BigNumber(0);
 
@@ -143,17 +152,25 @@ const createInscribeTxs = async ({
         }]
 
         const { txID, txFee } = await createRippleTransaction({
+            client,
             wallet,
             receiverAddress,
             amount,
             memos: memos,
             fee: fee,
-            rpcEndpoint
+            rpcEndpoint,
+            sequence,
+            isWait: false,
         });
 
         txIDs.push(txID);
-        totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee))
+        totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
+        sequence++;
     }
+
+    // Step 7: Disconnect from the client
+    await client.disconnect();
+    console.log("Disconnected from XRPL");
 
     return {
         txIDs,

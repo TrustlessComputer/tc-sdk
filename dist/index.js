@@ -9232,38 +9232,6 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
     return tx.virtualSize();
 }
 
-async function getAccountInfo(address, client) {
-    // Replace with the XRPL node URL (testnet or mainnet)
-    // const client = new Client("wss://s.altnet.rippletest.net:51233"); // Testnet
-    // await client.connect();
-    // Replace with the Ripple address you want to query
-    // const address = "rBUCUFK578yFnWe8wSd23UKYgj42p61ssK";
-    // Fetch account info
-    // try {
-    const accountInfo = await client.request({
-        command: "account_info",
-        account: address,
-        ledger_index: "validated", // You can use "current", "closed", or a specific ledger number
-    });
-    // console.log("Account Info:", accountInfo);
-    return accountInfo;
-    // } finally {
-    //     await client.disconnect()
-    // }
-}
-const decodeBlobTx = (blobTx) => {
-    const decodedTx = xrpl.decode(blobTx);
-    console.log("Decoded Transaction:", decodedTx);
-};
-// Input data
-const sha256Hash = (data) => {
-    // const data = "Hello, world!";
-    // Generate SHA-256 hash
-    // const hash = createHash("sha256").update(data).digest("hex");
-    const hash = crypto$1.createHash("sha256").update(data);
-    return hash.digest();
-};
-
 // Dependencies for Node.js.
 const generateXRPWallet = (seed) => {
     const seedEncoded = encodeBase58WithChecksum(Buffer.from(seed));
@@ -9273,7 +9241,7 @@ const generateXRPWallet = (seed) => {
     console.log(`Wallet address: ${wallet.address}`);
     console.log(`Wallet ${wallet}`);
 };
-const submitTx = async (blobTx, client) => {
+const submitTxWait = async (blobTx, client) => {
     const resp = await client.submitAndWait(blobTx);
     if (resp.status == "error" || !resp.result) {
         console.error(`submitTx error: ${resp}`);
@@ -9283,17 +9251,31 @@ const submitTx = async (blobTx, client) => {
     if (!resp.result.validated) {
         throw new Error("submitTx transaction is not validated");
     }
-    return resp.result;
+    return {
+        txID: resp.result.hash, txFee: resp.result.tx_json.Fee || ""
+    };
 };
-const createRippleTransaction = async ({ wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), rpcEndpoint, }) => {
-    // Step 1: Connect to the XRPL testnet
-    const client = new xrpl.Client(rpcEndpoint); // Testnet URL
-    await client.connect();
-    console.log("Connected to XRPL testnet");
+const submitTx = async (blobTx, client) => {
+    const resp = await client.submit(blobTx);
+    if (resp.status == "error" || !resp.result) {
+        console.error(`submitTx error: ${resp}`);
+        throw new Error(`submitTx error: ${resp}`);
+    }
+    console.log("submitTx resp:", resp);
+    // if (!resp.result.validated) {
+    //     throw new Error("submitTx transaction is not validated");
+    // }
+    return { txID: resp.result.tx_json.hash || "", txFee: resp.result.tx_json.Fee || "" };
+};
+const createRippleTransaction = async ({ client, wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), rpcEndpoint, sequence = 0, isWait = true, }) => {
+    // // Step 1: Connect to the XRPL testnet
+    // const client = new Client(rpcEndpoint); // Testnet URL
+    // await client.connect();
+    // console.log("Connected to XRPL testnet");
     const balance = await client.getBalances(wallet.address);
     console.log("Get balance from node: ", balance);
-    const accountInfo = await getAccountInfo(wallet.address, client);
-    console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+    // const accountInfo = await getAccountInfo(wallet.address, client);
+    // console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
     // Step 3: Define the payment transaction
     const payment = {
         TransactionType: "Payment",
@@ -9304,6 +9286,9 @@ const createRippleTransaction = async ({ wallet, receiverAddress, amount, memos 
         // LastLedgerSequence:   // default current ledger + 200
         // Memos: memos,
     };
+    if (sequence > 0) {
+        payment.Sequence = sequence;
+    }
     if (fee.comparedTo(new BigNumber(0)) == 1) {
         payment.Fee = fee.toString(); // in drops
     }
@@ -9317,12 +9302,15 @@ const createRippleTransaction = async ({ wallet, receiverAddress, amount, memos 
     const signedTx = wallet.sign(preparedTx);
     console.log("Transaction signed:", signedTx);
     // Step 6: Submit the transaction
-    const result = await submitTx(signedTx.tx_blob, client);
+    let result;
+    if (isWait) {
+        result = await submitTxWait(signedTx.tx_blob, client);
+    }
+    else {
+        result = await submitTx(signedTx.tx_blob, client);
+    }
     console.log("Transaction result:", result);
-    // Step 7: Disconnect from the client
-    await client.disconnect();
-    console.log("Disconnected from XRPL");
-    return { txID: result.hash, txFee: result.tx_json.Fee || "0" };
+    return result;
 };
 
 const randomWallet = () => {
@@ -9355,6 +9343,38 @@ const generateWalletFromSeed = (seed) => {
     // console.log(`randomWallet Wallet: ${wallet}`);
     // console.log(`randomWallet address: ${wallet.address}`);
     return wallet1;
+};
+
+async function getAccountInfo(address, client) {
+    // Replace with the XRPL node URL (testnet or mainnet)
+    // const client = new Client("wss://s.altnet.rippletest.net:51233"); // Testnet
+    // await client.connect();
+    // Replace with the Ripple address you want to query
+    // const address = "rBUCUFK578yFnWe8wSd23UKYgj42p61ssK";
+    // Fetch account info
+    // try {
+    const accountInfo = await client.request({
+        command: "account_info",
+        account: address,
+        ledger_index: "validated", // You can use "current", "closed", or a specific ledger number
+    });
+    // console.log("Account Info:", accountInfo);
+    return accountInfo;
+    // } finally {
+    //     await client.disconnect()
+    // }
+}
+const decodeBlobTx = (blobTx) => {
+    const decodedTx = xrpl.decode(blobTx);
+    console.log("Decoded Transaction:", decodedTx);
+};
+// Input data
+const sha256Hash = (data) => {
+    // const data = "Hello, world!";
+    // Generate SHA-256 hash
+    // const hash = createHash("sha256").update(data).digest("hex");
+    const hash = crypto$1.createHash("sha256").update(data);
+    return hash.digest();
 };
 
 function numberToBytes(number, byteLength) {
@@ -9424,6 +9444,13 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
     const wallet = generateWalletFromSeed(senderSeed);
     const scripts = createScripts(data, encodeVersion);
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
+    // Step 1: Connect to the XRPL testnet
+    const client = new xrpl.Client(rpcEndpoint); // Testnet URL
+    await client.connect();
+    console.log("Connected to XRPL testnet");
+    const accountInfo = await getAccountInfo(wallet.address, client);
+    console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+    let sequence = accountInfo.result.account_data?.Sequence;
     const txIDs = [];
     let totalNetworkFee = new BigNumber(0);
     for (let s of scripts) {
@@ -9435,16 +9462,23 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
                 }
             }];
         const { txID, txFee } = await createRippleTransaction({
+            client,
             wallet,
             receiverAddress,
             amount,
             memos: memos,
             fee: fee,
-            rpcEndpoint
+            rpcEndpoint,
+            sequence,
+            isWait: false,
         });
         txIDs.push(txID);
         totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
+        sequence++;
     }
+    // Step 7: Disconnect from the client
+    await client.disconnect();
+    console.log("Disconnected from XRPL");
     return {
         txIDs,
         totalNetworkFee

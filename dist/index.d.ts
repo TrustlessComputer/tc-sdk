@@ -10,7 +10,7 @@ import { Tapleaf } from 'bitcoinjs-lib/src/types';
 import { HDWallet as HDWallet$1, Masterless as Masterless$1, IMasterless as IMasterless$1, IDeriveKey as IDeriveKey$2, IDeriveReq as IDeriveReq$1, IHDWallet as IHDWallet$2, IDeriveMasterlessReq as IDeriveMasterlessReq$1 } from '@/wallet';
 import { IDeriveKey as IDeriveKey$1, IHDWallet as IHDWallet$1 } from '@/wallet/types';
 import * as CryptoJS from 'crypto-js';
-import { Memo, Wallet as Wallet$1, Client, AccountInfoResponse } from 'xrpl';
+import { Client, Memo, Wallet as Wallet$1, AccountInfoResponse } from 'xrpl';
 
 declare const MinSats = 1000;
 declare const DummyUTXOValue = 1000;
@@ -1602,13 +1602,16 @@ declare const createInscribeTxMintRunes: ({ senderPrivateKey, senderAddress, utx
 }>;
 
 declare const generateXRPWallet: (seed: string) => void;
-declare const createRippleTransaction: ({ wallet, receiverAddress, amount, memos, fee, rpcEndpoint, }: {
+declare const createRippleTransaction: ({ client, wallet, receiverAddress, amount, memos, fee, rpcEndpoint, sequence, isWait, }: {
+    client: Client;
     wallet: any;
     receiverAddress: string;
     amount: BigNumber;
     memos?: Memo[] | undefined;
     fee?: BigNumber | undefined;
     rpcEndpoint: string;
+    sequence?: number | undefined;
+    isWait?: boolean | undefined;
 }) => Promise<{
     txID: string;
     txFee: string;

@@ -7,10 +7,11 @@
 
 // var Wallet = xrpl.Wallet;
 
-import { Client, Wallet, Payment, xrpToDrops, dropsToXrp, getBalanceChanges, SubmittableTransaction, Memo } from "xrpl";
+import { Client, Wallet, Payment, xrpToDrops, dropsToXrp, getBalanceChanges, SubmittableTransaction, Memo, AccountInfoRequest } from "xrpl";
 import { encodeBase58, decodeBase58, encodeBase58WithChecksum } from "../utils";
 import { getAccountInfo, sha256Hash } from "./utils";
 import BigNumber from 'bignumber.js';
+import { BlobOptions } from "buffer";
 
 const XRPL_RPC = "wss://s.altnet.rippletest.net:51233";
 
@@ -26,8 +27,11 @@ const generateXRPWallet = (seed: string) => {
 
 }
 
-const submitTx = async (blobTx: string, client: Client) => {
+const submitTxWait = async (blobTx: string, client: Client): Promise<{ txID: string, txFee: string }> => {
+
     const resp = await client.submitAndWait(blobTx);
+
+
     if (resp.status == "error" || !resp.result) {
         console.error(`submitTx error: ${resp}`);
         throw new Error(`submitTx error: ${resp}`)
@@ -38,35 +42,76 @@ const submitTx = async (blobTx: string, client: Client) => {
         throw new Error("submitTx transaction is not validated");
     }
 
-    return resp.result;
+    return {
+        txID: resp.result.hash, txFee: resp.result.tx_json.Fee || ""
+    }
+}
+
+const submitTx = async (blobTx: string, client: Client): Promise<{ txID: string, txFee: string }> => {
+
+    const resp = await client.submit(blobTx);
+    if (resp.status == "error" || !resp.result) {
+        console.error(`submitTx error: ${resp}`);
+        throw new Error(`submitTx error: ${resp}`)
+    }
+    console.log("submitTx resp:", resp);
+
+    // if (!resp.result.validated) {
+    //     throw new Error("submitTx transaction is not validated");
+    // }
+
+    return { txID: resp.result.tx_json.hash || "", txFee: resp.result.tx_json.Fee || "" };
+}
+
+
+
+
+const getCurrentSequence = async (client: Client, address: string): Promise<number> => {
+    const request: AccountInfoRequest = {
+        command: 'account_info',
+        account: address,
+        ledger_index: 'current',
+    }
+    const data = await client.request(request)
+    // eslint-disable-next-line no-param-reassign, require-atomic-updates -- param reassign is safe with no race condition
+
+    return data.result.account_data.Sequence
+
 }
 
 const createRippleTransaction = async ({
+    client,
     wallet,
     receiverAddress,
     amount,
     memos = [],
     fee = new BigNumber(0),
     rpcEndpoint,
+    sequence = 0,
+    isWait = true,
 }: {
+    client: Client,
     wallet: any,
     receiverAddress: string
     amount: BigNumber,
     memos?: Memo[],
     fee?: BigNumber,
     rpcEndpoint: string,
+    sequence?: number,
+    isWait?: boolean,
 }): Promise<{ txID: string, txFee: string }> => {
 
-    // Step 1: Connect to the XRPL testnet
-    const client = new Client(rpcEndpoint); // Testnet URL
-    await client.connect();
-    console.log("Connected to XRPL testnet");
+    // // Step 1: Connect to the XRPL testnet
+    // const client = new Client(rpcEndpoint); // Testnet URL
+    // await client.connect();
+    // console.log("Connected to XRPL testnet");
 
     const balance = await client.getBalances(wallet.address)
     console.log("Get balance from node: ", balance);
 
-    const accountInfo = await getAccountInfo(wallet.address, client);
-    console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+    // const accountInfo = await getAccountInfo(wallet.address, client);
+    // console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+
 
     // Step 3: Define the payment transaction
     const payment: Payment = {
@@ -79,6 +124,9 @@ const createRippleTransaction = async ({
         // Memos: memos,
     };
 
+    if (sequence > 0) {
+        payment.Sequence = sequence;
+    }
 
     if (fee.comparedTo(new BigNumber(0)) == 1) {
         payment.Fee = fee.toString();  // in drops
@@ -97,14 +145,19 @@ const createRippleTransaction = async ({
     console.log("Transaction signed:", signedTx);
 
     // Step 6: Submit the transaction
-    const result = await submitTx(signedTx.tx_blob, client);
+    let result;
+    if (isWait) {
+        result = await submitTxWait(signedTx.tx_blob, client);
+    } else {
+        result = await submitTx(signedTx.tx_blob, client);
+    }
+
     console.log("Transaction result:", result);
 
-    // Step 7: Disconnect from the client
-    await client.disconnect();
-    console.log("Disconnected from XRPL");
+   
 
-    return { txID: result.hash, txFee: result.tx_json.Fee || "0" };
+
+    return result;
 }
 
 
