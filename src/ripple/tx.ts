@@ -106,8 +106,8 @@ const createRippleTransaction = async ({
     // await client.connect();
     // console.log("Connected to XRPL testnet");
 
-    const balance = await client.getBalances(wallet.address)
-    console.log("Get balance from node: ", balance);
+    // const balance = await client.getBalances(wallet.address)
+    // console.log("Get balance from node: ", balance);
 
     // const accountInfo = await getAccountInfo(wallet.address, client);
     // console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
@@ -154,14 +154,74 @@ const createRippleTransaction = async ({
 
     console.log("Transaction result:", result);
 
-   
-
-
     return result;
+}
+
+const createRawRippleTransaction = async ({
+    client,
+    wallet,
+    receiverAddress,
+    amount,
+    memos = [],
+    fee = new BigNumber(0),
+    sequence = 0,
+}: {
+    client: Client,
+    wallet: any,
+    receiverAddress: string
+    amount: BigNumber,
+    memos?: Memo[],
+    fee?: BigNumber,
+    sequence?: number,
+}): Promise<any> => {
+
+    // Step 3: Define the payment transaction
+    const payment: Payment = {
+        TransactionType: "Payment",
+        Account: wallet.address,
+        Destination: receiverAddress, // Replace with destination address
+        Amount: amount.toString(), // Amount in drops (1 XRP = 1,000,000 drops)
+        // Fee: fee.toString(),
+        // LastLedgerSequence:   // default current ledger + 200
+        // Memos: memos,
+    };
+
+    if (sequence > 0) {
+        payment.Sequence = sequence;
+    }
+
+    if (fee.comparedTo(new BigNumber(0)) == 1) {
+        payment.Fee = fee.toString();  // in drops
+    }
+
+    if (memos && memos.length > 0) {
+        payment.Memos = memos;
+    }
+
+    // Step 4: Prepare the transaction
+    const preparedTx = await client.autofill(payment);
+    console.log("Transaction prepared:", preparedTx);
+
+    // Step 5: Sign the transaction
+    const signedTx = wallet.sign(preparedTx);
+    console.log("Transaction signed:", signedTx);
+
+    // // Step 6: Submit the transaction
+    // let result;
+    // if (isWait) {
+    //     result = await submitTxWait(signedTx.tx_blob, client);
+    // } else {
+    //     result = await submitTx(signedTx.tx_blob, client);
+    // }
+
+    // console.log("Transaction result:", result);
+
+    return signedTx;
 }
 
 
 export {
     generateXRPWallet,
     createRippleTransaction,
+    createRawRippleTransaction,
 }

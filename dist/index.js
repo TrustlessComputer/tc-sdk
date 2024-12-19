@@ -9272,8 +9272,8 @@ const createRippleTransaction = async ({ client, wallet, receiverAddress, amount
     // const client = new Client(rpcEndpoint); // Testnet URL
     // await client.connect();
     // console.log("Connected to XRPL testnet");
-    const balance = await client.getBalances(wallet.address);
-    console.log("Get balance from node: ", balance);
+    // const balance = await client.getBalances(wallet.address)
+    // console.log("Get balance from node: ", balance);
     // const accountInfo = await getAccountInfo(wallet.address, client);
     // console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
     // Step 3: Define the payment transaction
@@ -9311,6 +9311,42 @@ const createRippleTransaction = async ({ client, wallet, receiverAddress, amount
     }
     console.log("Transaction result:", result);
     return result;
+};
+const createRawRippleTransaction = async ({ client, wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), sequence = 0, }) => {
+    // Step 3: Define the payment transaction
+    const payment = {
+        TransactionType: "Payment",
+        Account: wallet.address,
+        Destination: receiverAddress,
+        Amount: amount.toString(), // Amount in drops (1 XRP = 1,000,000 drops)
+        // Fee: fee.toString(),
+        // LastLedgerSequence:   // default current ledger + 200
+        // Memos: memos,
+    };
+    if (sequence > 0) {
+        payment.Sequence = sequence;
+    }
+    if (fee.comparedTo(new BigNumber(0)) == 1) {
+        payment.Fee = fee.toString(); // in drops
+    }
+    if (memos && memos.length > 0) {
+        payment.Memos = memos;
+    }
+    // Step 4: Prepare the transaction
+    const preparedTx = await client.autofill(payment);
+    console.log("Transaction prepared:", preparedTx);
+    // Step 5: Sign the transaction
+    const signedTx = wallet.sign(preparedTx);
+    console.log("Transaction signed:", signedTx);
+    // // Step 6: Submit the transaction
+    // let result;
+    // if (isWait) {
+    //     result = await submitTxWait(signedTx.tx_blob, client);
+    // } else {
+    //     result = await submitTx(signedTx.tx_blob, client);
+    // }
+    // console.log("Transaction result:", result);
+    return signedTx;
 };
 
 const randomWallet = () => {
@@ -9453,28 +9489,41 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
     let sequence = accountInfo.result.account_data?.Sequence;
     const txIDs = [];
     let totalNetworkFee = new BigNumber(0);
+    const signedTxs = [];
     for (let s of scripts) {
         const scriptHex = s.toString("hex");
-        console.log(`Script in hex : ${scriptHex}`);
+        // console.log(`Script in hex : ${scriptHex}`);
         const memos = [{
                 Memo: {
                     MemoData: scriptHex,
                 }
             }];
-        const { txID, txFee } = await createRippleTransaction({
+        const signedTx = await createRawRippleTransaction({
             client,
             wallet,
             receiverAddress,
             amount,
             memos: memos,
             fee: fee,
-            rpcEndpoint,
             sequence,
-            isWait: false,
         });
-        txIDs.push(txID);
-        totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
+        signedTxs.push(signedTx);
+        // txIDs.push(txID);
+        // totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
         sequence++;
+    }
+    const submitTxTasks = [];
+    for (let signedTx of signedTxs) {
+        const resp = client.submit(signedTx.tx_blob);
+        submitTxTasks.push(resp);
+    }
+    const submitTxResps = await Promise.all(submitTxTasks);
+    for (let r of submitTxResps) {
+        console.log("Submit tx resp: ", r);
+        // TODO: 2525 validate success 
+        // if (r.status != "success" || r.result. )
+        txIDs.push(r.result.tx_json.hash || "");
+        totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(r.result.tx_json.Fee || ""));
     }
     // Step 7: Disconnect from the client
     await client.disconnect();
@@ -9537,6 +9586,7 @@ exports.createInscribeTxMintRunes = createInscribeTxMintRunes;
 exports.createInscribeTxs = createInscribeTxs;
 exports.createLockScript = createLockScript;
 exports.createRawRevealTx = createRawRevealTx$3;
+exports.createRawRippleTransaction = createRawRippleTransaction;
 exports.createRawTx = createRawTx;
 exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createRawTxSendBTCFromMultisig = createRawTxSendBTCFromMultisig;

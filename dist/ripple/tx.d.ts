@@ -15,4 +15,13 @@ declare const createRippleTransaction: ({ client, wallet, receiverAddress, amoun
     txID: string;
     txFee: string;
 }>;
-export { generateXRPWallet, createRippleTransaction, };
+declare const createRawRippleTransaction: ({ client, wallet, receiverAddress, amount, memos, fee, sequence, }: {
+    client: Client;
+    wallet: any;
+    receiverAddress: string;
+    amount: BigNumber;
+    memos?: Memo[] | undefined;
+    fee?: BigNumber | undefined;
+    sequence?: number | undefined;
+}) => Promise<any>;
+export { generateXRPWallet, createRippleTransaction, createRawRippleTransaction, };

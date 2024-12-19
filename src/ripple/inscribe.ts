@@ -1,7 +1,7 @@
 import { Memo, Client } from "xrpl";
 import { sha256Hash, getAccountInfo } from "./utils";
 import BigNumber from "bignumber.js";
-import { createRippleTransaction } from "./tx";
+import { createRawRippleTransaction, createRippleTransaction } from "./tx";
 import { generateWalletFromSeed } from "./wallet";
 
 const getNumberHex = ({
@@ -103,7 +103,7 @@ const createScripts = (data: Buffer, encodeVersion: number): Buffer[] => {
     // chunk data
 }
 
-const createInscribeTxs = async ({
+const createInscribeTxsV0 = async ({
     senderSeed,
     receiverAddress,
     amount,
@@ -166,6 +166,97 @@ const createInscribeTxs = async ({
         txIDs.push(txID);
         totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
         sequence++;
+    }
+
+    // Step 7: Disconnect from the client
+    await client.disconnect();
+    console.log("Disconnected from XRPL");
+
+    return {
+        txIDs,
+        totalNetworkFee
+    };
+}
+
+const createInscribeTxs = async ({
+    senderSeed,
+    receiverAddress,
+    amount,
+    data,
+    encodeVersion,
+    fee = new BigNumber(0),
+    rpcEndpoint,
+}: {
+    senderSeed: string,
+    receiverAddress: string,
+    amount: BigNumber,
+    data: Buffer,
+    encodeVersion: number,
+    fee?: BigNumber,
+    rpcEndpoint: string,
+}): Promise<{
+    txIDs: string[],
+    totalNetworkFee: BigNumber,
+}> => {
+    const wallet = generateWalletFromSeed(senderSeed);
+
+    const scripts = createScripts(data, encodeVersion);
+
+    console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
+
+    // Step 1: Connect to the XRPL testnet
+    const client = new Client(rpcEndpoint); // Testnet URL
+    await client.connect();
+    console.log("Connected to XRPL testnet");
+
+    const accountInfo = await getAccountInfo(wallet.address, client);
+    console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
+    let sequence = accountInfo.result.account_data?.Sequence;
+
+    const txIDs: string[] = [];
+    let totalNetworkFee = new BigNumber(0);
+
+    const signedTxs = [];
+
+    for (let s of scripts) {
+        const scriptHex = s.toString("hex");
+        // console.log(`Script in hex : ${scriptHex}`);
+        const memos = [{
+            Memo: {
+                MemoData: scriptHex,
+            }
+        }]
+
+        const signedTx = await createRawRippleTransaction({
+            client,
+            wallet,
+            receiverAddress,
+            amount,
+            memos: memos,
+            fee: fee,
+            sequence,
+        });
+        signedTxs.push(signedTx);
+
+        // txIDs.push(txID);
+        // totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
+        sequence++;
+    }
+
+    const submitTxTasks = [];
+    for (let signedTx of signedTxs) {
+        const resp = client.submit(signedTx.tx_blob);
+        submitTxTasks.push(resp);
+    }
+
+    const submitTxResps = await Promise.all(submitTxTasks);
+
+    for (let r of submitTxResps) {
+        console.log("Submit tx resp: ", r);
+        // TODO: 2525 validate success 
+        // if (r.status != "success" || r.result. )
+        txIDs.push(r.result.tx_json.hash || "");
+        totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(r.result.tx_json.Fee || ""));
     }
 
     // Step 7: Disconnect from the client
