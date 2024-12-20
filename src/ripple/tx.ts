@@ -13,8 +13,8 @@ import { getAccountInfo, sha256Hash } from "./utils";
 import BigNumber from 'bignumber.js';
 import { BlobOptions } from "buffer";
 
-const XRPL_RPC = "wss://s.altnet.rippletest.net:51233";
-
+const XRPL_WSC_TESTNET = "wss://s.altnet.rippletest.net:51233";
+const XRPL_WSC_MAINNET = "wss://xrpl.ws";
 
 const generateXRPWallet = (seed: string) => {
     const seedEncoded = encodeBase58WithChecksum(Buffer.from(seed));
@@ -165,6 +165,7 @@ const createRawRippleTransaction = async ({
     memos = [],
     fee = new BigNumber(0),
     sequence = 0,
+    curLedgerHeight,
 }: {
     client: Client,
     wallet: any,
@@ -173,6 +174,7 @@ const createRawRippleTransaction = async ({
     memos?: Memo[],
     fee?: BigNumber,
     sequence?: number,
+    curLedgerHeight: number,
 }): Promise<any> => {
 
     // Step 3: Define the payment transaction
@@ -182,7 +184,7 @@ const createRawRippleTransaction = async ({
         Destination: receiverAddress, // Replace with destination address
         Amount: amount.toString(), // Amount in drops (1 XRP = 1,000,000 drops)
         // Fee: fee.toString(),
-        // LastLedgerSequence:   // default current ledger + 200
+        LastLedgerSequence: curLedgerHeight + 2000,  // default current ledger + 200
         // Memos: memos,
     };
 
@@ -224,4 +226,6 @@ export {
     generateXRPWallet,
     createRippleTransaction,
     createRawRippleTransaction,
+    XRPL_WSC_TESTNET,
+    XRPL_WSC_MAINNET,
 }

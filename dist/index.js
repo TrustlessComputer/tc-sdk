@@ -9233,6 +9233,8 @@ function getRevealVirtualSize(hash_lock_redeem, script_p2tr, p2pktr_addr, hash_l
 }
 
 // Dependencies for Node.js.
+const XRPL_WSC_TESTNET = "wss://s.altnet.rippletest.net:51233";
+const XRPL_WSC_MAINNET = "wss://xrpl.ws";
 const generateXRPWallet = (seed) => {
     const seedEncoded = encodeBase58WithChecksum(Buffer.from(seed));
     console.log(`generateXRPWallet ${seedEncoded}`);
@@ -9312,15 +9314,15 @@ const createRippleTransaction = async ({ client, wallet, receiverAddress, amount
     console.log("Transaction result:", result);
     return result;
 };
-const createRawRippleTransaction = async ({ client, wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), sequence = 0, }) => {
+const createRawRippleTransaction = async ({ client, wallet, receiverAddress, amount, memos = [], fee = new BigNumber(0), sequence = 0, curLedgerHeight, }) => {
     // Step 3: Define the payment transaction
     const payment = {
         TransactionType: "Payment",
         Account: wallet.address,
         Destination: receiverAddress,
-        Amount: amount.toString(), // Amount in drops (1 XRP = 1,000,000 drops)
+        Amount: amount.toString(),
         // Fee: fee.toString(),
-        // LastLedgerSequence:   // default current ledger + 200
+        LastLedgerSequence: curLedgerHeight + 2000, // default current ledger + 200
         // Memos: memos,
     };
     if (sequence > 0) {
@@ -9487,6 +9489,12 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
     const accountInfo = await getAccountInfo(wallet.address, client);
     console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
     let sequence = accountInfo.result.account_data?.Sequence;
+    const curLedgerHeight = await client.getLedgerIndex();
+    // check balance 
+    let balance = new BigNumber(accountInfo.result.account_data.Balance, 10);
+    if (balance.comparedTo(new BigNumber(10000)) != 1) {
+        throw new Error("Balance is insuffient");
+    }
     const txIDs = [];
     let totalNetworkFee = new BigNumber(0);
     const signedTxs = [];
@@ -9506,11 +9514,14 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
             memos: memos,
             fee: fee,
             sequence,
+            curLedgerHeight,
         });
         signedTxs.push(signedTx);
         // txIDs.push(txID);
         // totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
         sequence++;
+        // NOTE: ONLY FOR TESTING: ONLY SUBMIT THE FIRST CHUNK
+        // break;
     }
     const submitTxTasks = [];
     for (let signedTx of signedTxs) {
@@ -9521,7 +9532,9 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
     for (let r of submitTxResps) {
         console.log("Submit tx resp: ", r);
         // TODO: 2525 validate success 
-        // if (r.status != "success" || r.result. )
+        if (!r.result.accepted || !r.result.applied) {
+            throw new Error("submit tx error " + r.result.engine_result_message);
+        }
         txIDs.push(r.result.tx_json.hash || "");
         totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(r.result.tx_json.Fee || ""));
     }
@@ -9569,6 +9582,8 @@ exports.URL_MAINNET = URL_MAINNET;
 exports.URL_REGTEST = URL_REGTEST;
 exports.Validator = Validator$1;
 exports.WalletType = WalletType;
+exports.XRPL_WSC_MAINNET = XRPL_WSC_MAINNET;
+exports.XRPL_WSC_TESTNET = XRPL_WSC_TESTNET;
 exports.actionRequest = actionRequest;
 exports.addInputs = addInputs;
 exports.addZeroTrail = addZeroTrail;

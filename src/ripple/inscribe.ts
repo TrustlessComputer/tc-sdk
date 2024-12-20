@@ -213,6 +213,14 @@ const createInscribeTxs = async ({
     console.log("Account Sequence:", accountInfo.result.account_data?.Sequence);
     let sequence = accountInfo.result.account_data?.Sequence;
 
+    const curLedgerHeight = await client.getLedgerIndex()
+
+    // check balance 
+    let balance = new BigNumber(accountInfo.result.account_data.Balance, 10);
+    if (balance.comparedTo(new BigNumber(10000)) != 1) {
+        throw new Error("Balance is insuffient");
+    }
+
     const txIDs: string[] = [];
     let totalNetworkFee = new BigNumber(0);
 
@@ -235,12 +243,16 @@ const createInscribeTxs = async ({
             memos: memos,
             fee: fee,
             sequence,
+            curLedgerHeight,
         });
         signedTxs.push(signedTx);
 
         // txIDs.push(txID);
         // totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(txFee));
         sequence++;
+
+        // NOTE: ONLY FOR TESTING: ONLY SUBMIT THE FIRST CHUNK
+        // break;
     }
 
     const submitTxTasks = [];
@@ -254,7 +266,9 @@ const createInscribeTxs = async ({
     for (let r of submitTxResps) {
         console.log("Submit tx resp: ", r);
         // TODO: 2525 validate success 
-        // if (r.status != "success" || r.result. )
+        if (!r.result.accepted || !r.result.applied) {
+            throw new Error("submit tx error " + r.result.engine_result_message);
+        }
         txIDs.push(r.result.tx_json.hash || "");
         totalNetworkFee = BigNumber.sum(totalNetworkFee, new BigNumber(r.result.tx_json.Fee || ""));
     }
