@@ -2939,7 +2939,7 @@ function toFixedPoint(str, e, z) {
 var BigNumber = clone();
 
 // const BlockStreamURL = "https://blockstream.info/api";
-const MinSats = 1000; // TODO: update
+const MinSats$1 = 1000; // TODO: update
 const DummyUTXOValue = 1000;
 const InputSize = 68;
 const OutputSize = 43;
@@ -3296,7 +3296,7 @@ const selectUTXOs = (utxos, inscriptions, sendInscriptionID, sendAmount, feeRate
             // maxAmountInsTransfer = (inscriptionUTXO.value - inscriptionInfo.offset - 1) - MinSats;
             maxAmountInsTransfer = inscriptionUTXO.value.
                 minus(inscriptionInfo.offset).
-                minus(1).minus(MinSats);
+                minus(1).minus(MinSats$1);
             console.log("maxAmountInsTransfer: ", maxAmountInsTransfer.toNumber());
         }
         if (sendInscriptionID !== "") {
@@ -6715,6 +6715,29 @@ var ValueType$1;
     ValueType[ValueType["U128"] = 4] = "U128";
 })(ValueType$1 || (ValueType$1 = {}));
 
+new BigNumber(0);
+
+const dogecore$2 = require('bitcore-lib-doge');
+require('fs');
+const dotenv$1 = require('dotenv');
+require('mime-types');
+require('express');
+const { PrivateKey: PrivateKey$1, Address: Address$1, Transaction: Transaction$1, Script: Script$1, Opcode: Opcode$1 } = dogecore$2;
+dogecore$2.crypto;
+dotenv$1.config();
+if (process.env.TESTNET == 'true') {
+    dogecore$2.Networks.defaultNetwork = dogecore$2.Networks.testnet;
+}
+// TODO: 2525 get real time
+if (process.env.FEE_PER_KB) {
+    Transaction$1.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
+}
+else {
+    Transaction$1.FEE_PER_KB = 100000000;
+}
+
+require('bitcore-lib-doge');
+
 const deriveHDNodeByIndex$1 = (payload) => {
     const hdNode = ethers.ethers.utils.HDNode
         .fromMnemonic(payload.mnemonic)
@@ -9478,7 +9501,7 @@ const createScripts = (data, encodeVersion) => {
     return scripts;
     // chunk data
 };
-const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee = new BigNumber(0), rpcEndpoint, }) => {
+const createInscribeTxs$1 = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee = new BigNumber(0), rpcEndpoint, }) => {
     const wallet = generateWalletFromSeed(senderSeed);
     const scripts = createScripts(data, encodeVersion);
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
@@ -9547,6 +9570,494 @@ const createInscribeTxs = async ({ senderSeed, receiverAddress, amount, data, en
     };
 };
 
+const MinSats = 100000; // TODO: 2525 update
+new BigNumber(0);
+
+const dogecore$1 = require('bitcore-lib-doge');
+require('fs');
+const dotenv = require('dotenv');
+require('mime-types');
+require('express');
+const { PrivateKey, Address, Transaction, Script, Opcode } = dogecore$1;
+const { Hash, Signature } = dogecore$1.crypto;
+dotenv.config();
+if (process.env.TESTNET == 'true') {
+    dogecore$1.Networks.defaultNetwork = dogecore$1.Networks.testnet;
+}
+// TODO: 2525 get real time
+if (process.env.FEE_PER_KB) {
+    Transaction.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
+}
+else {
+    Transaction.FEE_PER_KB = 100000000;
+}
+// const WALLET_PATH = process.env.WALLET || '.wallet.json'
+// async function main() {
+//     let cmd = process.argv[2]
+//     if (fs.existsSync('pending-txs.json')) {
+//         console.log('found pending-txs.json. rebroadcasting...')
+//         const txs = JSON.parse(fs.readFileSync('pending-txs.json'))
+//         await broadcastAll(txs.map(tx => new Transaction(tx)), false)
+//         return
+//     }
+//     if (cmd == 'mint') {
+//         await mint()
+//     } else if (cmd == 'wallet') {
+//         await wallet()
+//     } else if (cmd == 'server') {
+//         await server()
+//     } else {
+//         throw new Error(`unknown command: ${cmd}`)
+//     }
+// }
+// async function wallet() {
+//     let subcmd = process.argv[3]
+//     if (subcmd == 'new') {
+//         walletNew()
+//     } else if (subcmd == 'sync') {
+//         await walletSync()
+//     } else if (subcmd == 'balance') {
+//         walletBalance()
+//     } else if (subcmd == 'send') {
+//         await walletSend()
+//     } else if (subcmd == 'split') {
+//         await walletSplit()
+//     } else {
+//         throw new Error(`unknown subcommand: ${subcmd}`)
+//     }
+// }
+// function walletNew() {
+//     if (!fs.existsSync(WALLET_PATH)) {
+//         const privateKey = new PrivateKey()
+//         const privkey = privateKey.toWIF()
+//         const address = privateKey.toAddress().toString()
+//         const json = { privkey, address, utxos: [] }
+//         fs.writeFileSync(WALLET_PATH, JSON.stringify(json, 0, 2))
+//         console.log('address', address)
+//     } else {
+//         throw new Error('wallet already exists')
+//     }
+// }
+// async function walletSync() {
+//     if (process.env.TESTNET == 'true') throw new Error('no testnet api')
+//     let wallet = JSON.parse(fs.readFileSync(WALLET_PATH))
+//     console.log('syncing utxos with dogechain.info api')
+//     let response = await axios.get(`https://dogechain.info/api/v1/address/unspent/${wallet.address}`)
+//     wallet.utxos = response.data.unspent_outputs.map(output => {
+//         return {
+//             txid: output.tx_hash,
+//             vout: output.tx_output_n,
+//             script: output.script,
+//             satoshis: output.value
+//         }
+//     })
+//     fs.writeFileSync(WALLET_PATH, JSON.stringify(wallet, 0, 2))
+//     let balance = wallet.utxos.reduce((acc, curr) => acc + curr.satoshis, 0)
+//     console.log('balance', balance)
+// }
+// async function walletSync() {
+//     if (process.env.TESTNET == 'true') throw new Error('no testnet api')
+//     let wallet = JSON.parse(fs.readFileSync(WALLET_PATH))
+//     console.log('syncing utxos with dogechain.info api')
+//     let response = await axios.get(`https://dogeblocks.com/api/utxo/${wallet.address}`)
+//     console.log("syncing utxos response ", response);
+//     wallet.utxos = response.data.map(output => {
+//         return {
+//             txid: output.txid,
+//             vout: output.vout,
+//             script: output.scriptPubKey,
+//             satoshis: output.satoshis
+//         }
+//     })
+//     fs.writeFileSync(WALLET_PATH, JSON.stringify(wallet, 0, 2))
+//     let balance = wallet.utxos.reduce((acc, curr) => acc + curr.satoshis, 0)
+//     console.log('balance', balance)
+// }
+// function walletBalance() {
+//     let wallet = JSON.parse(fs.readFileSync(WALLET_PATH))
+//     let balance = wallet.utxos.reduce((acc, curr) => acc + curr.satoshis, 0)
+//     console.log(wallet.address, balance)
+// }
+// async function walletSend() {
+//     const argAddress = process.argv[4]
+//     const argAmount = process.argv[5]
+//     let wallet = JSON.parse(fs.readFileSync(WALLET_PATH))
+//     let balance = wallet.utxos.reduce((acc, curr) => acc + curr.satoshis, 0)
+//     if (balance == 0) throw new Error('no funds to send')
+//     let receiver = new Address(argAddress)
+//     let amount = parseInt(argAmount)
+//     let tx = new Transaction()
+//     if (amount) {
+//         tx.to(receiver, amount)
+//         fund(wallet, tx)
+//     } else {
+//         tx.from(wallet.utxos)
+//         tx.change(receiver)
+//         tx.sign(wallet.privkey)
+//     }
+//     await broadcast(tx, true)
+//     console.log(tx.hash)
+// }
+// async function walletSplit() {
+//     let splits = parseInt(process.argv[4])
+//     let wallet = JSON.parse(fs.readFileSync(WALLET_PATH))
+//     let balance = wallet.utxos.reduce((acc, curr) => acc + curr.satoshis, 0)
+//     if (balance == 0) throw new Error('no funds to split')
+//     let tx = new Transaction()
+//     tx.from(wallet.utxos)
+//     for (let i = 0; i < splits - 1; i++) {
+//         tx.to(wallet.address, Math.floor(balance / splits))
+//     }
+//     tx.change(wallet.address)
+//     tx.sign(wallet.privkey)
+//     await broadcast(tx, true)
+//     console.log(tx.hash)
+// }
+const MAX_SCRIPT_ELEMENT_SIZE = 520;
+// async function mint() {
+//     const argAddress = process.argv[3]
+//     const argContentTypeOrFilename = process.argv[4]
+//     const argHexData = process.argv[5]
+//     let address = new Address(argAddress)
+//     let contentType
+//     let data
+//     if (fs.existsSync(argContentTypeOrFilename)) {
+//         contentType = mime.contentType(mime.lookup(argContentTypeOrFilename))
+//         data = fs.readFileSync(argContentTypeOrFilename)
+//     } else {
+//         contentType = argContentTypeOrFilename
+//         if (!/^[a-fA-F0-9]*$/.test(argHexData)) throw new Error('data must be hex')
+//         data = Buffer.from(argHexData, 'hex')
+//     }
+//     if (data.length == 0) {
+//         throw new Error('no data to mint')
+//     }
+//     if (contentType.length > MAX_SCRIPT_ELEMENT_SIZE) {
+//         throw new Error('content type too long')
+//     }
+//     let wallet = JSON.parse(fs.readFileSync(WALLET_PATH))
+//     let txs = inscribe(wallet, address, contentType, data)
+//     await broadcastAll(txs, false)
+// }
+// async function broadcastAll(txs: any, retry: boolean) {
+//     for (let i = 0; i < txs.length; i++) {
+//         console.log(`broadcasting tx ${i + 1} of ${txs.length}`)
+//         try {
+//             throw new Error('hello')
+//             const txid = await broadcast(txs[i], retry)
+//             console.log(`Broadcast tx ${i} success - TxID ${txid}`);
+//         } catch (e) {
+//             console.log('broadcast failed', e)
+//             console.log('saving pending txs to pending-txs.json')
+//             console.log('to reattempt broadcast, re-run the command')
+//             fs.writeFileSync('pending-txs.json', JSON.stringify(txs.slice(i).map((tx: any) => tx.toString())))
+//             process.exit(1)
+//         }
+//     }
+//     fs.deleteFileSync('pending-txs.json')
+//     console.log('inscription txid:', txs[1].hash)
+// }
+// const broadcastDogeTx = async (txHex: string): Promise<string> => {
+//     const blockstream = new axios.Axios({
+//         baseURL: "https://dogeblocks.com"
+//     });
+//     const response: AxiosResponse = await blockstream.post("/sendtx", txHex);
+//     const { status, data } = response;
+//     if (status !== 200) {
+//         throw new Error(data);
+//     }
+//     return response.data;
+// };
+const bufferToChunk = ({ b, type }) => {
+    b = Buffer.from(b, type);
+    return {
+        buf: b.length ? b : undefined,
+        len: b.length,
+        opcodenum: b.length <= 75 ? b.length : b.length <= 255 ? 76 : 77
+    };
+};
+const numberToChunk = (n) => {
+    return {
+        buf: n <= 16 ? undefined : n < 128 ? Buffer.from([n]) : Buffer.from([n % 256, n / 256]),
+        len: n <= 16 ? 0 : n < 128 ? 1 : 2,
+        opcodenum: n == 0 ? 0 : n <= 16 ? 80 + n : n < 128 ? 1 : 2
+    };
+};
+const opcodeToChunk = (op) => {
+    return { opcodenum: op };
+};
+const MAX_CHUNK_LEN = 240;
+const MAX_PAYLOAD_LEN = 1500;
+const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, contentType, }) => {
+    let txs = [];
+    const wallet = {
+        privKey: senderPrivKey,
+        address: senderAddress,
+        utxos: utxos,
+    };
+    let privateKey = new PrivateKey(senderPrivKey);
+    let publicKey = privateKey.toPublicKey();
+    const pubKeyBuffer = publicKey.toBuffer();
+    let receiverAddressType = new Address(receiverAddress);
+    let parts = [];
+    while (data.length) {
+        let part = data.slice(0, Math.min(MAX_CHUNK_LEN, data.length));
+        data = data.slice(part.length);
+        parts.push(part);
+    }
+    console.log(`inscribe parts.length ${parts.length}`);
+    let inscription = new Script();
+    inscription.chunks.push(bufferToChunk({ b: 'ord' }));
+    inscription.chunks.push(numberToChunk(parts.length));
+    inscription.chunks.push(bufferToChunk({ b: contentType }));
+    parts.forEach((part, n) => {
+        inscription.chunks.push(numberToChunk(parts.length - n - 1));
+        inscription.chunks.push(bufferToChunk({ b: part }));
+    });
+    console.log(`inscribe inscription.chunks.length ${inscription.chunks.length}`);
+    let p2shInput;
+    let lastLock;
+    let lastPartial;
+    while (inscription.chunks.length) {
+        let partial = new Script();
+        if (txs.length == 0) {
+            partial.chunks.push(inscription.chunks.shift());
+        }
+        while (partial.toBuffer().length <= MAX_PAYLOAD_LEN && inscription.chunks.length) {
+            partial.chunks.push(inscription.chunks.shift());
+            partial.chunks.push(inscription.chunks.shift());
+        }
+        if (partial.toBuffer().length > MAX_PAYLOAD_LEN) {
+            inscription.chunks.unshift(partial.chunks.pop());
+            inscription.chunks.unshift(partial.chunks.pop());
+        }
+        let lock = new Script();
+        lock.chunks.push(bufferToChunk({ b: pubKeyBuffer }));
+        lock.chunks.push(opcodeToChunk(Opcode.OP_CHECKSIGVERIFY));
+        partial.chunks.forEach(() => {
+            lock.chunks.push(opcodeToChunk(Opcode.OP_DROP));
+        });
+        lock.chunks.push(opcodeToChunk(Opcode.OP_TRUE));
+        console.log(`inscribe lock script ${lock}`);
+        let lockhash = Hash.ripemd160(Hash.sha256(lock.toBuffer()));
+        console.log(`inscribe lock hash ${lockhash}`);
+        let p2sh = new Script();
+        p2sh.chunks.push(opcodeToChunk(Opcode.OP_HASH160));
+        p2sh.chunks.push(bufferToChunk({ b: lockhash }));
+        p2sh.chunks.push(opcodeToChunk(Opcode.OP_EQUAL));
+        let p2shOutput = new Transaction.Output({
+            script: p2sh,
+            satoshis: MinSats
+        });
+        let tx = new Transaction();
+        if (p2shInput)
+            tx.addInput(p2shInput);
+        tx.addOutput(p2shOutput);
+        fund(wallet, tx); // add utxo to pay network fee
+        if (p2shInput) {
+            let signature = Transaction.sighash.sign(tx, privateKey, Signature.SIGHASH_ALL, 0, lastLock);
+            let txsignature = Buffer.concat([signature.toBuffer(), Buffer.from([Signature.SIGHASH_ALL])]);
+            let unlock = new Script();
+            unlock.chunks = unlock.chunks.concat(lastPartial.chunks);
+            unlock.chunks.push(bufferToChunk({ b: txsignature }));
+            unlock.chunks.push(bufferToChunk({ b: lastLock.toBuffer() }));
+            tx.inputs[0].setScript(unlock);
+            console.log(`inscribe unlock script ${unlock}`);
+        }
+        updateWallet(wallet, tx);
+        txs.push(tx);
+        p2shInput = new Transaction.Input({
+            prevTxId: tx.hash,
+            outputIndex: 0,
+            output: tx.outputs[0],
+            script: ''
+        });
+        p2shInput.clearSignatures = () => { };
+        p2shInput.getSignatures = () => { return []; };
+        lastLock = lock;
+        lastPartial = partial;
+    }
+    // the last tx
+    let tx = new Transaction();
+    tx.addInput(p2shInput);
+    tx.to(receiverAddressType, MinSats);
+    fund(wallet, tx);
+    let signature = Transaction.sighash.sign(tx, privateKey, Signature.SIGHASH_ALL, 0, lastLock);
+    let txsignature = Buffer.concat([signature.toBuffer(), Buffer.from([Signature.SIGHASH_ALL])]);
+    let unlock = new Script();
+    unlock.chunks = unlock.chunks.concat(lastPartial.chunks);
+    unlock.chunks.push(bufferToChunk({ b: txsignature }));
+    unlock.chunks.push(bufferToChunk({ b: lastLock.toBuffer() }));
+    tx.inputs[0].setScript(unlock);
+    console.log(`inscribe unlock script ${unlock}`);
+    // 036f72645117746578742f706c61696e3b636861727365743d75746638002b
+    // 48656c6c6f2c20776f726c642e2049276d20426974636f696e205669727475616c204d616368696e65732e
+    // 473044022066665e2a374eb2f2bec303590ccc4ef717aebd041ce49559c0c747c164f742a602201d030bce832278b4e29657791afc888cdb17895a375603a42afa92db205c305901292103cab4eb34768ba7b5afa51d79e19b41533123a2cb2e70929bcb0a8bf8c6850f40ad757575757551
+    updateWallet(wallet, tx);
+    txs.push(tx);
+    console.log("Number of txs: ", txs.length);
+    return txs;
+};
+const fund = (wallet, tx) => {
+    tx.change(wallet.address);
+    delete tx._fee;
+    console.log("fund tx fee: ", tx.getFee());
+    for (const utxo of wallet.utxos) {
+        if (tx.inputs.length && tx.outputs.length && tx.inputAmount >= tx.outputAmount + tx.getFee()) {
+            break;
+        }
+        delete tx._fee;
+        console.log("Fund UTXO: ", utxo);
+        tx.from(utxo);
+        tx.change(wallet.address);
+        tx.sign(wallet.privKey);
+    }
+    if (tx.inputAmount < tx.outputAmount + tx.getFee()) {
+        throw new Error('not enough funds');
+    }
+};
+function updateWallet(wallet, tx) {
+    wallet.utxos = wallet.utxos.filter(utxo => {
+        for (const input of tx.inputs) {
+            if (input.prevTxId.toString('hex') == utxo.txid && input.outputIndex == utxo.vout) {
+                return false;
+            }
+        }
+        return true;
+    });
+    tx.outputs
+        .forEach((output, vout) => {
+        if (output.script.toAddress().toString() == wallet.address) {
+            wallet.utxos.push({
+                txid: tx.hash,
+                vout,
+                script: output.script.toHex(),
+                satoshis: output.satoshis
+            });
+        }
+    });
+}
+async function broadcastDogeTx(txHex) {
+    const body = {
+        jsonrpc: "1.0",
+        id: 0,
+        method: "sendrawtransaction",
+        params: [txHex]
+    };
+    // const options = {
+    //     auth: {
+    //         username: process.env.NODE_RPC_USER,
+    //         password: process.env.NODE_RPC_PASS
+    //     }
+    // }
+    // Base64 encode the username:password for Basic Authentication
+    const auth = 'Basic ' + Buffer.from(`${process.env.NODE_RPC_USER}:${process.env.NODE_RPC_PASS}`).toString('base64');
+    const options = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': auth // Add the authorization header here
+        }
+    };
+    // try {
+    const resp = await axios__default["default"].post(process.env.NODE_RPC_URL || "", body, options);
+    console.log("Resp: ", resp);
+    if (!resp.data.error) {
+        throw resp.data.error;
+    }
+    return resp?.data?.result;
+}
+// async function extract(txid) {
+//     let resp = await axios.get(`https://dogechain.info/api/v1/transaction/${txid}`)
+//     let transaction = resp.data.transaction
+//     let script = Script.fromHex(transaction.inputs[0].scriptSig.hex)
+//     let chunks = script.chunks
+//     let prefix = chunks.shift().buf.toString('utf8')
+//     if (prefix != 'ord') {
+//         throw new Error('not a doginal')
+//     }
+//     let pieces = chunkToNumber(chunks.shift())
+//     let contentType = chunks.shift().buf.toString('utf8')
+//     let data = Buffer.alloc(0)
+//     let remaining = pieces
+//     while (remaining && chunks.length) {
+//         let n = chunkToNumber(chunks.shift())
+//         if (n !== remaining - 1) {
+//             txid = transaction.outputs[0].spent.hash
+//             resp = await axios.get(`https://dogechain.info/api/v1/transaction/${txid}`)
+//             transaction = resp.data.transaction
+//             script = Script.fromHex(transaction.inputs[0].scriptSig.hex)
+//             chunks = script.chunks
+//             continue
+//         }
+//         data = Buffer.concat([data, chunks.shift().buf])
+//         remaining -= 1
+//     }
+//     return {
+//         contentType,
+//         data
+//     }
+// }
+// function server() {
+//     const app = express()
+//     const port = process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT) : 3000
+//     app.get('/tx/:txid', (req, res) => {
+//         extract(req.params.txid).then(result => {
+//             res.setHeader('content-type', result.contentType)
+//             res.send(result.data)
+//         }).catch(e => res.send(e.message))
+//     })
+//     app.listen(port, () => {
+//         console.log(`Listening on port ${port}`)
+//         console.log()
+//         console.log(`Example:`)
+//         console.log(`http://localhost:${port}/tx/15f3b73df7e5c072becb1d84191843ba080734805addfccb650929719080f62e`)
+//     })
+// }
+// main().catch(e => {
+//     let reason = e.response && e.response.data && e.response.data.error && e.response.data.error.message
+//     console.error(reason ? e.message + ':' + reason : e.message)
+// })
+const createInscribeTxs = async ({ senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate = 0, rpcEndpoint, }) => {
+    if (data.length == 0) {
+        throw new Error('no data to mint');
+    }
+    if (contentType.length > MAX_SCRIPT_ELEMENT_SIZE) {
+        throw new Error('content type too long');
+    }
+    let txs = inscribe({
+        senderPrivKey,
+        senderAddress,
+        receiverAddress,
+        utxos,
+        data,
+        contentType,
+    });
+    // await broadcastAll(txs, false);
+    const txIDs = [];
+    const txHexes = [];
+    let totalNetworkFee = new BigNumber(0);
+    for (let tx of txs) {
+        txIDs.push(tx.hash);
+        txHexes.push(tx.toString());
+        totalNetworkFee = BigNumber.sum(totalNetworkFee, tx.getFee());
+    }
+    return {
+        txIDs,
+        txHexes,
+        totalNetworkFee,
+    };
+};
+
+const dogecore = require('bitcore-lib-doge');
+const randomDogeWallet = () => {
+    const privateKey = new dogecore.PrivateKey();
+    const address = privateKey.toAddress();
+    // Step 3: Log the private key, public key, and Dogecoin address
+    console.log('Private Key (WIF):', privateKey.toWIF()); // Wallet Import Format (WIF)
+    // console.log('Public Key:', publicKey.toString());
+    console.log('Dogecoin Address:', address.toString());
+};
+
 exports.ARC4Decrypt = ARC4Decrypt;
 exports.ARC4Encrypt = ARC4Encrypt;
 exports.BNZero = BNZero;
@@ -9567,7 +10078,7 @@ exports.Mainnet = Mainnet;
 exports.MasterWallet = MasterWallet;
 exports.Masterless = Masterless;
 exports.MaxTxSize = MaxTxSize;
-exports.MinSats = MinSats;
+exports.MinSats = MinSats$1;
 exports.MinSats2 = MinSats2;
 exports.MinSats3 = MinSats3;
 exports.NetworkType = NetworkType$1;
@@ -9588,6 +10099,7 @@ exports.actionRequest = actionRequest;
 exports.addInputs = addInputs;
 exports.addZeroTrail = addZeroTrail;
 exports.aggregateUTXOs = aggregateUTXOs;
+exports.broadcastDogeTx = broadcastDogeTx;
 exports.broadcastTx = broadcastTx;
 exports.convertPrivateKey = convertPrivateKey$1;
 exports.convertPrivateKeyFromStr = convertPrivateKeyFromStr;
@@ -9598,7 +10110,7 @@ exports.createInscribeTxEtchRunes = createInscribeTxEtchRunes;
 exports.createInscribeTxFromAnyWallet = createInscribeTxFromAnyWallet;
 exports.createInscribeTxGeneral = createInscribeTxGeneral;
 exports.createInscribeTxMintRunes = createInscribeTxMintRunes;
-exports.createInscribeTxs = createInscribeTxs;
+exports.createInscribeTxs = createInscribeTxs$1;
 exports.createLockScript = createLockScript;
 exports.createRawRevealTx = createRawRevealTx$3;
 exports.createRawRippleTransaction = createRawRippleTransaction;
@@ -9625,6 +10137,7 @@ exports.deriveHDNodeByIndex = deriveHDNodeByIndex;
 exports.deriveMasterless = deriveMasterless;
 exports.derivePasswordWallet = derivePasswordWallet;
 exports.deriveSegwitWallet = deriveSegwitWallet;
+exports.dogeCreateInscribeTxs = createInscribeTxs;
 exports.encodeBase58 = encodeBase58;
 exports.encodeBase58WithChecksum = encodeBase58WithChecksum;
 exports.encryptAES = encryptAES$1;
@@ -9671,6 +10184,7 @@ exports.importBTCPrivateKey = importBTCPrivateKey;
 exports.increaseGasPrice = increaseGasPrice;
 exports.isRBFable = isRBFable;
 exports.ordCreateInscribeTx = createInscribeTx;
+exports.randomDogeWallet = randomDogeWallet;
 exports.randomMnemonic = randomMnemonic;
 exports.randomTaprootWallet = randomTaprootWallet;
 exports.randomWallet = randomWallet;

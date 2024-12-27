@@ -1,5 +1,4 @@
 /// <reference types="node" />
-/// <reference types="node" />
 import { Varuint } from "big-varuint-js";
 export declare enum Tag {
     Body = 0,

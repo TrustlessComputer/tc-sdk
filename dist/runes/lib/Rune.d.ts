@@ -1,5 +1,4 @@
 /// <reference types="node" />
-/// <reference types="node" />
 import { U128 } from "big-varuint-js";
 export declare class Rune {
     readonly rune: U128;
