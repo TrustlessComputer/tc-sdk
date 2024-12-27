@@ -32,7 +32,8 @@ const config = [
             "bip39",
             "lodash/maxBy",
             "bsv-wasm",
-            "xrpl"
+            "xrpl",
+            "bitcore-lib-doge",
         ],
         plugins: [
             typescript(),

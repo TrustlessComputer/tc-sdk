@@ -37,7 +37,8 @@
     "test-stamps": " env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/stamps.spec.ts'",
     "test-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 0 -r ts-node/register  'test/runes.spec.ts'",
     "mint-runes": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' ts-node 'scripts/mint_runes.ts'",
-    "test-xrpl": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' mocha --timeout 0 -r ts-node/register 'test/ripple.spec.ts'"
+    "test-xrpl": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' mocha --timeout 0 -r ts-node/register 'test/ripple.spec.ts'",
+    "test-doge": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' mocha --timeout 0 -r ts-node/register 'test/doge.spec.ts'"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.4.4",
@@ -76,6 +77,7 @@
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "https://github.com/generative-xyz/bitcoinjs-lib",
+    "bitcore-lib-doge": "^10.7.0",
     "browserify": "^17.0.0",
     "bsv-wasm": "^2.0.1",
     "crypto-js": "^4.1.1",
@@ -90,7 +92,8 @@
     "ts-mocha": "^10.0.0",
     "underscore": "^1.13.6",
     "web3": "^1.9.0",
-    "wif": "^2.0.6"
+    "wif": "^2.0.6",
+    "xrpl": "^4.1.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
