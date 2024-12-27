@@ -1,7 +1,8 @@
 import BigNumber from "bignumber.js";
 import { DUTXO } from "./types";
 declare function broadcastDogeTx(txHex: string): Promise<any>;
-declare const createInscribeTxs: ({ senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate, rpcEndpoint, }: {
+declare const createInscribeTxs: ({ network, senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate, rpcEndpoint, }: {
+    network: number;
     senderPrivKey: string;
     senderAddress: string;
     receiverAddress: string;

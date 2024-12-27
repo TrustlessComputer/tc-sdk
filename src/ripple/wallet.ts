@@ -5,18 +5,15 @@ import { Wallet } from "xrpl";
 const randomWallet = (): Wallet => {
     // random seed : 16 bytes
 
-    const seedBytes = randomBytes(16);
+    // const seedBytes = randomBytes(16);
 
-    const encodedSeed = encodeBase58WithChecksum(seedBytes);
+    // const encodedSeed = encodeBase58WithChecksum(seedBytes);
 
     const wallet1 = Wallet.generate();
     console.log(`randomWallet wallet1: ${wallet1}`);
     console.log(`randomWallet address: ${wallet1.address}`);
     console.log(`randomWallet  wallet1.seed: ${wallet1.seed}`);
     console.log(`randomWallet  wallet1.privateKey: ${wallet1.privateKey}`);
-
-
-
 
 
     // const walletFromSecret = Wallet.fromSecret(encodedSeed);

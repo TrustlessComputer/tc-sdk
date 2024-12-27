@@ -9376,8 +9376,8 @@ const createRawRippleTransaction = async ({ client, wallet, receiverAddress, amo
 
 const randomWallet = () => {
     // random seed : 16 bytes
-    const seedBytes = crypto$1.randomBytes(16);
-    encodeBase58WithChecksum(seedBytes);
+    // const seedBytes = randomBytes(16);
+    // const encodedSeed = encodeBase58WithChecksum(seedBytes);
     const wallet1 = xrpl.Wallet.generate();
     console.log(`randomWallet wallet1: ${wallet1}`);
     console.log(`randomWallet address: ${wallet1.address}`);
@@ -9464,8 +9464,8 @@ const chunkData = (data, chunkSize) => {
     }
     return result;
 };
-const createScripts = (data, encodeVersion) => {
-    const ProtocolID = "BVMV1"; // TODO 2525: custom protocol ID
+const createScripts = (data, encodeVersion, protocolID) => {
+    const ProtocolID = protocolID;
     const protocolIDBuff = Buffer.from(ProtocolID, "utf-8");
     const MAX_CHUNK_LEN = 960; // 1000 - 40  // protocolID || dataID || Op_N || len chunk (2 byte) = 40 bytes
     // 32 bytes
@@ -9501,9 +9501,9 @@ const createScripts = (data, encodeVersion) => {
     return scripts;
     // chunk data
 };
-const createInscribeTxs$1 = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee = new BigNumber(0), rpcEndpoint, }) => {
+const createInscribeTxs$1 = async ({ senderSeed, receiverAddress, amount, data, encodeVersion, protocolID, fee = new BigNumber(0), rpcEndpoint, }) => {
     const wallet = generateWalletFromSeed(senderSeed);
-    const scripts = createScripts(data, encodeVersion);
+    const scripts = createScripts(data, encodeVersion, protocolID);
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
     // Step 1: Connect to the XRPL testnet
     const client = new xrpl.Client(rpcEndpoint); // Testnet URL
@@ -10017,7 +10017,7 @@ async function broadcastDogeTx(txHex) {
 //     let reason = e.response && e.response.data && e.response.data.error && e.response.data.error.message
 //     console.error(reason ? e.message + ':' + reason : e.message)
 // })
-const createInscribeTxs = async ({ senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate = 0, rpcEndpoint, }) => {
+const createInscribeTxs = async ({ network, senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate = 0, rpcEndpoint, }) => {
     if (data.length == 0) {
         throw new Error('no data to mint');
     }

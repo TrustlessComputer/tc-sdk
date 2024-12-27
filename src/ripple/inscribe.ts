@@ -45,9 +45,9 @@ const chunkData = (data: Buffer, chunkSize: number): Buffer[] => {
 }
 
 
-const createScripts = (data: Buffer, encodeVersion: number): Buffer[] => {
+const createScripts = (data: Buffer, encodeVersion: number, protocolID: string): Buffer[] => {
 
-    const ProtocolID = "BVMV1";  // TODO 2525: custom protocol ID
+    const ProtocolID = protocolID;
     const protocolIDBuff = Buffer.from(ProtocolID, "utf-8");
 
     const MAX_CHUNK_LEN = 960; // 1000 - 40  // protocolID || dataID || Op_N || len chunk (2 byte) = 40 bytes
@@ -111,6 +111,7 @@ const createInscribeTxsV0 = async ({
     encodeVersion,
     fee = new BigNumber(0),
     rpcEndpoint,
+    protocolID,
 }: {
     senderSeed: string,
     receiverAddress: string,
@@ -119,13 +120,14 @@ const createInscribeTxsV0 = async ({
     encodeVersion: number,
     fee?: BigNumber,
     rpcEndpoint: string,
+    protocolID: string,
 }): Promise<{
     txIDs: string[],
     totalNetworkFee: BigNumber,
 }> => {
     const wallet = generateWalletFromSeed(senderSeed);
 
-    const scripts = createScripts(data, encodeVersion);
+    const scripts = createScripts(data, encodeVersion, protocolID);
 
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
 
@@ -184,6 +186,7 @@ const createInscribeTxs = async ({
     amount,
     data,
     encodeVersion,
+    protocolID,
     fee = new BigNumber(0),
     rpcEndpoint,
 }: {
@@ -192,6 +195,7 @@ const createInscribeTxs = async ({
     amount: BigNumber,
     data: Buffer,
     encodeVersion: number,
+    protocolID: string,
     fee?: BigNumber,
     rpcEndpoint: string,
 }): Promise<{
@@ -200,7 +204,7 @@ const createInscribeTxs = async ({
 }> => {
     const wallet = generateWalletFromSeed(senderSeed);
 
-    const scripts = createScripts(data, encodeVersion);
+    const scripts = createScripts(data, encodeVersion, protocolID);
 
     console.log(`createInscribeTxs scripts length ${scripts.length} - need to create ${scripts.length} txs`);
 

@@ -1636,13 +1636,14 @@ declare function getAccountInfo(address: string, client: Client): Promise<Accoun
 declare const decodeBlobTx: (blobTx: string) => void;
 declare const sha256Hash: (data: Buffer) => Buffer;
 
-declare const createScripts: (data: Buffer, encodeVersion: number) => Buffer[];
-declare const createInscribeTxs$1: ({ senderSeed, receiverAddress, amount, data, encodeVersion, fee, rpcEndpoint, }: {
+declare const createScripts: (data: Buffer, encodeVersion: number, protocolID: string) => Buffer[];
+declare const createInscribeTxs$1: ({ senderSeed, receiverAddress, amount, data, encodeVersion, protocolID, fee, rpcEndpoint, }: {
     senderSeed: string;
     receiverAddress: string;
     amount: BigNumber;
     data: Buffer;
     encodeVersion: number;
+    protocolID: string;
     fee?: BigNumber | undefined;
     rpcEndpoint: string;
 }) => Promise<{
@@ -1663,7 +1664,8 @@ interface DWallet {
 }
 
 declare function broadcastDogeTx(txHex: string): Promise<any>;
-declare const createInscribeTxs: ({ senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate, rpcEndpoint, }: {
+declare const createInscribeTxs: ({ network, senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate, rpcEndpoint, }: {
+    network: number;
     senderPrivKey: string;
     senderAddress: string;
     receiverAddress: string;

@@ -661,6 +661,7 @@ function chunkToNumber(chunk: any) {
 
 
 const createInscribeTxs = async ({
+    network,
     senderPrivKey,
     senderAddress,
     receiverAddress,
@@ -670,6 +671,7 @@ const createInscribeTxs = async ({
     feeRate = 0,
     rpcEndpoint,
 }: {
+    network: number,
     senderPrivKey: string,
     senderAddress: string,
     receiverAddress: string,

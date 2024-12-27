@@ -91,8 +91,8 @@ describe("XRPL create txs inscribe data", async () => {
         const { txID, txFee } = await createRippleTransaction({
             client,
             wallet,
-            receiverAddress,
-            amount,
+            receiverAddress: "rNQL7jNN2e79nqWggUkg6i9rUbd4WViJw",
+            amount: new BigNumber(18 * 1e6),
             memos: [],
             rpcEndpoint: XRPL_WSC_MAINNET,
             fee: new BigNumber(10),
