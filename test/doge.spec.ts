@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { broadcastDogeTx, dogeCreateInscribeTxs, DUTXO, randomDogeWallet } from "../dist";
+import { broadcastDogeTx, dogeCreateInscribeTxs, DUTXO, NetworkType, randomDogeWallet, setDogeNetwork } from "../dist";
 import dotenv from "dotenv";
 const fs = require('fs').promises;
 dotenv.config({ path: __dirname + "/.env" });
@@ -82,49 +82,50 @@ describe("XRPL create txs inscribe data", async () => {
     //     console.log("txIDs, totalNetworkFee: ", txIDs, totalNetworkFee);
     // });
 
-    it("DOGE inscribe data", async () => {
+    // it("DOGE inscribe data", async () => {
 
-        const data = await readFile("/images/test_14.jpeg");
-        const contentType = "image/jpeg";
-        console.log("Data: ", data.length);
-        const utxos: DUTXO[] = [{
-            txid: "545b0c627d0eaac32f7d0106e76bffcb520ab7a85ce90b482ec3614146d9f15d",
-            vout: 1,
-            satoshis: 246900000,
-            script: "76a9141d20435f39233a6d892294eae3fcd7099d57a38d88ac",
-        }]
+    //     const data = await readFile("/images/test_14.jpeg");
+    //     const contentType = "image/jpeg";
+    //     console.log("Data: ", data.length);
+    //     const utxos: DUTXO[] = [{
+    //         txid: "545b0c627d0eaac32f7d0106e76bffcb520ab7a85ce90b482ec3614146d9f15d",
+    //         vout: 1,
+    //         satoshis: 246900000,
+    //         script: "76a9141d20435f39233a6d892294eae3fcd7099d57a38d88ac",
+    //     }]
 
-        const { txIDs, txHexes, totalNetworkFee } = await dogeCreateInscribeTxs({
-            senderPrivKey: privKey,
-            senderAddress: address,
-            receiverAddress: address,
-            data,
-            utxos,
-            contentType,
-        })
+    //     const { txIDs, txHexes, totalNetworkFee } = await dogeCreateInscribeTxs({
+    //         senderPrivKey: privKey,
+    //         senderAddress: address,
+    //         receiverAddress: address,
+    //         data,
+    //         utxos,
+    //         contentType,
+    //     })
 
-        console.log("txIDs: ", txIDs);
-        console.log("txHexes: ", txHexes);
-        console.log("totalNetworkFee: ", totalNetworkFee);
+    //     console.log("txIDs: ", txIDs);
+    //     console.log("txHexes: ", txHexes);
+    //     console.log("totalNetworkFee: ", totalNetworkFee);
 
-        // await getDogeFeeRate()
+    //     // await getDogeFeeRate()
 
-        for (let tx of txHexes) {
-            console.log("Broadcasting tx: ", tx);
-            try {
-                const txID = await broadcastDogeTx(tx);
-                console.log("Broadcast tx successfully: ", txID);
-                await sleep(2 * 1000);
-            } catch (e) {
-                console.log("ERR: ", e);
-            }
+    //     for (let tx of txHexes) {
+    //         console.log("Broadcasting tx: ", tx);
+    //         try {
+    //             const txID = await broadcastDogeTx(tx);
+    //             console.log("Broadcast tx successfully: ", txID);
+    //             await sleep(2 * 1000);
+    //         } catch (e) {
+    //             console.log("ERR: ", e);
+    //         }
 
-        }
+    //     }
 
-    });
+    // });
 
-    // it("random wallet", async () => {
-    //     randomDogeWallet();
-    // })
+    it("random wallet", async () => {
+        setDogeNetwork(NetworkType.Testnet);
+        randomDogeWallet();
+    })
 
 })

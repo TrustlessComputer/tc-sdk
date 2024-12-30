@@ -3922,7 +3922,7 @@ const getAddressType = ({ btcAddress, pubKey, }) => {
 // default is bitcoin mainnet
 exports.Network = bitcoinjsLib.networks.bitcoin;
 exports.BlockStreamURL = "https://blockstream.info/api";
-const NetworkType$1 = {
+const NetworkType$2 = {
     Mainnet: 1,
     Testnet: 2,
     Regtest: 3,
@@ -3930,22 +3930,22 @@ const NetworkType$1 = {
 };
 const setBTCNetwork$1 = (netType) => {
     switch (netType) {
-        case NetworkType$1.Mainnet: {
+        case NetworkType$2.Mainnet: {
             exports.Network = bitcoinjsLib.networks.bitcoin;
             exports.BlockStreamURL = "https://blockstream.info/api";
             break;
         }
-        case NetworkType$1.Testnet: {
+        case NetworkType$2.Testnet: {
             exports.Network = bitcoinjsLib.networks.testnet;
             exports.BlockStreamURL = "https://blockstream.info/testnet/api";
             break;
         }
-        case NetworkType$1.Regtest: {
+        case NetworkType$2.Regtest: {
             exports.Network = bitcoinjsLib.networks.regtest;
             exports.BlockStreamURL = "https://blockstream.regtest.trustless.computer/regtest/api";
             break;
         }
-        case NetworkType$1.Fractal: {
+        case NetworkType$2.Fractal: {
             exports.Network = bitcoinjsLib.networks.bitcoin;
             exports.BlockStreamURL = "https://mempool.fractalbitcoin.io/api";
             break;
@@ -5165,7 +5165,7 @@ function tapTweakHash(pubKey, h) {
 
 // default is bitcoin mainnet
 bitcoinjsLib.networks.bitcoin;
-const NetworkType = {
+const NetworkType$1 = {
     Mainnet: 1,
     Testnet: 2,
     Regtest: 3,
@@ -5173,19 +5173,19 @@ const NetworkType = {
 };
 const setBTCNetwork = (netType) => {
     switch (netType) {
-        case NetworkType.Mainnet: {
+        case NetworkType$1.Mainnet: {
             bitcoinjsLib.networks.bitcoin;
             break;
         }
-        case NetworkType.Testnet: {
+        case NetworkType$1.Testnet: {
             bitcoinjsLib.networks.testnet;
             break;
         }
-        case NetworkType.Regtest: {
+        case NetworkType$1.Regtest: {
             bitcoinjsLib.networks.regtest;
             break;
         }
-        case NetworkType.Fractal: {
+        case NetworkType$1.Fractal: {
             bitcoinjsLib.networks.bitcoin;
             break;
         }
@@ -5343,19 +5343,19 @@ class StorageService {
 const setupConfig = ({ storage, tcClient, netType }) => {
     let network;
     switch (netType) {
-        case NetworkType.Mainnet: {
+        case NetworkType$1.Mainnet: {
             network = bitcoinjsLib.networks.bitcoin;
             break;
         }
-        case NetworkType.Testnet: {
+        case NetworkType$1.Testnet: {
             network = bitcoinjsLib.networks.testnet;
             break;
         }
-        case NetworkType.Regtest: {
+        case NetworkType$1.Regtest: {
             network = bitcoinjsLib.networks.regtest;
             break;
         }
-        case NetworkType.Fractal: {
+        case NetworkType$1.Fractal: {
             network = bitcoinjsLib.networks.bitcoin;
             break;
         }
@@ -6725,9 +6725,6 @@ require('express');
 const { PrivateKey: PrivateKey$1, Address: Address$1, Transaction: Transaction$1, Script: Script$1, Opcode: Opcode$1 } = dogecore$2;
 dogecore$2.crypto;
 dotenv$1.config();
-if (process.env.TESTNET == 'true') {
-    dogecore$2.Networks.defaultNetwork = dogecore$2.Networks.testnet;
-}
 // TODO: 2525 get real time
 if (process.env.FEE_PER_KB) {
     Transaction$1.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
@@ -9581,9 +9578,27 @@ require('express');
 const { PrivateKey, Address, Transaction, Script, Opcode } = dogecore$1;
 const { Hash, Signature } = dogecore$1.crypto;
 dotenv.config();
-if (process.env.TESTNET == 'true') {
-    dogecore$1.Networks.defaultNetwork = dogecore$1.Networks.testnet;
-}
+// if (process.env.TESTNET == 'true') {
+//     dogecore.Networks.defaultNetwork = dogecore.Networks.testnet
+// }
+const NetworkType = {
+    Mainnet: 1,
+    Testnet: 2,
+};
+const setDogeNetwork = (netType) => {
+    switch (netType) {
+        case NetworkType.Mainnet: {
+            dogecore$1.Networks.defaultNetwork = dogecore$1.Networks.mainnet;
+            // BlockStreamURL = "https://blockstream.info/api";
+            break;
+        }
+        case NetworkType.Testnet: {
+            dogecore$1.Networks.defaultNetwork = dogecore$1.Networks.testnet;
+            // BlockStreamURL = "https://blockstream.info/testnet/api";
+            break;
+        }
+    }
+};
 // TODO: 2525 get real time
 if (process.env.FEE_PER_KB) {
     Transaction.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
@@ -10081,7 +10096,7 @@ exports.MaxTxSize = MaxTxSize;
 exports.MinSats = MinSats$1;
 exports.MinSats2 = MinSats2;
 exports.MinSats3 = MinSats3;
-exports.NetworkType = NetworkType$1;
+exports.NetworkType = NetworkType$2;
 exports.OutputSize = OutputSize;
 exports.Regtest = Regtest;
 exports.SDKError = SDKError$1;
@@ -10197,6 +10212,7 @@ exports.selectUTXOs = selectUTXOs;
 exports.selectUTXOsToCreateBuyTx = selectUTXOsToCreateBuyTx;
 exports.selectUTXOsV2 = selectUTXOsV2;
 exports.setBTCNetwork = setBTCNetwork$1;
+exports.setDogeNetwork = setDogeNetwork;
 exports.setStorageHDWallet = setStorageHDWallet;
 exports.setStorageMasterless = setStorageMasterless;
 exports.setupConfig = setupConfig;

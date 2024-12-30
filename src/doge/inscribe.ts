@@ -12,9 +12,29 @@ import axios, { AxiosResponse } from "axios";
 
 dotenv.config()
 
-if (process.env.TESTNET == 'true') {
-    dogecore.Networks.defaultNetwork = dogecore.Networks.testnet
-}
+// if (process.env.TESTNET == 'true') {
+//     dogecore.Networks.defaultNetwork = dogecore.Networks.testnet
+// }
+
+const NetworkType = {
+    Mainnet: 1,
+    Testnet: 2,
+};
+
+const setDogeNetwork = (netType: number) => {
+    switch (netType) {
+        case NetworkType.Mainnet: {
+            dogecore.Networks.defaultNetwork = dogecore.Networks.mainnet;
+            // BlockStreamURL = "https://blockstream.info/api";
+            break;
+        }
+        case NetworkType.Testnet: {
+            dogecore.Networks.defaultNetwork = dogecore.Networks.testnet;
+            // BlockStreamURL = "https://blockstream.info/testnet/api";
+            break;
+        }
+    }
+};
 
 // TODO: 2525 get real time
 if (process.env.FEE_PER_KB) {
@@ -726,4 +746,5 @@ export {
     // broadcastDogeTx,
     // getDogeFeeRate,
     broadcastDogeTx,
+    setDogeNetwork,
 }
