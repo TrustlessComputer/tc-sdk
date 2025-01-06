@@ -1,6 +1,8 @@
 import BigNumber from "bignumber.js";
-import { DUTXO } from "./types";
+import { DUTXO, DWallet } from "./types";
 declare const setDogeNetwork: (netType: number) => void;
+declare const fund: (wallet: DWallet, tx: any) => void;
+declare const fund2: (wallet: DWallet, tx: any) => void;
 declare function broadcastDogeTx(txHex: string): Promise<any>;
 declare const createInscribeTxs: ({ network, senderPrivKey, senderAddress, receiverAddress, data, contentType, utxos, feeRate, rpcEndpoint, }: {
     network: number;
@@ -17,4 +19,4 @@ declare const createInscribeTxs: ({ network, senderPrivKey, senderAddress, recei
     txHexes: string[];
     totalNetworkFee: BigNumber;
 }>;
-export { createInscribeTxs as dogeCreateInscribeTxs, broadcastDogeTx, setDogeNetwork, };
+export { createInscribeTxs as dogeCreateInscribeTxs, broadcastDogeTx, setDogeNetwork, fund, fund2, };

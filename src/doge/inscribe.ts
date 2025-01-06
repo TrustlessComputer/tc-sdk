@@ -36,7 +36,6 @@ const setDogeNetwork = (netType: number) => {
     }
 };
 
-// TODO: 2525 get real time
 if (process.env.FEE_PER_KB) {
     Transaction.FEE_PER_KB = parseInt(process.env.FEE_PER_KB)
 } else {
@@ -483,8 +482,44 @@ const fund = (
     wallet: DWallet,
     tx: any,
 ) => {
+
+    // console.log("Tx before funding: ", tx);
     tx.change(wallet.address);
+    // console.log("Tx after adding change: ", tx);
     delete tx._fee
+
+    console.log("fund tx fee: ", tx.getFee())
+
+
+    for (const utxo of wallet.utxos) {
+        if (tx.inputs.length && tx.outputs.length && tx.inputAmount >= tx.outputAmount + tx.getFee()) {
+            break
+        }
+
+        delete tx._fee;
+        console.log("Fund UTXO: ", utxo);
+        tx.from(utxo)
+        tx.change(wallet.address)
+        tx.sign(wallet.privKey)
+    }
+
+    // console.log("Tx after adding inputs: ", tx);
+
+    if (tx.inputAmount < tx.outputAmount + tx.getFee()) {
+        throw new Error('not enough funds')
+    }
+}
+
+
+const fund2 = (
+    wallet: DWallet,
+    tx: any,
+) => {
+
+    console.log("Tx before funding: ", tx);
+    // tx.change(wallet.address);
+    console.log("Tx after adding change: ", tx);
+    // delete tx._fee
 
     console.log("fund tx fee: ", tx.getFee())
 
@@ -499,6 +534,8 @@ const fund = (
         tx.change(wallet.address)
         tx.sign(wallet.privKey)
     }
+
+    console.log("Tx after adding inputs: ", tx);
 
     if (tx.inputAmount < tx.outputAmount + tx.getFee()) {
         throw new Error('not enough funds')
@@ -714,6 +751,10 @@ const createInscribeTxs = async ({
         throw new Error('content type too long')
     }
 
+    if (feeRate > 0) {
+        Transaction.FEE_PER_KB = feeRate * 1024;
+    }
+
     let txs = inscribe({
         senderPrivKey,
         senderAddress,
@@ -747,4 +788,6 @@ export {
     // getDogeFeeRate,
     broadcastDogeTx,
     setDogeNetwork,
+    fund,
+    fund2,
 }

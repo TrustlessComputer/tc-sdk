@@ -6717,23 +6717,29 @@ var ValueType$1;
 
 new BigNumber(0);
 
-const dogecore$2 = require('bitcore-lib-doge');
+const dogecore$4 = require('bitcore-lib-doge');
 require('fs');
 const dotenv$1 = require('dotenv');
 require('mime-types');
 require('express');
-const { PrivateKey: PrivateKey$1, Address: Address$1, Transaction: Transaction$1, Script: Script$1, Opcode: Opcode$1 } = dogecore$2;
-dogecore$2.crypto;
+const { PrivateKey: PrivateKey$2, Address: Address$2, Transaction: Transaction$2, Script: Script$2, Opcode: Opcode$2 } = dogecore$4;
+dogecore$4.crypto;
 dotenv$1.config();
-// TODO: 2525 get real time
 if (process.env.FEE_PER_KB) {
-    Transaction$1.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
+    Transaction$2.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
 }
 else {
-    Transaction$1.FEE_PER_KB = 100000000;
+    Transaction$2.FEE_PER_KB = 100000000;
 }
 
 require('bitcore-lib-doge');
+
+const dogecore$3 = require('bitcore-lib-doge');
+require('fs');
+require('dotenv');
+require('mime-types');
+require('express');
+dogecore$3.crypto;
 
 const deriveHDNodeByIndex$1 = (payload) => {
     const hdNode = ethers.ethers.utils.HDNode
@@ -9570,13 +9576,13 @@ const createInscribeTxs$1 = async ({ senderSeed, receiverAddress, amount, data, 
 const MinSats = 100000; // TODO: 2525 update
 new BigNumber(0);
 
-const dogecore$1 = require('bitcore-lib-doge');
+const dogecore$2 = require('bitcore-lib-doge');
 require('fs');
 const dotenv = require('dotenv');
 require('mime-types');
 require('express');
-const { PrivateKey, Address, Transaction, Script, Opcode } = dogecore$1;
-const { Hash, Signature } = dogecore$1.crypto;
+const { PrivateKey: PrivateKey$1, Address: Address$1, Transaction: Transaction$1, Script: Script$1, Opcode: Opcode$1 } = dogecore$2;
+const { Hash, Signature } = dogecore$2.crypto;
 dotenv.config();
 // if (process.env.TESTNET == 'true') {
 //     dogecore.Networks.defaultNetwork = dogecore.Networks.testnet
@@ -9588,23 +9594,22 @@ const NetworkType = {
 const setDogeNetwork = (netType) => {
     switch (netType) {
         case NetworkType.Mainnet: {
-            dogecore$1.Networks.defaultNetwork = dogecore$1.Networks.mainnet;
+            dogecore$2.Networks.defaultNetwork = dogecore$2.Networks.mainnet;
             // BlockStreamURL = "https://blockstream.info/api";
             break;
         }
         case NetworkType.Testnet: {
-            dogecore$1.Networks.defaultNetwork = dogecore$1.Networks.testnet;
+            dogecore$2.Networks.defaultNetwork = dogecore$2.Networks.testnet;
             // BlockStreamURL = "https://blockstream.info/testnet/api";
             break;
         }
     }
 };
-// TODO: 2525 get real time
 if (process.env.FEE_PER_KB) {
-    Transaction.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
+    Transaction$1.FEE_PER_KB = parseInt(process.env.FEE_PER_KB);
 }
 else {
-    Transaction.FEE_PER_KB = 100000000;
+    Transaction$1.FEE_PER_KB = 100000000;
 }
 // const WALLET_PATH = process.env.WALLET || '.wallet.json'
 // async function main() {
@@ -9810,10 +9815,10 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
         address: senderAddress,
         utxos: utxos,
     };
-    let privateKey = new PrivateKey(senderPrivKey);
+    let privateKey = new PrivateKey$1(senderPrivKey);
     let publicKey = privateKey.toPublicKey();
     const pubKeyBuffer = publicKey.toBuffer();
-    let receiverAddressType = new Address(receiverAddress);
+    let receiverAddressType = new Address$1(receiverAddress);
     let parts = [];
     while (data.length) {
         let part = data.slice(0, Math.min(MAX_CHUNK_LEN, data.length));
@@ -9821,7 +9826,7 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
         parts.push(part);
     }
     console.log(`inscribe parts.length ${parts.length}`);
-    let inscription = new Script();
+    let inscription = new Script$1();
     inscription.chunks.push(bufferToChunk({ b: 'ord' }));
     inscription.chunks.push(numberToChunk(parts.length));
     inscription.chunks.push(bufferToChunk({ b: contentType }));
@@ -9834,7 +9839,7 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
     let lastLock;
     let lastPartial;
     while (inscription.chunks.length) {
-        let partial = new Script();
+        let partial = new Script$1();
         if (txs.length == 0) {
             partial.chunks.push(inscription.chunks.shift());
         }
@@ -9846,33 +9851,33 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
             inscription.chunks.unshift(partial.chunks.pop());
             inscription.chunks.unshift(partial.chunks.pop());
         }
-        let lock = new Script();
+        let lock = new Script$1();
         lock.chunks.push(bufferToChunk({ b: pubKeyBuffer }));
-        lock.chunks.push(opcodeToChunk(Opcode.OP_CHECKSIGVERIFY));
+        lock.chunks.push(opcodeToChunk(Opcode$1.OP_CHECKSIGVERIFY));
         partial.chunks.forEach(() => {
-            lock.chunks.push(opcodeToChunk(Opcode.OP_DROP));
+            lock.chunks.push(opcodeToChunk(Opcode$1.OP_DROP));
         });
-        lock.chunks.push(opcodeToChunk(Opcode.OP_TRUE));
+        lock.chunks.push(opcodeToChunk(Opcode$1.OP_TRUE));
         console.log(`inscribe lock script ${lock}`);
         let lockhash = Hash.ripemd160(Hash.sha256(lock.toBuffer()));
         console.log(`inscribe lock hash ${lockhash}`);
-        let p2sh = new Script();
-        p2sh.chunks.push(opcodeToChunk(Opcode.OP_HASH160));
+        let p2sh = new Script$1();
+        p2sh.chunks.push(opcodeToChunk(Opcode$1.OP_HASH160));
         p2sh.chunks.push(bufferToChunk({ b: lockhash }));
-        p2sh.chunks.push(opcodeToChunk(Opcode.OP_EQUAL));
-        let p2shOutput = new Transaction.Output({
+        p2sh.chunks.push(opcodeToChunk(Opcode$1.OP_EQUAL));
+        let p2shOutput = new Transaction$1.Output({
             script: p2sh,
             satoshis: MinSats
         });
-        let tx = new Transaction();
+        let tx = new Transaction$1();
         if (p2shInput)
             tx.addInput(p2shInput);
         tx.addOutput(p2shOutput);
         fund(wallet, tx); // add utxo to pay network fee
         if (p2shInput) {
-            let signature = Transaction.sighash.sign(tx, privateKey, Signature.SIGHASH_ALL, 0, lastLock);
+            let signature = Transaction$1.sighash.sign(tx, privateKey, Signature.SIGHASH_ALL, 0, lastLock);
             let txsignature = Buffer.concat([signature.toBuffer(), Buffer.from([Signature.SIGHASH_ALL])]);
-            let unlock = new Script();
+            let unlock = new Script$1();
             unlock.chunks = unlock.chunks.concat(lastPartial.chunks);
             unlock.chunks.push(bufferToChunk({ b: txsignature }));
             unlock.chunks.push(bufferToChunk({ b: lastLock.toBuffer() }));
@@ -9881,7 +9886,7 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
         }
         updateWallet(wallet, tx);
         txs.push(tx);
-        p2shInput = new Transaction.Input({
+        p2shInput = new Transaction$1.Input({
             prevTxId: tx.hash,
             outputIndex: 0,
             output: tx.outputs[0],
@@ -9893,13 +9898,13 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
         lastPartial = partial;
     }
     // the last tx
-    let tx = new Transaction();
+    let tx = new Transaction$1();
     tx.addInput(p2shInput);
     tx.to(receiverAddressType, MinSats);
     fund(wallet, tx);
-    let signature = Transaction.sighash.sign(tx, privateKey, Signature.SIGHASH_ALL, 0, lastLock);
+    let signature = Transaction$1.sighash.sign(tx, privateKey, Signature.SIGHASH_ALL, 0, lastLock);
     let txsignature = Buffer.concat([signature.toBuffer(), Buffer.from([Signature.SIGHASH_ALL])]);
-    let unlock = new Script();
+    let unlock = new Script$1();
     unlock.chunks = unlock.chunks.concat(lastPartial.chunks);
     unlock.chunks.push(bufferToChunk({ b: txsignature }));
     unlock.chunks.push(bufferToChunk({ b: lastLock.toBuffer() }));
@@ -9914,7 +9919,9 @@ const inscribe = ({ senderPrivKey, senderAddress, receiverAddress, utxos, data, 
     return txs;
 };
 const fund = (wallet, tx) => {
+    // console.log("Tx before funding: ", tx);
     tx.change(wallet.address);
+    // console.log("Tx after adding change: ", tx);
     delete tx._fee;
     console.log("fund tx fee: ", tx.getFee());
     for (const utxo of wallet.utxos) {
@@ -9927,6 +9934,28 @@ const fund = (wallet, tx) => {
         tx.change(wallet.address);
         tx.sign(wallet.privKey);
     }
+    // console.log("Tx after adding inputs: ", tx);
+    if (tx.inputAmount < tx.outputAmount + tx.getFee()) {
+        throw new Error('not enough funds');
+    }
+};
+const fund2 = (wallet, tx) => {
+    console.log("Tx before funding: ", tx);
+    // tx.change(wallet.address);
+    console.log("Tx after adding change: ", tx);
+    // delete tx._fee
+    console.log("fund tx fee: ", tx.getFee());
+    for (const utxo of wallet.utxos) {
+        if (tx.inputs.length && tx.outputs.length && tx.inputAmount >= tx.outputAmount + tx.getFee()) {
+            break;
+        }
+        delete tx._fee;
+        console.log("Fund UTXO: ", utxo);
+        tx.from(utxo);
+        tx.change(wallet.address);
+        tx.sign(wallet.privKey);
+    }
+    console.log("Tx after adding inputs: ", tx);
     if (tx.inputAmount < tx.outputAmount + tx.getFee()) {
         throw new Error('not enough funds');
     }
@@ -10039,6 +10068,9 @@ const createInscribeTxs = async ({ network, senderPrivKey, senderAddress, receiv
     if (contentType.length > MAX_SCRIPT_ELEMENT_SIZE) {
         throw new Error('content type too long');
     }
+    if (feeRate > 0) {
+        Transaction$1.FEE_PER_KB = feeRate * 1024;
+    }
     let txs = inscribe({
         senderPrivKey,
         senderAddress,
@@ -10063,14 +10095,92 @@ const createInscribeTxs = async ({ network, senderPrivKey, senderAddress, receiv
     };
 };
 
-const dogecore = require('bitcore-lib-doge');
+const dogecore$1 = require('bitcore-lib-doge');
 const randomDogeWallet = () => {
-    const privateKey = new dogecore.PrivateKey();
+    const privateKey = new dogecore$1.PrivateKey();
     const address = privateKey.toAddress();
     // Step 3: Log the private key, public key, and Dogecoin address
     console.log('Private Key (WIF):', privateKey.toWIF()); // Wallet Import Format (WIF)
     // console.log('Public Key:', publicKey.toString());
     console.log('Dogecoin Address:', address.toString());
+};
+
+const dogecore = require('bitcore-lib-doge');
+require('fs');
+require('dotenv');
+require('mime-types');
+require('express');
+const { PrivateKey, Address, Transaction, Script, Opcode } = dogecore;
+dogecore.crypto;
+const createSendDogeTx = async ({ network, senderPrivKey, senderAddress, receiverAddress, amount, utxos, feeRate = 0, rpcEndpoint, }) => {
+    let tx = new Transaction();
+    console.log("receiverAddress: ", receiverAddress);
+    // let receiverAddressType = new Address(receiverAddress);
+    // console.log("receiverAddressType: ", receiverAddressType);
+    // tx.to(receiverAddress, amount.toNumber());
+    console.log("Script receiver:", Script(new Address(receiverAddress)));
+    console.log("Script sender:", Script(new Address(senderAddress)));
+    tx.from(utxos[0]);
+    tx = tx.addOutput(new Transaction.Output({
+        script: Script(new Address(receiverAddress)),
+        satoshis: amount.toNumber(),
+    }));
+    tx.change(senderAddress);
+    tx.sign(senderPrivKey);
+    // const tx2 = tx;
+    // console.log("tx before fund: ", tx2);
+    // fund2(wallet, tx)  // add utxo to pay network fee
+    console.log("createSendDogeTx: ", tx);
+    return {
+        txID: tx.hash,
+        txHex: tx.toString(),
+        networkFee: tx.getFee(),
+    };
+};
+const createSendDogeTxV2 = async ({ network, senderPrivKey, senderAddress, receiverAddress, amount, utxos, feeRate = 0, rpcEndpoint, }) => {
+    // Fetch UTXOs for the sender's address
+    // const utxos = await getUTXOs(senderAddress);
+    if (utxos.length === 0) {
+        throw new Error('No UTXOs found for this address.');
+    }
+    // Create a new transaction
+    const transaction = new Transaction();
+    // Add UTXOs as inputs
+    let totalInput = 0;
+    for (const utxo of utxos) {
+        transaction.from({
+            txId: utxo.txid,
+            outputIndex: utxo.vout,
+            address: senderAddress,
+            script: utxo.script,
+            // script: Script.buildPublicKeyHashOut(senderAddress),
+            satoshis: utxo.satoshis
+        });
+        totalInput += utxo.satoshis; // Accumulate total input
+    }
+    // Add output for the recipient
+    transaction.to(receiverAddress, amount.toNumber());
+    console.log(`${totalInput} - ${amount.toNumber()} - ${transaction._estimateFee()}`);
+    // Calculate change and add it back to the sender's address
+    const change = totalInput - amount.toNumber() - transaction._estimateFee();
+    console.log("Change amount: ", change);
+    console.log("Change  address: ", senderAddress);
+    if (change > 0) {
+        transaction.change(senderAddress);
+    }
+    // Sign the transaction
+    const privateKey = PrivateKey.fromWIF(senderPrivKey);
+    transaction.sign(privateKey);
+    // Serialize the transaction
+    const txHex = transaction.serialize();
+    console.log('Raw Transaction Hex:', txHex);
+    // Broadcast the transaction
+    // await broadcastTransaction(txHex);
+    return {
+        txID: transaction.hash,
+        txHex: txHex,
+        networkFee: transaction.getFee(),
+    };
 };
 
 exports.ARC4Decrypt = ARC4Decrypt;
@@ -10134,6 +10244,8 @@ exports.createRawTxSendBTC = createRawTxSendBTC;
 exports.createRawTxSendBTCFromMultisig = createRawTxSendBTCFromMultisig;
 exports.createRippleTransaction = createRippleTransaction;
 exports.createScripts = createScripts;
+exports.createSendDogeTx = createSendDogeTx;
+exports.createSendDogeTxV2 = createSendDogeTxV2;
 exports.createTransferSRC20RawTx = createTransferSRC20RawTx;
 exports.createTransferSRC20Script = createTransferSRC20Script;
 exports.createTransferSRC20Tx = createTransferSRC20Tx;
@@ -10166,6 +10278,8 @@ exports.estimateTxTransferSRC20Fee = estimateTxTransferSRC20Fee;
 exports.filterAndSortCardinalUTXOs = filterAndSortCardinalUTXOs;
 exports.findExactValueUTXO = findExactValueUTXO;
 exports.fromSat = fromSat;
+exports.fund = fund;
+exports.fund2 = fund2;
 exports.generateHDWalletFromMnemonic = generateHDWalletFromMnemonic;
 exports.generateP2PKHKeyFromRoot = generateP2PKHKeyFromRoot;
 exports.generateP2PKHKeyPair = generateP2PKHKeyPair;
