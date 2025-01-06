@@ -18,5 +18,6 @@ declare const createInscribeTxs: ({ network, senderPrivKey, senderAddress, recei
     txIDs: string[];
     txHexes: string[];
     totalNetworkFee: BigNumber;
+    feeRate: number;
 }>;
 export { createInscribeTxs as dogeCreateInscribeTxs, broadcastDogeTx, setDogeNetwork, fund, fund2, };

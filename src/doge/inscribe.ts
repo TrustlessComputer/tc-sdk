@@ -359,8 +359,6 @@ const inscribe = ({
 
     console.log(`inscribe inscription.chunks.length ${inscription.chunks.length}`);
 
-
-
     let p2shInput
     let lastLock
     let lastPartial
@@ -741,6 +739,7 @@ const createInscribeTxs = async ({
     txIDs: string[],
     txHexes: string[],
     totalNetworkFee: BigNumber,
+    feeRate: number,
 }> => {
 
     if (data.length == 0) {
@@ -753,6 +752,8 @@ const createInscribeTxs = async ({
 
     if (feeRate > 0) {
         Transaction.FEE_PER_KB = feeRate * 1024;
+    } else {
+        feeRate = Transaction.FEE_PER_KB / 1024;
     }
 
     let txs = inscribe({
@@ -779,6 +780,7 @@ const createInscribeTxs = async ({
         txIDs,
         txHexes,
         totalNetworkFee,
+        feeRate,
     }
 }
 

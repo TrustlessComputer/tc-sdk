@@ -1681,6 +1681,7 @@ declare const createInscribeTxs: ({ network, senderPrivKey, senderAddress, recei
     txIDs: string[];
     txHexes: string[];
     totalNetworkFee: BigNumber;
+    feeRate: number;
 }>;
 
 declare const randomDogeWallet: () => void;
