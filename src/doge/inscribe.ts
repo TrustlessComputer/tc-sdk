@@ -753,7 +753,7 @@ const createInscribeTxs = async ({
     if (feeRate > 0) {
         Transaction.FEE_PER_KB = feeRate * 1024;
     } else {
-        feeRate = Transaction.FEE_PER_KB / 1024;
+        feeRate = Math.round(Transaction.FEE_PER_KB / 1024);
     }
 
     let txs = inscribe({

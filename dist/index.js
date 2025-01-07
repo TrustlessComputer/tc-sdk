@@ -10072,7 +10072,7 @@ const createInscribeTxs = async ({ network, senderPrivKey, senderAddress, receiv
         Transaction$1.FEE_PER_KB = feeRate * 1024;
     }
     else {
-        feeRate = Transaction$1.FEE_PER_KB / 1024;
+        feeRate = Math.round(Transaction$1.FEE_PER_KB / 1024);
     }
     let txs = inscribe({
         senderPrivKey,
